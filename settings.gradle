@@ -1,0 +1,2 @@
+rootProject.name = 'service-foundation'
+include 'framework', 'driver', 'common-biz', 'web-example'
