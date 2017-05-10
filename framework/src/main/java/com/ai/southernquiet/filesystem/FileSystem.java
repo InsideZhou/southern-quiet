@@ -9,13 +9,14 @@ import java.util.function.Function;
  * 文件系统。
  */
 public interface FileSystem {
+    String PATH_SEPARATOR = "/";
+
     /**
      * 创建目录。目录已存在则忽略。
      *
      * @param path 路径
-     * @throws FileSystemException 文件系统操作失败
      */
-    void create(String path) throws FileSystemException;
+    void create(String path);
 
     /**
      * 创建文件。
@@ -23,9 +24,8 @@ public interface FileSystem {
      * @param path   要写入的路径
      * @param stream 输入流
      * @throws PathAlreadyExistsException 文件已存在
-     * @throws FileSystemException        文件系统操作失败
      */
-    void create(String path, InputStream stream) throws FileSystemException;
+    void create(String path, InputStream stream) throws PathAlreadyExistsException;
 
     /**
      * 创建文件。
@@ -33,62 +33,54 @@ public interface FileSystem {
      * @param path 要写入的路径
      * @param txt  输入文本
      * @throws PathAlreadyExistsException 文件已存在
-     * @throws FileSystemException        文件系统操作失败
      */
-    void create(String path, CharSequence txt) throws FileSystemException;
+    void create(String path, CharSequence txt) throws PathAlreadyExistsException;
 
     /**
      * 如果文件未存在，则创建；否则替换。
      *
      * @param path   要写入的路径
      * @param stream 输入流
-     * @throws FileSystemException 文件系统操作失败
      */
-    void put(String path, InputStream stream) throws FileSystemException;
+    void put(String path, InputStream stream);
 
     /**
      * 如果文件未存在，则创建；否则替换。
      *
      * @param path 要写入的路径
      * @param txt  输入文本
-     * @throws FileSystemException 文件系统操作失败
      */
-    void put(String path, CharSequence txt) throws FileSystemException;
+    void put(String path, CharSequence txt);
 
     /**
      * 检查路径是否存在。
      *
      * @param path 路径
-     * @throws FileSystemException 文件系统操作失败
      */
-    boolean exists(String path) throws FileSystemException;
+    boolean exists(String path);
 
     /**
      * @param path 文件路径
      * @throws PathNotFoundException 文件不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    InputStream read(String path) throws FileSystemException;
+    InputStream read(String path) throws PathNotFoundException;
 
     /**
      * 使用UTF8编码读取文件。
      *
      * @param path 文件路径
      * @throws PathNotFoundException 文件不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    String readString(String path) throws FileSystemException;
+    String readString(String path) throws PathNotFoundException;
 
     /**
      * @param path    文件路径
      * @param charset 文件编码
      * @throws PathNotFoundException 文件不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    String readString(String path, Charset charset) throws FileSystemException;
+    String readString(String path, Charset charset) throws PathNotFoundException;
 
     /**
-     * @throws PathAlreadyExistsException 目标路径已存在
      * @see #move(String, String, boolean)
      */
     void move(String source, String destination) throws FileSystemException;
@@ -107,7 +99,6 @@ public interface FileSystem {
 
 
     /**
-     * @throws PathAlreadyExistsException 目标路径已存在
      * @see #copy(String, String, boolean)
      */
     void copy(String source, String destination) throws FileSystemException;
@@ -128,36 +119,33 @@ public interface FileSystem {
      * 删除文件或目录。
      *
      * @param path 路径
-     * @throws FileSystemException 文件系统操作失败
      */
-    void delete(String path) throws FileSystemException;
+    void delete(String path);
 
     /**
      * 刷新文件或目录的 {@link PathMeta#getLastAccessTime()}。
      *
      * @param path 路径
-     * @throws FileSystemException 文件系统操作失败
      */
-    void touch(String path) throws FileSystemException;
+    void touch(String path);
 
     /**
      * 获取路径的元信息。
      *
      * @param path 路径
      * @throws PathNotFoundException 路径不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    PathMeta meta(String path) throws FileSystemException;
+    PathMeta meta(String path) throws PathNotFoundException;
 
     /**
      * @see #paths(String, boolean, Function<PathMeta, Boolean>)
      */
-    List<PathMeta> paths(String path) throws FileSystemException;
+    List<PathMeta> paths(String path) throws PathNotFoundException;
 
     /**
      * @see #paths(String, boolean, Function<PathMeta, Boolean>)
      */
-    List<PathMeta> paths(String path, Function<PathMeta, Boolean> filter) throws FileSystemException;
+    List<PathMeta> paths(String path, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
 
     /**
      * 获取目录下所有子路径。
@@ -166,19 +154,18 @@ public interface FileSystem {
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
      * @param filter    过滤器
      * @throws PathNotFoundException 目录不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    List<PathMeta> paths(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws FileSystemException;
+    List<PathMeta> paths(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
 
     /**
      * @see #files(String, boolean, Function<PathMeta, Boolean>)
      */
-    List<PathMeta> files(String path) throws FileSystemException;
+    List<PathMeta> files(String path) throws PathNotFoundException;
 
     /**
      * @see #files(String, boolean, Function<PathMeta, Boolean>)
      */
-    List<PathMeta> files(String path, Function<PathMeta, Boolean> filter) throws FileSystemException;
+    List<PathMeta> files(String path, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
 
     /**
      * 获取目录下所有文件。
@@ -187,7 +174,6 @@ public interface FileSystem {
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
      * @param filter    过滤器
      * @throws PathNotFoundException 目录不存在
-     * @throws FileSystemException   文件系统操作失败
      */
-    List<PathMeta> files(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws FileSystemException;
+    List<PathMeta> files(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
 }
