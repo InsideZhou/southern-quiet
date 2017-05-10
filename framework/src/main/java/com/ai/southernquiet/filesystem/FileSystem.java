@@ -3,6 +3,7 @@ package com.ai.southernquiet.filesystem;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * 文件系统。
@@ -149,32 +150,44 @@ public interface FileSystem {
     PathMeta meta(String path) throws FileSystemException;
 
     /**
-     * @see #paths(String, boolean)
+     * @see #paths(String, boolean, Function<PathMeta, Boolean>)
      */
     List<PathMeta> paths(String path) throws FileSystemException;
+
+    /**
+     * @see #paths(String, boolean, Function<PathMeta, Boolean>)
+     */
+    List<PathMeta> paths(String path, Function<PathMeta, Boolean> filter) throws FileSystemException;
 
     /**
      * 获取目录下所有子路径。
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
+     * @param filter    过滤器
      * @throws PathNotFoundException 目录不存在
      * @throws FileSystemException   文件系统操作失败
      */
-    List<PathMeta> paths(String path, boolean recursive) throws FileSystemException;
+    List<PathMeta> paths(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws FileSystemException;
 
     /**
-     * @see #files(String, boolean)
+     * @see #files(String, boolean, Function<PathMeta, Boolean>)
      */
     List<PathMeta> files(String path) throws FileSystemException;
+
+    /**
+     * @see #files(String, boolean, Function<PathMeta, Boolean>)
+     */
+    List<PathMeta> files(String path, Function<PathMeta, Boolean> filter) throws FileSystemException;
 
     /**
      * 获取目录下所有文件。
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
+     * @param filter    过滤器
      * @throws PathNotFoundException 目录不存在
      * @throws FileSystemException   文件系统操作失败
      */
-    List<PathMeta> files(String path, boolean recursive) throws FileSystemException;
+    List<PathMeta> files(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws FileSystemException;
 }

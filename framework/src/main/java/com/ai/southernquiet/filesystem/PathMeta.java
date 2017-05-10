@@ -6,11 +6,20 @@ import java.time.Instant;
  * 路径的元信息。
  */
 public class PathMeta {
+    private String name;
     private boolean isDirectory;
     private Instant creationTime;
     private Instant lastModifiedTime;
     private Instant lastAccessTime;
     private long size;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public boolean isDirectory() {
         return isDirectory;
