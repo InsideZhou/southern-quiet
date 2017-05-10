@@ -132,6 +132,14 @@ public interface FileSystem {
     void delete(String path) throws FileSystemException;
 
     /**
+     * 刷新文件或目录的 {@link PathMeta#getLastAccessTime()}。
+     *
+     * @param path 路径
+     * @throws FileSystemException 文件系统操作失败
+     */
+    void touch(String path) throws FileSystemException;
+
+    /**
      * 获取路径的元信息。
      *
      * @param path 路径
