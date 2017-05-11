@@ -1,4 +1,5 @@
 package com.ai.southernquiet.filesystem;
 
 public class PathNotFoundException extends FileSystemException {
+    private final static long serialVersionUID = -7066503468436236283L;
 }

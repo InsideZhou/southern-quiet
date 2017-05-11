@@ -1,6 +1,7 @@
 package com.ai.southernquiet.filesystem;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -40,16 +41,18 @@ public interface FileSystem {
      *
      * @param path   要写入的路径
      * @param stream 输入流
+     * @throws InvalidFileException 无效文件
      */
-    void put(String path, InputStream stream);
+    void put(String path, InputStream stream) throws InvalidFileException;
 
     /**
      * 如果文件未存在，则创建；否则替换。
      *
      * @param path 要写入的路径
      * @param txt  输入文本
+     * @throws InvalidFileException 无效文件
      */
-    void put(String path, CharSequence txt);
+    void put(String path, CharSequence txt) throws InvalidFileException;
 
     /**
      * 检查路径是否存在。
@@ -67,24 +70,40 @@ public interface FileSystem {
 
     /**
      * @param path 文件路径
-     * @throws PathNotFoundException 文件不存在
+     * @throws InvalidFileException 无效文件
      */
-    InputStream read(String path) throws PathNotFoundException;
+    InputStream read(String path) throws InvalidFileException;
 
     /**
      * 使用UTF8编码读取文件。
      *
      * @param path 文件路径
-     * @throws PathNotFoundException 文件不存在
+     * @throws InvalidFileException 无效文件
      */
-    String readString(String path) throws PathNotFoundException;
+    String readString(String path) throws InvalidFileException;
 
     /**
      * @param path    文件路径
      * @param charset 文件编码
-     * @throws PathNotFoundException 文件不存在
+     * @throws InvalidFileException 无效文件
      */
-    String readString(String path, Charset charset) throws PathNotFoundException;
+    String readString(String path, Charset charset) throws InvalidFileException;
+
+    /**
+     * 用流的方式读取文件内容，调用方负责流的关闭。
+     *
+     * @param path 路径
+     * @throws InvalidFileException 无效文件
+     */
+    InputStream openReadStream(String path) throws InvalidFileException;
+
+    /**
+     * 用流的方式写入文件内容，调用方负责流的关闭。
+     *
+     * @param path 路径
+     * @throws InvalidFileException 无效文件
+     */
+    OutputStream openWriteStream(String path) throws InvalidFileException;
 
     /**
      * @see #move(String, String, boolean)
