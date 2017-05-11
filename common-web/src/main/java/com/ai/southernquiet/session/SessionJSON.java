@@ -11,12 +11,12 @@ import java.util.Map;
  * 用于转换{@link SessionData}到JSON的中转对象.
  */
 public class SessionJSON {
-    private final static ObjectMapper MAPPER = new ObjectMapper();
+    private final static ObjectMapper mapper = new ObjectMapper();
 
     public static String dataToJSON(SessionData data) {
         SessionJSON jsonObj = new SessionJSON(data);
         try {
-            return MAPPER.writeValueAsString(jsonObj);
+            return mapper.writeValueAsString(jsonObj);
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -25,7 +25,7 @@ public class SessionJSON {
 
     public static SessionData jsonToData(String json) {
         try {
-            return MAPPER.readValue(json, SessionJSON.class).toData();
+            return mapper.readValue(json, SessionJSON.class).toData();
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -45,8 +45,22 @@ public class SessionJSON {
     private long lastSaved;
     private Map<String, Object> attributes;
 
+    public SessionJSON() {
+    }
+
     public SessionJSON(SessionData data) {
-        id = data.getId();
+        setId(data.getId());
+        setContextPath(data.getContextPath());
+        setVhost(data.getVhost());
+        setLastNode(data.getLastNode());
+        setExpiry(data.getExpiry());
+        setCreated(data.getCreated());
+        setCookieSet(data.getCookieSet());
+        setAccessed(data.getAccessed());
+        setLastAccessed(data.getLastAccessed());
+        setMaxInactiveMs(data.getMaxInactiveMs());
+        setLastSaved(data.getLastSaved());
+        setAttributes(data.getAllAttributes());
     }
 
     public String getId() {
