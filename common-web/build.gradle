@@ -1,0 +1,11 @@
+dependencies {
+    compile project(':common-biz')
+
+    compile("org.springframework.boot:spring-boot-starter-web") {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+    compile "org.springframework.boot:spring-boot-starter-jetty"
+    compile "org.springframework.boot:spring-boot-starter-actuator"
+
+    testCompile "org.springframework.boot:spring-boot-starter-test"
+}

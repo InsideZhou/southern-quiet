@@ -1,9 +1,4 @@
 dependencies {
-	compile project(':common-biz')
+	compile project(':common-web')
 	compile project(':driver')
-
-	compile "org.springframework.boot:spring-boot-starter-web"
-	compile "org.springframework.boot:spring-boot-starter-actuator"
-	
-	testCompile "org.springframework.boot:spring-boot-starter-test"
 }
