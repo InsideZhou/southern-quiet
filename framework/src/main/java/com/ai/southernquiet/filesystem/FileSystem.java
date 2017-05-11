@@ -3,7 +3,6 @@ package com.ai.southernquiet.filesystem;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * 文件系统。
@@ -58,6 +57,13 @@ public interface FileSystem {
      * @param path 路径
      */
     boolean exists(String path);
+
+    /**
+     * 获取路径。
+     *
+     * @param path 路径
+     */
+    PathMeta getPath(String path);
 
     /**
      * @param path 文件路径
@@ -138,42 +144,44 @@ public interface FileSystem {
     PathMeta meta(String path) throws PathNotFoundException;
 
     /**
-     * @see #paths(String, boolean, Function<PathMeta, Boolean>)
+     * @see #paths(String, boolean, String)
      */
     List<PathMeta> paths(String path) throws PathNotFoundException;
 
     /**
-     * @see #paths(String, boolean, Function<PathMeta, Boolean>)
+     * @see #paths(String, boolean, String)
      */
-    List<PathMeta> paths(String path, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
+    List<PathMeta> paths(String path, String search) throws PathNotFoundException;
 
     /**
      * 获取目录下所有子路径。
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @param filter    过滤器
+     * @param search    要搜索的名称。如果为空，返回所有结果。
+     * @return 文件名中包含 {@code search} 的文件列表。
      * @throws PathNotFoundException 目录不存在
      */
-    List<PathMeta> paths(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
+    List<PathMeta> paths(String path, boolean recursive, String search) throws PathNotFoundException;
 
     /**
-     * @see #files(String, boolean, Function<PathMeta, Boolean>)
+     * @see #files(String, boolean, String)
      */
     List<PathMeta> files(String path) throws PathNotFoundException;
 
     /**
-     * @see #files(String, boolean, Function<PathMeta, Boolean>)
+     * @see #files(String, boolean, String)
      */
-    List<PathMeta> files(String path, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
+    List<PathMeta> files(String path, String search) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有文件。
+     * 获取目录下所有文件路径。
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @param filter    过滤器
+     * @param search    要搜索的名称。如果为空，返回所有结果。
+     * @return 文件名中包含 {@code search} 的文件列表。
      * @throws PathNotFoundException 目录不存在
      */
-    List<PathMeta> files(String path, boolean recursive, Function<PathMeta, Boolean> filter) throws PathNotFoundException;
+    List<PathMeta> files(String path, boolean recursive, String search) throws PathNotFoundException;
 }
