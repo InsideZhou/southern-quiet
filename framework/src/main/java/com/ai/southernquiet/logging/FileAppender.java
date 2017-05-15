@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * 在未能成功获取FileSystem时，如果本Appender被start，则会把日志输出到System.out。
+ * {@link FileSystem}可以在运行时设置，如为null，则把日志输出到 {@link System#out}。
  */
 public class FileAppender<E> extends OutputStreamAppender<E> {
     private FileSystem fileSystem;
@@ -19,16 +19,24 @@ public class FileAppender<E> extends OutputStreamAppender<E> {
     }
 
     public void setFileSystem(FileSystem fileSystem) {
-        if (null == this.fileSystem && isStarted()) {
+        OutputStream out;
+        if (null == fileSystem) {
+            out = System.out;
+        }
+        else {
             try {
-                setOutputStream(fileSystem.openWriteStream(getFilePath()));
+                out = fileSystem.openWriteStream(getFilePath());
             }
             catch (InvalidFileException e) {
                 throw new RuntimeException(e);
             }
+
+            this.fileSystem = fileSystem;
         }
 
-        this.fileSystem = fileSystem;
+        if (isStarted()) {
+            setOutputStream(out);
+        }
     }
 
     public String getFilePath() {
