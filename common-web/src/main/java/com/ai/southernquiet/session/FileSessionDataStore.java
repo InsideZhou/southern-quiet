@@ -3,11 +3,14 @@ package com.ai.southernquiet.session;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.PathMeta;
 import com.ai.southernquiet.filesystem.PathNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,15 +23,17 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public final static String DEFAULT_ROOT = "SESSION";
     public final static String NAME_SEPARATOR = "__";
 
-    private FileSystem fileSystem = null;
-    private String workingRoot;
+    private ObjectMapper mapper;
+    private FileSystem fileSystem;
+    private String workingRoot = DEFAULT_ROOT;
 
-    public FileSessionDataStore() {
-        this(DEFAULT_ROOT);
+    public ObjectMapper getMapper() {
+        return mapper;
     }
 
-    public FileSessionDataStore(String workingRoot) {
-        this.workingRoot = workingRoot;
+    @Autowired
+    public void setMapper(ObjectMapper mapper) {
+        this.mapper = mapper;
     }
 
     public FileSystem getFileSystem() {
@@ -50,7 +55,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public void doStore(String id, SessionData data, long lastSaveTime) throws Exception {
-        fileSystem.put(getFilePath(id, data.getExpiry()), SessionJSON.dataToJSON(data));
+        getFileSystem().put(getFilePath(id, data.getExpiry()), dataToJSON(data));
     }
 
     @Override
@@ -61,7 +66,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
             .map(id -> getIdPrefix(id))
             .map(prefix -> {
                 try {
-                    return fileSystem.files(getWorkingRoot(), prefix);
+                    return getFileSystem().files(getWorkingRoot(), prefix);
                 }
                 catch (PathNotFoundException e) {
                     throw new RuntimeException(e);
@@ -85,16 +90,16 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public boolean exists(String id) throws Exception {
         long now = System.currentTimeMillis();
 
-        return fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream()
+        return getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream()
             .anyMatch(meta -> getExpiryFromFileName(meta.getName()) > now);
     }
 
     @Override
     public SessionData load(String id) throws Exception {
-        Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
         if (opt.isPresent()) {
-            String json = fileSystem.readString(opt.get().getPath());
-            return SessionJSON.jsonToData(json);
+            String json = getFileSystem().readString(opt.get().getPath());
+            return jsonToData(json);
         }
 
         return null;
@@ -102,9 +107,9 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public boolean delete(String id) throws Exception {
-        Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
         if (opt.isPresent()) {
-            fileSystem.delete(opt.get().getPath());
+            getFileSystem().delete(opt.get().getPath());
         }
 
         return true;
@@ -128,5 +133,24 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     private long getExpiryFromFileName(String name) {
         return Long.parseLong(name.substring(name.indexOf(NAME_SEPARATOR) + NAME_SEPARATOR.length()));
+    }
+
+    private String dataToJSON(SessionData data) {
+        SessionJSON jsonObj = new SessionJSON(data);
+        try {
+            return getMapper().writeValueAsString(jsonObj);
+        }
+        catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private SessionData jsonToData(String json) {
+        try {
+            return getMapper().readValue(json, SessionJSON.class).toData();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

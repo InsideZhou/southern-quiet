@@ -1,37 +1,13 @@
 package com.ai.southernquiet.session;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.SessionData;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
  * 用于转换{@link SessionData}到JSON的中转对象.
  */
 public class SessionJSON {
-    private final static ObjectMapper mapper = new ObjectMapper();
-
-    public static String dataToJSON(SessionData data) {
-        SessionJSON jsonObj = new SessionJSON(data);
-        try {
-            return mapper.writeValueAsString(jsonObj);
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static SessionData jsonToData(String json) {
-        try {
-            return mapper.readValue(json, SessionJSON.class).toData();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private String id;
     private String contextPath;
     private String vhost;
