@@ -111,7 +111,7 @@ public interface FileSystem {
     void move(String source, String destination) throws FileSystemException;
 
     /**
-     * 移动文件或目录。
+     * 移动文件或目录，{@link PathMeta}保持不变。
      *
      * @param source       源路径
      * @param destination  目标路径
@@ -122,14 +122,13 @@ public interface FileSystem {
      */
     void move(String source, String destination, boolean ignoreExists) throws FileSystemException;
 
-
     /**
      * @see #copy(String, String, boolean)
      */
     void copy(String source, String destination) throws FileSystemException;
 
     /**
-     * 复制文件或目录。
+     * 复制文件或目录，新建目标的{@link PathMeta}。
      *
      * @param source       源路径
      * @param destination  目标路径
@@ -148,11 +147,25 @@ public interface FileSystem {
     void delete(String path);
 
     /**
+     * 刷新文件或目录的 {@link PathMeta#getCreationTime()}。
+     *
+     * @param path 路径
+     */
+    void touchCreation(String path);
+
+    /**
+     * 刷新文件或目录的 {@link PathMeta#getLastModifiedTime()}。
+     *
+     * @param path 路径
+     */
+    void touchLastModified(String path);
+
+    /**
      * 刷新文件或目录的 {@link PathMeta#getLastAccessTime()}。
      *
      * @param path 路径
      */
-    void touch(String path);
+    void touchLastAccess(String path);
 
     /**
      * 获取路径的元信息。
@@ -177,7 +190,7 @@ public interface FileSystem {
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @param search    要搜索的名称。如果为空，返回所有结果。
+     * @param search    以contains方式查找的名称。如果为空，返回所有结果。
      * @return 文件名中包含 {@code search} 的文件列表。
      * @throws PathNotFoundException 目录不存在
      */
@@ -198,7 +211,7 @@ public interface FileSystem {
      *
      * @param path      目录路径
      * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @param search    要搜索的名称。如果为空，返回所有结果。
+     * @param search    以contains方式查找的名称。如果为空，返回所有结果。
      * @return 文件名中包含 {@code search} 的文件列表。
      * @throws PathNotFoundException 目录不存在
      */
