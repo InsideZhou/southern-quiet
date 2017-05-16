@@ -17,14 +17,35 @@ import java.util.stream.Collectors;
  */
 @Component
 public class FileSessionDataStore extends AbstractSessionDataStore {
-    public final static String PATH = "SESSION";
+    public final static String DEFAULT_ROOT = "SESSION";
     public final static String NAME_SEPARATOR = "__";
 
     private FileSystem fileSystem = null;
+    private String workingRoot;
+
+    public FileSessionDataStore() {
+        this(DEFAULT_ROOT);
+    }
+
+    public FileSessionDataStore(String workingRoot) {
+        this.workingRoot = workingRoot;
+    }
+
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
 
     @Autowired
-    public FileSessionDataStore(FileSystem fileSystem) {
+    public void setFileSystem(FileSystem fileSystem) {
         this.fileSystem = fileSystem;
+    }
+
+    public String getWorkingRoot() {
+        return workingRoot;
+    }
+
+    public void setWorkingRoot(String workingRoot) {
+        this.workingRoot = workingRoot;
     }
 
     @Override
@@ -40,7 +61,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
             .map(id -> getIdPrefix(id))
             .map(prefix -> {
                 try {
-                    return fileSystem.files(PATH, prefix);
+                    return fileSystem.files(getWorkingRoot(), prefix);
                 }
                 catch (PathNotFoundException e) {
                     throw new RuntimeException(e);
@@ -64,15 +85,15 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public boolean exists(String id) throws Exception {
         long now = System.currentTimeMillis();
 
-        return fileSystem.files(PATH, getIdPrefix(id)).stream()
+        return fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream()
             .anyMatch(meta -> getExpiryFromFileName(meta.getName()) > now);
     }
 
     @Override
     public SessionData load(String id) throws Exception {
-        Optional<PathMeta> opt = fileSystem.files(PATH, getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
         if (opt.isPresent()) {
-            String json = fileSystem.readString(getFilePath(opt.get().getName()));
+            String json = fileSystem.readString(opt.get().getPath());
             return SessionJSON.jsonToData(json);
         }
 
@@ -81,9 +102,9 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public boolean delete(String id) throws Exception {
-        Optional<PathMeta> opt = fileSystem.files(PATH, getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
         if (opt.isPresent()) {
-            fileSystem.delete(getFilePath(opt.get().getName()));
+            fileSystem.delete(opt.get().getPath());
         }
 
         return true;
@@ -97,12 +118,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return sessionId + NAME_SEPARATOR + expiry;
     }
 
-    private String getFilePath(String name) {
-        return PATH + FileSystem.PATH_SEPARATOR + name;
-    }
-
     private String getFilePath(String sessionId, long expiry) {
-        return PATH + FileSystem.PATH_SEPARATOR + getFileName(sessionId, expiry);
+        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(sessionId, expiry);
     }
 
     private String getIdFromFileName(String name) {
