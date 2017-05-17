@@ -1,16 +1,20 @@
 package com.ai.southernquiet.session;
 
 import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.filesystem.FileSystemHelper;
 import com.ai.southernquiet.filesystem.PathMeta;
 import com.ai.southernquiet.filesystem.PathNotFoundException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
+import org.springframework.util.StreamUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,7 +25,7 @@ import java.util.stream.Collectors;
 @Component
 public class FileSessionDataStore extends AbstractSessionDataStore {
     public final static String DEFAULT_ROOT = "SESSION";
-    public final static String NAME_SEPARATOR = "__";
+    public final static String NAME_SEPARATOR = "_";
 
     private ObjectMapper mapper;
     private FileSystem fileSystem;
@@ -55,7 +59,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public void doStore(String id, SessionData data, long lastSaveTime) throws Exception {
-        getFileSystem().put(getFilePath(id, data.getExpiry()), dataToJSON(data));
+        getFileSystem().put(getFilePath(id, data.getExpiry()), serialize(data));
     }
 
     @Override
@@ -98,8 +102,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public SessionData load(String id) throws Exception {
         Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
         if (opt.isPresent()) {
-            String json = getFileSystem().readString(opt.get().getPath());
-            return jsonToData(json);
+            InputStream stream = getFileSystem().read(opt.get().getPath());
+            return deserialize(stream);
         }
 
         return null;
@@ -120,7 +124,9 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     }
 
     private String getFileName(String sessionId, long expiry) {
-        return sessionId + NAME_SEPARATOR + expiry;
+        String filename = sessionId + NAME_SEPARATOR + expiry;
+        FileSystemHelper.assertFileNameValid(filename);
+        return filename;
     }
 
     private String getFilePath(String sessionId, long expiry) {
@@ -135,19 +141,13 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return Long.parseLong(name.substring(name.indexOf(NAME_SEPARATOR) + NAME_SEPARATOR.length()));
     }
 
-    private String dataToJSON(SessionData data) {
-        SessionJSON jsonObj = new SessionJSON(data);
-        try {
-            return getMapper().writeValueAsString(jsonObj);
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    private InputStream serialize(SessionData data) {
+        return new ByteArrayInputStream(SerializationUtils.serialize(new SessionJSON(data)));
     }
 
-    private SessionData jsonToData(String json) {
+    private SessionData deserialize(InputStream stream) {
         try {
-            return getMapper().readValue(json, SessionJSON.class).toData();
+            return ((SessionJSON) SerializationUtils.deserialize(StreamUtils.copyToByteArray(stream))).toData();
         }
         catch (IOException e) {
             throw new RuntimeException(e);

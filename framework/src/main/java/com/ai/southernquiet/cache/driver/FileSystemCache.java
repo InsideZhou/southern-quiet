@@ -4,7 +4,12 @@ import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
+import org.springframework.util.StreamUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collector;
@@ -17,7 +22,7 @@ import java.util.stream.Stream;
 @Component
 public class FileSystemCache implements Cache {
     public final static String DEFAULT_ROOT = "CACHE";
-    public final static String NAME_SEPARATOR = "__";
+    public final static String NAME_SEPARATOR = "_";
 
     private FileSystem fileSystem;
     private String workingRoot;
@@ -51,9 +56,9 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public void put(String key, String value, int ttl) {
+    public void put(String key, Object value, int ttl) {
         try {
-            fileSystem.put(getFilePath(key, ttl), value);
+            getFileSystem().put(getFilePath(key, ttl), serialize(value));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -61,9 +66,9 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public void set(String key, String value) {
+    public void set(String key, Object value) {
         try {
-            fileSystem.put(getFilePath(key, -1), value);
+            getFileSystem().put(getFilePath(key, -1), serialize(value));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -71,9 +76,9 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public String get(String key) {
+    public Object get(String key) {
         try {
-            Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+            Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
                 String filename = meta.getName();
@@ -85,7 +90,7 @@ public class FileSystemCache implements Cache {
                     return null;
                 }
 
-                return fileSystem.readString(meta.getPath());
+                return deserialize(getFileSystem().read(meta.getPath()));
             }
         }
         catch (PathNotFoundException e) {
@@ -101,13 +106,13 @@ public class FileSystemCache implements Cache {
     @Override
     public void touch(String key, Integer ttl) {
         try {
-            Optional<PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+            Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
 
-                fileSystem.touchCreation(meta.getPath());
+                getFileSystem().touchCreation(meta.getPath());
                 if (null != ttl) {
-                    fileSystem.move(meta.getPath(), getFilePath(key, ttl));
+                    getFileSystem().move(meta.getPath(), getFilePath(key, ttl));
                 }
             }
 
@@ -119,7 +124,7 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public Map<String, String> getAlive() {
+    public Map<String, Object> getAlive() {
         long now = System.currentTimeMillis();
         Stream<PathMeta> stream = getMetaStream();
 
@@ -133,7 +138,7 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public Map<String, String> getExpired() {
+    public Map<String, Object> getExpired() {
         long now = System.currentTimeMillis();
         Stream<PathMeta> stream = getMetaStream();
 
@@ -151,22 +156,22 @@ public class FileSystemCache implements Cache {
         Stream.of(keys).forEach(key -> {
             Optional<PathMeta> opt = null;
             try {
-                opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+                opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
             }
             catch (PathNotFoundException e) {
                 return;
             }
 
             if (opt.isPresent()) {
-                fileSystem.delete(opt.get().getPath());
+                getFileSystem().delete(opt.get().getPath());
             }
         });
     }
 
     @Override
-    public Map<String, String> find(String search) {
+    public Map<String, Object> find(String search) {
         try {
-            return fileSystem.files(getWorkingRoot()).stream()
+            return getFileSystem().files(getWorkingRoot()).stream()
                 .filter(meta -> meta.getName().contains(search))
                 .collect(collector);
         }
@@ -179,8 +184,15 @@ public class FileSystemCache implements Cache {
         return key + NAME_SEPARATOR;
     }
 
+    private String getFileName(String key, int ttl) {
+        String filename = key + NAME_SEPARATOR + ttl;
+        FileSystemHelper.assertFileNameValid(filename);
+        return filename;
+
+    }
+
     private String getFilePath(String key, int ttl) {
-        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + key + NAME_SEPARATOR + ttl;
+        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(key, ttl);
     }
 
     private int getTTLFromFileName(String name) {
@@ -195,7 +207,7 @@ public class FileSystemCache implements Cache {
         Stream<PathMeta> stream;
 
         try {
-            stream = fileSystem.files(getWorkingRoot()).stream();
+            stream = getFileSystem().files(getWorkingRoot()).stream();
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
@@ -204,12 +216,25 @@ public class FileSystemCache implements Cache {
         return stream;
     }
 
-    private Collector<PathMeta, ?, Map<String, String>> collector =
+    private InputStream serialize(Object data) {
+        return new ByteArrayInputStream(SerializationUtils.serialize(data));
+    }
+
+    private Object deserialize(InputStream stream) {
+        try {
+            return SerializationUtils.deserialize(StreamUtils.copyToByteArray(stream));
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Collector<PathMeta, ?, Map<String, Object>> collector =
         Collectors.toMap(
             meta -> getKeyFromFileName(meta.getName()),
             meta -> {
                 try {
-                    return fileSystem.readString(meta.getPath());
+                    return deserialize(getFileSystem().read(meta.getPath()));
                 }
                 catch (InvalidFileException e) {
                     throw new RuntimeException(e);
