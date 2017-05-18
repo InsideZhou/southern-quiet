@@ -1,5 +1,6 @@
 package com.ai.southernquiet.cache.driver;
 
+import com.ai.southernquiet.Constant;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
 /**
  * 基于 {@link FileSystem} 的缓存驱动.
  */
-@Component("DEFAULT_CACHE_DRIVER")
+@Component(Constant.DEFAULT_DRIVER_NAME)
 public class FileSystemCache implements Cache {
     public final static String DEFAULT_ROOT = "CACHE";
     public final static String NAME_SEPARATOR = "_";

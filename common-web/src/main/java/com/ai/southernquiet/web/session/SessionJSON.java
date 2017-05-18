@@ -1,4 +1,4 @@
-package com.ai.southernquiet.session;
+package com.ai.southernquiet.web.session;
 
 import org.eclipse.jetty.server.session.SessionData;
 

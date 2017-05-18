@@ -1,4 +1,4 @@
-package com.ai.southernquiet.session;
+package com.ai.southernquiet.web.session;
 
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.FileSystemHelper;

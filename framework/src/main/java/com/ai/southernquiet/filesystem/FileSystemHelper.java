@@ -25,7 +25,7 @@ public abstract class FileSystemHelper {
      * @param filename 目前只考虑数字、字母、下划线是合法的
      */
     public static boolean isFileNameValid(String filename) {
-        return !getInvalidPatterns().stream().anyMatch(p -> p.matcher(filename).matches());
+        return getInvalidPatterns().stream().noneMatch(p -> p.matcher(filename).matches());
     }
 
     /**
