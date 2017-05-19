@@ -4,6 +4,7 @@ import com.ai.southernquiet.Constant;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
@@ -20,10 +21,11 @@ import java.util.stream.Stream;
 /**
  * 基于 {@link FileSystem} 的缓存驱动.
  */
-@Component(Constant.DEFAULT_DRIVER_NAME)
+@Component
+@Qualifier(Constant.DEFAULT_DRIVER_QUALIFIER)
 public class FileSystemCache implements Cache {
     public final static String DEFAULT_ROOT = "CACHE";
-    public final static String NAME_SEPARATOR = "_";
+    public final static String NAME_SEPARATOR = "__";
 
     private FileSystem fileSystem;
     private String workingRoot;
@@ -181,15 +183,13 @@ public class FileSystemCache implements Cache {
         }
     }
 
-    private String getKeyPrefix(String key) {
-        return key + NAME_SEPARATOR;
+    protected String getFileName(String key, int ttl) {
+        String filename = key + NAME_SEPARATOR + ttl;
+        return filename;
     }
 
-    private String getFileName(String key, int ttl) {
-        String filename = key + NAME_SEPARATOR + ttl;
-        FileSystemHelper.assertFileNameValid(filename);
-        return filename;
-
+    private String getKeyPrefix(String key) {
+        return key + NAME_SEPARATOR;
     }
 
     private String getFilePath(String key, int ttl) {
