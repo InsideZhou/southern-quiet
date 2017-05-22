@@ -174,9 +174,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Map<String, Object> find(String search) {
         try {
-            return getFileSystem().files(getWorkingRoot()).stream()
-                .filter(meta -> meta.getName().contains(search))
-                .collect(collector);
+            return getFileSystem().files(getWorkingRoot(), search).stream().collect(collector);
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);

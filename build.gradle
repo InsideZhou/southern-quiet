@@ -38,8 +38,12 @@ subprojects {
     }
 
     dependencies {
+        provided "org.springframework.boot:spring-boot-configuration-processor"
+
 		testCompile "org.springframework.boot:spring-boot-starter-test"
     }
+
+    compileJava.dependsOn(processResources)
 
     tasks.withType(JavaCompile) {
         sourceCompatibility = JavaVersion.VERSION_1_8

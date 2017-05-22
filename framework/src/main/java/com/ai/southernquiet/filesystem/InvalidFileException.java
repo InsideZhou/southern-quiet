@@ -1,5 +1,8 @@
 package com.ai.southernquiet.filesystem;
 
+/**
+ * 无效文件
+ */
 public class InvalidFileException extends FileSystemException {
     private final static long serialVersionUID = -7740627011844462423L;
 
