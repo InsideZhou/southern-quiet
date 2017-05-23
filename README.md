@@ -4,6 +4,7 @@
 
     - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必兼容。需要跨驱动的应用，特别需要注意。
     - 默认的驱动是本地文件系统，限制了文件名只能是数字、字母、下划线。查看FileSystemHelper类。
+    - 如果没有配置framework.filesystem.default.working_root，默认驱动会使用${user.home}/sq_filesystem作为根目录。
 
 1. Cache 缓存
     - 默认驱动基于FileSystem，所以会有缓存KEY规范的问题需要考虑。

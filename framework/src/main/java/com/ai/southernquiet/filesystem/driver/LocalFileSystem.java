@@ -33,10 +33,15 @@ import java.util.stream.Stream;
 public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
-    public LocalFileSystem(FrameworkProperties frameworkProperties) {
+    public LocalFileSystem(FrameworkProperties frameworkProperties) throws IOException {
         String workingRoot = frameworkProperties.getFileSystem().getDefaultDriver().getWorkingRoot();
         if (!workingRoot.endsWith(FileSystem.PATH_SEPARATOR)) {
             workingRoot += FileSystem.PATH_SEPARATOR;
+        }
+
+        Path workingPath = Paths.get(workingRoot);
+        if (Files.notExists(workingPath)) {
+            Files.createDirectory(workingPath);
         }
 
         this.workingRoot = workingRoot;
