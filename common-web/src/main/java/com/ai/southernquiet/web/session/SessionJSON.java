@@ -2,12 +2,13 @@ package com.ai.southernquiet.web.session;
 
 import org.eclipse.jetty.server.session.SessionData;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * 用于转换{@link SessionData}到JSON的中转对象.
  */
-public class SessionJSON {
+public class SessionJSON implements Serializable {
     private String id;
     private String contextPath;
     private String vhost;
@@ -20,9 +21,6 @@ public class SessionJSON {
     private long maxInactiveMs;
     private long lastSaved;
     private Map<String, Object> attributes;
-
-    public SessionJSON() {
-    }
 
     public SessionJSON(SessionData data) {
         setId(data.getId());

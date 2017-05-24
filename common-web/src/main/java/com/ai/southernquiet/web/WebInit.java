@@ -67,7 +67,7 @@ public abstract class WebInit implements ServletContextInitializer, ApplicationC
             servletContext.addFilter("requestWrapper", filter);
         }
         catch (BeansException e) {
-            logger.warn("无法获取AuthService，身份验证关闭。", e);
+            logger.warn("无法获取AuthService，身份验证关闭。");
         }
     }
 }

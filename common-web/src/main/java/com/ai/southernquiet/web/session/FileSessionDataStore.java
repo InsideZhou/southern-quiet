@@ -1,9 +1,7 @@
 package com.ai.southernquiet.web.session;
 
-import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.filesystem.FileSystemHelper;
-import com.ai.southernquiet.filesystem.PathMeta;
-import com.ai.southernquiet.filesystem.PathNotFoundException;
+import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.web.CommonWebProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
@@ -24,12 +22,9 @@ import java.util.stream.Collectors;
  */
 @Component
 public class FileSessionDataStore extends AbstractSessionDataStore {
-    public final static String DEFAULT_ROOT = "SESSION";
-    public final static String NAME_SEPARATOR = "_";
-
     private ObjectMapper mapper;
     private FileSystem fileSystem;
-    private String workingRoot = DEFAULT_ROOT;
+    private String workingRoot;
 
     public ObjectMapper getMapper() {
         return mapper;
@@ -44,7 +39,6 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return fileSystem;
     }
 
-    @Autowired
     public void setFileSystem(FileSystem fileSystem) {
         this.fileSystem = fileSystem;
     }
@@ -57,32 +51,38 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         this.workingRoot = workingRoot;
     }
 
+    public FileSessionDataStore(FileSystem fileSystem, CommonWebProperties properties) {
+        String workingRoot = properties.getSession().getFileSystem().getWorkingRoot();
+
+        fileSystem.create(workingRoot);
+
+        setFileSystem(fileSystem);
+        setWorkingRoot(workingRoot);
+
+    }
+
     @Override
     public void doStore(String id, SessionData data, long lastSaveTime) throws Exception {
-        getFileSystem().put(getFilePath(id, data.getExpiry()), serialize(data));
+        getFileSystem().put(getFilePath(id), serialize(data));
     }
 
     @Override
     public Set<String> doGetExpired(Set<String> candidates) {
         long now = System.currentTimeMillis();
 
-        Set<String> validCandidates = candidates.stream()
-            .map(id -> getIdPrefix(id))
-            .map(prefix -> {
+        return candidates.stream()
+            .map(id -> {
                 try {
-                    return getFileSystem().files(getWorkingRoot(), prefix);
+                    return getFileSystem().files(getWorkingRoot(), id);
                 }
                 catch (PathNotFoundException e) {
                     throw new RuntimeException(e);
                 }
             })
-            .flatMap(metas -> metas.stream().map(PathMeta::getName))
-            .filter(name -> getExpiryFromFileName(name) > now)
-            .map(name -> getIdFromFileName(name))
+            .flatMap(metas -> metas.stream())
+            .filter(meta -> getByMeta(meta).getExpiry() <= now)
+            .map(meta -> meta.getName())
             .collect(Collectors.toSet());
-
-        candidates.removeAll(validCandidates);
-        return candidates;
     }
 
     @Override
@@ -94,13 +94,13 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public boolean exists(String id) throws Exception {
         long now = System.currentTimeMillis();
 
-        return getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream()
-            .anyMatch(meta -> getExpiryFromFileName(meta.getName()) > now);
+        return getFileSystem().files(getWorkingRoot(), id).stream()
+            .anyMatch(meta -> getByMeta(meta).getExpiry() > now);
     }
 
     @Override
     public SessionData load(String id) throws Exception {
-        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).stream().findFirst();
         if (opt.isPresent()) {
             InputStream stream = getFileSystem().read(opt.get().getPath());
             return deserialize(stream);
@@ -111,7 +111,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public boolean delete(String id) throws Exception {
-        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getIdPrefix(id)).stream().findFirst();
+        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).stream().findFirst();
         if (opt.isPresent()) {
             getFileSystem().delete(opt.get().getPath());
         }
@@ -119,26 +119,25 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return true;
     }
 
-    private String getIdPrefix(String sessionId) {
-        return sessionId + NAME_SEPARATOR;
+    private String getFileName(String sessionId) {
+        FileSystemHelper.assertFileNameValid(sessionId);
+        return sessionId;
     }
 
-    private String getFileName(String sessionId, long expiry) {
-        String filename = sessionId + NAME_SEPARATOR + expiry;
-        FileSystemHelper.assertFileNameValid(filename);
-        return filename;
+    private String getFilePath(String sessionId) {
+        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(sessionId);
     }
 
-    private String getFilePath(String sessionId, long expiry) {
-        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(sessionId, expiry);
-    }
+    private SessionData getByMeta(PathMeta meta) {
+        InputStream inputStream;
+        try {
+            inputStream = getFileSystem().read(meta.getPath());
+        }
+        catch (InvalidFileException e) {
+            throw new RuntimeException(e);
+        }
 
-    private String getIdFromFileName(String name) {
-        return name.substring(0, name.indexOf(NAME_SEPARATOR));
-    }
-
-    private long getExpiryFromFileName(String name) {
-        return Long.parseLong(name.substring(name.indexOf(NAME_SEPARATOR) + NAME_SEPARATOR.length()));
+        return deserialize(inputStream);
     }
 
     private InputStream serialize(SessionData data) {
