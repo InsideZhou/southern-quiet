@@ -1,10 +1,12 @@
 package com.ai.southernquiet.web;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * common-web模块依赖的外部配置。
  */
+@Component
 @ConfigurationProperties("common_web")
 public class CommonWebProperties {
     private Session session = new Session();

@@ -1,6 +1,6 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <springProperty scope="context" name="fileLocation" source="app.logging.file" defaultValue="spring.log"/>
+    <springProperty scope="context" name="fileLocation" source="app.logging.file" defaultValue="app.log"/>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -18,7 +18,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.ai.southernquiet" level="debug" additivity="false">
+    <logger name="app" level="debug" additivity="false">
         <appender-ref ref="file"/>
         <appender-ref ref="console"/>
     </logger>

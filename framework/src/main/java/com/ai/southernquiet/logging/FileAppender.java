@@ -4,9 +4,6 @@ import ch.qos.logback.core.OutputStreamAppender;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.InvalidFileException;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * {@link FileSystem}可以在运行时设置，如为null，则不输出日志。
  */
@@ -47,21 +44,6 @@ public class FileAppender<E> extends OutputStreamAppender<E> {
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-
-        OutputStream out = getOutputStream();
-        if (null != out) {
-            try {
-                out.close();
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }

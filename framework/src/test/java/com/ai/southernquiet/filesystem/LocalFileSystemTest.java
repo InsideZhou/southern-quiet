@@ -1,6 +1,5 @@
 package com.ai.southernquiet.filesystem;
 
-import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class LocalFileSystemTest {
     @Configuration
-    @EnableConfigurationProperties({FrameworkProperties.class})
+    @EnableConfigurationProperties
     @ComponentScan({"com.ai.southernquiet.filesystem"})
     public static class Config {}
 

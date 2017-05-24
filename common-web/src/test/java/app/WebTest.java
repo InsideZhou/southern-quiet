@@ -1,5 +1,7 @@
-package com.ai.southernquiet.web;
+package app;
 
+import com.ai.southernquiet.web.JettyConfiguration;
+import com.ai.southernquiet.web.WebInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -16,8 +18,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
-@EnableConfigurationProperties({CommonWebProperties.class})
+@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "app"})
+@EnableConfigurationProperties
 public class WebTest {
     public static void main(String[] args) throws Exception {
         SpringApplication.run(WebTest.class);

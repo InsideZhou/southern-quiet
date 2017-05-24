@@ -1,15 +1,14 @@
 package com.ai.southernquiet;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.util.SystemPropertyUtils;
-
-import java.io.IOException;
-import java.nio.file.Files;
 
 /**
  * framework模块依赖的外部配置。
  */
+@Component
 @ConfigurationProperties("framework")
 public class FrameworkProperties {
     private FileSystem fileSystem = new FileSystem();

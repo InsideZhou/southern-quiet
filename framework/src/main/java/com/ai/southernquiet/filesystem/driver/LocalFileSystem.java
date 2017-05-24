@@ -40,9 +40,7 @@ public class LocalFileSystem implements FileSystem {
         }
 
         Path workingPath = Paths.get(workingRoot);
-        if (Files.notExists(workingPath)) {
-            Files.createDirectory(workingPath);
-        }
+        createDirectory(workingPath);
 
         this.workingRoot = workingRoot;
     }
@@ -63,7 +61,7 @@ public class LocalFileSystem implements FileSystem {
         if (Files.exists(workingPath)) throw new PathAlreadyExistsException(path);
 
         try {
-            Files.createDirectory(workingPath.getParent());
+            createDirectory(workingPath.getParent());
             Files.write(workingPath, StreamUtils.copyToByteArray(stream), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         }
         catch (IOException e) {
@@ -77,7 +75,7 @@ public class LocalFileSystem implements FileSystem {
         if (Files.exists(workingPath)) throw new PathAlreadyExistsException(path);
 
         try {
-            Files.createDirectory(workingPath.getParent());
+            createDirectory(workingPath.getParent());
             Files.write(workingPath, txt.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         }
         catch (IOException e) {
@@ -161,7 +159,7 @@ public class LocalFileSystem implements FileSystem {
         Path workingPath = getWorkingPath(path);
 
         try {
-            Files.createDirectory(workingPath.getParent());
+            createDirectory(workingPath.getParent());
             return Files.newOutputStream(workingPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         }
         catch (IOException e) {
@@ -423,6 +421,12 @@ public class LocalFileSystem implements FileSystem {
         }
         catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void createDirectory(Path dir) throws IOException {
+        if (Files.notExists(dir)) {
+            Files.createDirectory(dir);
         }
     }
 }
