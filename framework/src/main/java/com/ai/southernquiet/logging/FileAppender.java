@@ -8,43 +8,30 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * {@link FileSystem}可以在运行时设置，如为null，则把日志输出到 {@link System#out}。
+ * {@link FileSystem}可以在运行时设置，如为null，则不输出日志。
  */
 public class FileAppender<E> extends OutputStreamAppender<E> {
     private FileSystem fileSystem;
-    private String filePath;
+    private String file;
 
     public FileSystem getFileSystem() {
         return fileSystem;
     }
 
     public void setFileSystem(FileSystem fileSystem) {
-        OutputStream out;
-        if (null == fileSystem) {
-            out = System.out;
-        }
-        else {
-            try {
-                out = fileSystem.openWriteStream(getFilePath());
-            }
-            catch (InvalidFileException e) {
-                throw new RuntimeException(e);
-            }
+        this.fileSystem = fileSystem;
 
-            this.fileSystem = fileSystem;
-        }
-
-        if (isStarted()) {
-            setOutputStream(out);
+        if (!isStarted()) {
+            start();
         }
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getFile() {
+        return file;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setFile(String file) {
+        this.file = file;
     }
 
     @Override
@@ -52,18 +39,15 @@ public class FileAppender<E> extends OutputStreamAppender<E> {
         FileSystem fileSystem = getFileSystem();
 
         try {
-            if (null == fileSystem) {
-                setOutputStream(System.out);
-            }
-            else {
-                setOutputStream(fileSystem.openWriteStream(getFilePath()));
+            if (null != fileSystem) {
+                setOutputStream(fileSystem.openWriteStream(getFile()));
+
+                super.start();
             }
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
         }
-
-        super.start();
     }
 
     @Override

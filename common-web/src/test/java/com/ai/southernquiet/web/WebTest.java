@@ -45,7 +45,7 @@ public class WebTest {
 
     @RequestMapping("/")
     String home(HttpSession session) {
-        logger.info("你好，Spring Boot！");
+        logger.debug("你好，Spring Boot！");
         return "Hello World!";
     }
 }
