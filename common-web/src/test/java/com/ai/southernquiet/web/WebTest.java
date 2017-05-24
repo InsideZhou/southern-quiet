@@ -14,21 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableConfigurationProperties({CommonWebProperties.class})
 public class WebTest {
     public static void main(String[] args) throws Exception {
-        SpringApplication app = new SpringApplication(WebTest.class);
-
-        Map<String, Object> defaultProperties = new HashMap<>();
-        defaultProperties.put("management.security.enabled", false);
-        app.setDefaultProperties(defaultProperties);
-
-        app.run();
+        SpringApplication.run(WebTest.class);
     }
 
     @Bean
