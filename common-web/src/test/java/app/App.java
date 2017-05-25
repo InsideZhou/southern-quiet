@@ -22,14 +22,13 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
-import java.util.UUID;
 
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "app"})
 @EnableConfigurationProperties
-public class WebTest extends WebMvcConfigurerAdapter {
+public class App extends WebMvcConfigurerAdapter {
     public static void main(String[] args) throws Exception {
-        SpringApplication.run(WebTest.class);
+        SpringApplication.run(App.class);
     }
 
     @Bean
@@ -87,7 +86,7 @@ public class WebTest extends WebMvcConfigurerAdapter {
         registry.addInterceptor(new AuthInterceptor(authService));
     }
 
-    private Logger logger = LoggerFactory.getLogger(WebTest.class);
+    private Logger logger = LoggerFactory.getLogger(App.class);
 
     @RequestMapping("/")
     String home() {
