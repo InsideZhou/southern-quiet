@@ -1,0 +1,10 @@
+/.*/
+.*
+!.gitignore
+
+/build/*
+*/build/*
+
+*.iml
+application-default.properties
+gradle-app.setting
