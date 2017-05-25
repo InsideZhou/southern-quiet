@@ -21,6 +21,8 @@ public class CommonWebProperties {
 
     public static class Session {
         private FileSystem fileSystem = new FileSystem();
+        private RememberMe rememberMe = new RememberMe();
+        private String user;
 
         public FileSystem getFileSystem() {
             return fileSystem;
@@ -30,8 +32,24 @@ public class CommonWebProperties {
             this.fileSystem = fileSystem;
         }
 
+        public RememberMe getRememberMe() {
+            return rememberMe;
+        }
+
+        public void setRememberMe(RememberMe rememberMe) {
+            this.rememberMe = rememberMe;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
         public static class FileSystem {
-            private String workingRoot = "SESSION";
+            private String workingRoot;
 
             public String getWorkingRoot() {
                 return workingRoot;
@@ -39,6 +57,27 @@ public class CommonWebProperties {
 
             public void setWorkingRoot(String workingRoot) {
                 this.workingRoot = workingRoot;
+            }
+        }
+
+        public static class RememberMe {
+            private String cookie;
+            private int timeout;
+
+            public String getCookie() {
+                return cookie;
+            }
+
+            public void setCookie(String cookie) {
+                this.cookie = cookie;
+            }
+
+            public int getTimeout() {
+                return timeout;
+            }
+
+            public void setTimeout(int timeout) {
+                this.timeout = timeout;
             }
         }
     }

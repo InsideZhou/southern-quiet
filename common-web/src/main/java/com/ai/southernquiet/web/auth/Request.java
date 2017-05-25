@@ -6,14 +6,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.security.Principal;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Request extends HttpServletRequestWrapper {
-    public final static String KEY_USER = "com.ai.southernquiet.web.auth.User";
-    public final static String KEY_REMEMBER_ME_COOKIE = "remember_me";
-    public final static int DAY365_IN_SECONDS = 31536000;
+    public static String KEY_USER = "com.ai.southernquiet.web.auth.User";
+    public static String KEY_REMEMBER_ME_COOKIE = "remember_me";
+    public static int REMEMBER_ME_TIMEOUT = 31536000;
 
     private AuthService authService;
     private HttpServletResponse response;
@@ -112,7 +111,7 @@ public class Request extends HttpServletRequestWrapper {
         cookie.setHttpOnly(true);
 
         if (StringUtils.hasLength(token)) {
-            cookie.setMaxAge(DAY365_IN_SECONDS);
+            cookie.setMaxAge(REMEMBER_ME_TIMEOUT);
         }
         else {
             cookie.setMaxAge(0);
