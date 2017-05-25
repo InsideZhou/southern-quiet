@@ -86,13 +86,13 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
 
     @SuppressWarnings("unused")
     protected boolean onAuthenticationFail(Request request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "");
         return false;
     }
 
     @SuppressWarnings("unused")
     protected boolean onAuthorizationFail(Request request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
-        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "");
         return false;
     }
 

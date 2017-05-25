@@ -10,9 +10,9 @@ public interface AuthService {
      * @param password 密码
      * @param remember 记住该用户。如果true，返回的 {@link User#getRememberToken()} 不为空。
      * @return 永远不该为null。如果验证失败，请抛出适当的异常。
-     * @throws UserNotFoundException 找不到用户
-     * @throws IncorrectPasswordException     密码不正确
-     * @throws AuthException         验证失败
+     * @throws UserNotFoundException      找不到用户
+     * @throws IncorrectPasswordException 密码不正确
+     * @throws AuthException              验证失败
      */
     User authenticate(String username, String password, boolean remember) throws AuthException;
 

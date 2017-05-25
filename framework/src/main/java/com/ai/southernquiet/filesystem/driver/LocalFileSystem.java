@@ -38,6 +38,7 @@ public class LocalFileSystem implements FileSystem {
         if (!workingRoot.endsWith(FileSystem.PATH_SEPARATOR)) {
             workingRoot += FileSystem.PATH_SEPARATOR;
         }
+        workingRoot = workingRoot.replace("/", FileSystem.PATH_SEPARATOR);
 
         Path workingPath = Paths.get(workingRoot);
         createDirectory(workingPath);
@@ -261,33 +262,7 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public PathMeta meta(String path) {
-        Path workingPath = getWorkingPath(path);
-        if (Files.notExists(workingPath)) return null;
-
-        File file = workingPath.toFile();
-
-        BasicFileAttributes attributes;
-        try {
-            attributes = Files.readAttributes(workingPath, BasicFileAttributes.class);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        PathMeta meta = new PathMeta();
-
-        meta.setPath(path);
-        meta.setName(file.getName());
-        meta.setDirectory(file.isDirectory());
-        meta.setCreationTime(attributes.creationTime().toInstant());
-        meta.setLastAccessTime(attributes.lastAccessTime().toInstant());
-        meta.setLastModifiedTime(attributes.lastModifiedTime().toInstant());
-
-        if (file.isFile()) {
-            meta.setSize(file.length());
-        }
-
-        return meta;
+        return meta(getWorkingPath(path));
     }
 
     @Override
@@ -303,7 +278,7 @@ public class LocalFileSystem implements FileSystem {
     @Override
     public List<PathMeta> paths(String path, String search, boolean recursive) throws PathNotFoundException {
         Stream<Path> stream = pathStream(path, search, recursive, false);
-        return stream.map(p -> meta(p.toString())).collect(Collectors.toList());
+        return stream.map(this::meta).collect(Collectors.toList());
     }
 
     @Override
@@ -319,7 +294,7 @@ public class LocalFileSystem implements FileSystem {
     @Override
     public List<PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
         Stream<Path> stream = pathStream(path, search, recursive, true);
-        return stream.map(p -> meta(p.toString())).collect(Collectors.toList());
+        return stream.map(this::meta).collect(Collectors.toList());
     }
 
     private Path getWorkingPath(String path) {
@@ -410,7 +385,7 @@ public class LocalFileSystem implements FileSystem {
             }
 
             if (fileOnly) {
-                stream = stream.filter(Files::isDirectory);
+                stream = stream.filter(p -> !Files.isDirectory(p));
             }
 
             if (StringUtils.hasText(search)) {
@@ -428,5 +403,34 @@ public class LocalFileSystem implements FileSystem {
         if (Files.notExists(dir)) {
             Files.createDirectory(dir);
         }
+    }
+
+    private PathMeta meta(Path workingPath) {
+        if (Files.notExists(workingPath)) return null;
+
+        File file = workingPath.toFile();
+
+        BasicFileAttributes attributes;
+        try {
+            attributes = Files.readAttributes(workingPath, BasicFileAttributes.class);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        PathMeta meta = new PathMeta();
+
+        meta.setPath(workingPath.toString().substring(workingRoot.length()));
+        meta.setName(file.getName());
+        meta.setDirectory(file.isDirectory());
+        meta.setCreationTime(attributes.creationTime().toInstant());
+        meta.setLastAccessTime(attributes.lastAccessTime().toInstant());
+        meta.setLastModifiedTime(attributes.lastModifiedTime().toInstant());
+
+        if (file.isFile()) {
+            meta.setSize(file.length());
+        }
+
+        return meta;
     }
 }

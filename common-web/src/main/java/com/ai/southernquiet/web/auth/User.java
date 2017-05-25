@@ -1,12 +1,23 @@
 package com.ai.southernquiet.web.auth;
 
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
-public class User {
+public class User implements Serializable {
     public static int AuthenticationTTL = 86400;
 
+    public User(String username) {
+        setUsername(username);
+    }
+
+    public User(String username, String rememberToken) {
+        setUsername(username);
+        setRememberToken(rememberToken);
+    }
+
     private String username;
-    private Set<String> roles;
+    private Set<String> roles = new HashSet<>();
     private long authenticationTime;
     private String rememberToken;
 

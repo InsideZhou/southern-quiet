@@ -3,6 +3,7 @@ package com.ai.southernquiet.web.session;
 import org.eclipse.jetty.server.session.SessionData;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -34,7 +35,7 @@ public class SessionJSON implements Serializable {
         setLastAccessed(data.getLastAccessed());
         setMaxInactiveMs(data.getMaxInactiveMs());
         setLastSaved(data.getLastSaved());
-        setAttributes(data.getAllAttributes());
+        setAttributes(new HashMap<>(data.getAllAttributes()));
     }
 
     public String getId() {

@@ -13,8 +13,10 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import java.util.EnumSet;
 
 /**
  * 初始化web应用。
@@ -64,7 +66,7 @@ public abstract class WebInit implements ServletContextInitializer, ApplicationC
             AuthService authService = applicationContext.getBean(AuthService.class);
             RequestWrapperFilter filter = new RequestWrapperFilter();
             filter.setAuthService(authService);
-            servletContext.addFilter("requestWrapper", filter);
+            servletContext.addFilter("requestWrapper", filter).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
         }
         catch (BeansException e) {
             logger.warn("无法获取AuthService，身份验证关闭。");

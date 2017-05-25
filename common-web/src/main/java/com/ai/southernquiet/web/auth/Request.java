@@ -13,7 +13,7 @@ import java.util.Set;
 public class Request extends HttpServletRequestWrapper {
     public final static String KEY_USER = "com.ai.southernquiet.web.auth.User";
     public final static String KEY_REMEMBER_ME_COOKIE = "remember_me";
-    public final static int DAY365_IN_SECONDS = Math.toIntExact(Duration.ofDays(365).getSeconds());
+    public final static int DAY365_IN_SECONDS = 31536000;
 
     private AuthService authService;
     private HttpServletResponse response;
@@ -63,7 +63,7 @@ public class Request extends HttpServletRequestWrapper {
             login(username, password, false);
         }
         catch (AuthException e) {
-            throw new RuntimeException(e);
+            throw new ServletException(e);
         }
     }
 
@@ -78,11 +78,12 @@ public class Request extends HttpServletRequestWrapper {
     public User getUser() {
         HttpSession session = getSession();
         Object u = session.getAttribute(KEY_USER);
-        if (User.class.isAssignableFrom(u.getClass())) {
-            return (User) u;
+
+        if (null == u || !User.class.isAssignableFrom(u.getClass())) {
+            return null;
         }
 
-        return null;
+        return (User) u;
     }
 
     public Set<String> getUserRoles() {
@@ -92,7 +93,7 @@ public class Request extends HttpServletRequestWrapper {
         return user.getRoles();
     }
 
-    public void login(String username, String password, boolean remember) throws ServletException, AuthException {
+    public void login(String username, String password, boolean remember) throws AuthException {
         User user = authService.authenticate(username, password, remember);
         writeUser(user);
         writeRememberMeCookie(user.getRememberToken());

@@ -22,14 +22,7 @@ public class RequestWrapperFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        AuthService authService = getAuthService();
-
-        if (null == authService) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        chain.doFilter(new Request((HttpServletRequest) request, (HttpServletResponse) response, authService), response);
+        chain.doFilter(new Request((HttpServletRequest) request, (HttpServletResponse) response, getAuthService()), response);
     }
 
     @Override

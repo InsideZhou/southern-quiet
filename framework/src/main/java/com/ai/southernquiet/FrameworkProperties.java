@@ -2,8 +2,6 @@ package com.ai.southernquiet;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.util.SystemPropertyUtils;
 
 /**
  * framework模块依赖的外部配置。
@@ -36,10 +34,6 @@ public class FrameworkProperties {
             private String workingRoot;
 
             public String getWorkingRoot() {
-                if (!StringUtils.hasLength(workingRoot)) {
-                    return SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
-                }
-
                 return workingRoot;
             }
 

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
  * common-web模块依赖的外部配置。
  */
 @Component
-@ConfigurationProperties("common_web")
+@ConfigurationProperties("web")
 public class CommonWebProperties {
     private Session session = new Session();
 
