@@ -8,15 +8,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -26,7 +26,7 @@ import java.util.Set;
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "app"})
 @EnableConfigurationProperties
-public class App extends WebMvcConfigurerAdapter {
+public class App implements WebMvcConfigurer {
     public static void main(String[] args) throws Exception {
         SpringApplication.run(App.class);
     }
@@ -43,8 +43,8 @@ public class App extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    static JettyEmbeddedServletContainerFactory servletContainerFactory(JettyConfiguration jettyConfiguration) {
-        JettyEmbeddedServletContainerFactory factory = new JettyEmbeddedServletContainerFactory();
+    static JettyServletWebServerFactory servletContainerFactory(JettyConfiguration jettyConfiguration) {
+        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);
         return factory;
     }

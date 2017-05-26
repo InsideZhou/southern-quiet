@@ -1,2 +1,2 @@
 rootProject.name = 'southern-quiet'
-include 'framework', 'driver', 'common-biz', 'common-web', 'web-example'
+include 'framework', 'driver', 'common-biz', 'common-web'

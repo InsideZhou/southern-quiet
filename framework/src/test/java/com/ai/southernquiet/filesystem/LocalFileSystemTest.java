@@ -45,7 +45,7 @@ public class LocalFileSystemTest {
 
         Assert.assertTrue(fileSystem.exists(file));
         try {
-            Assert.assertTrue(fileSystem.files("", file).stream().anyMatch(meta -> meta.getName().equals(file)));
+            Assert.assertTrue(fileSystem.files("/", file).stream().anyMatch(meta -> meta.getName().equals(file)));
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
