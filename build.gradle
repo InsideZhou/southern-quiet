@@ -1,5 +1,14 @@
-buildscript { scriptHandler ->
-    apply from: 'buildscript.gradle', to: scriptHandler
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+        maven { url "http://repo.spring.io/milestone" }
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.0.M1'
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+    }
 }
 
 apply plugin: 'idea'
