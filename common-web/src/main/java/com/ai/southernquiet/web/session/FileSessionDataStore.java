@@ -1,13 +1,13 @@
 package com.ai.southernquiet.web.session;
 
 import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.util.SerializationUtils;
 import com.ai.southernquiet.web.CommonWebProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayInputStream;

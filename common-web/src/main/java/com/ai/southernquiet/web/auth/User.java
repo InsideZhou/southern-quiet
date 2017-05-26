@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class User implements Serializable {
+    private final static long serialVersionUID = -2874340118038495940L;
+
     public static int AuthenticationTTL = 86400;
 
     public User(String username) {

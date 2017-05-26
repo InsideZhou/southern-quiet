@@ -10,6 +10,8 @@ import java.util.Map;
  * 用于转换{@link SessionData}到JSON的中转对象.
  */
 public class SessionJSON implements Serializable {
+    private final static long serialVersionUID = -6189191658140986063L;
+
     private String id;
     private String contextPath;
     private String vhost;
