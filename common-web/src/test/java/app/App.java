@@ -1,5 +1,6 @@
 package app;
 
+import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.JettyConfiguration;
 import com.ai.southernquiet.web.WebInit;
 import com.ai.southernquiet.web.auth.*;
@@ -51,6 +52,8 @@ public class App implements WebMvcConfigurer {
 
     @Bean
     static AuthService authService() {
+        Logger logger = LoggerFactory.getLogger(App.class);
+
         return new AuthService() {
             private User user = new User("superman", "2636d11c-7e52-4d12-80b5-893116c20cce");
 
@@ -59,7 +62,11 @@ public class App implements WebMvcConfigurer {
                 user.setAuthenticationTime(System.currentTimeMillis());
 
                 if (!user.getUsername().equals(username)) throw new UserNotFoundException(username);
-                if (!"givemefive".equals(password)) throw new IncorrectPasswordException("");
+                String hashed = BCrypt.hashpw("givemefive", BCrypt.gensalt());
+                logger.debug(hashed);
+                if (!BCrypt.checkpw(password, hashed)) {
+                    throw new IncorrectPasswordException("");
+                }
 
                 return user;
             }
