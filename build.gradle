@@ -24,7 +24,7 @@ idea {
 }
 
 subprojects {
-    group = 'com.ai.service-framework'
+    group = 'com.ai.southern-quiet'
     version = '0.0.1-SNAPSHOT'
 
     apply plugin: 'idea'
