@@ -11,10 +11,8 @@ buildscript {
     }
 }
 
-plugins {
-    id 'idea'
-    id 'eclipse'
-}
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 idea {
     project {
