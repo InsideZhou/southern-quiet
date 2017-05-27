@@ -1,3 +1,5 @@
+//方便下游项目引用，并统一修改。
+
 repositories {
     mavenLocal()
     jcenter()
