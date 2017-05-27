@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.util.SystemPropertyUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -35,6 +36,10 @@ public class LocalFileSystem implements FileSystem {
 
     public LocalFileSystem(FrameworkProperties frameworkProperties) throws IOException {
         String workingRoot = frameworkProperties.getFileSystem().getDefaultDriver().getWorkingRoot();
+        if (!StringUtils.hasLength(workingRoot)) {
+            workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
+        }
+
         if (!workingRoot.endsWith(FileSystem.PATH_SEPARATOR)) {
             workingRoot += FileSystem.PATH_SEPARATOR;
         }

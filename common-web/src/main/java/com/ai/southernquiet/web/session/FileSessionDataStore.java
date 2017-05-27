@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 public class FileSessionDataStore extends AbstractSessionDataStore {
     private ObjectMapper mapper;
     private FileSystem fileSystem;
-    private String workingRoot;
+    private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
 
     public ObjectMapper getMapper() {
         return mapper;
@@ -53,11 +54,12 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     public FileSessionDataStore(FileSystem fileSystem, CommonWebProperties properties) {
         String workingRoot = properties.getSession().getFileSystem().getWorkingRoot();
+        if (StringUtils.hasText(workingRoot)) {
+            setWorkingRoot(workingRoot);
+        }
 
-        fileSystem.create(workingRoot);
-
+        fileSystem.create(getWorkingRoot());
         setFileSystem(fileSystem);
-        setWorkingRoot(workingRoot);
 
     }
 

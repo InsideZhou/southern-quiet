@@ -62,7 +62,7 @@ public class CommonWebProperties {
 
         public static class RememberMe {
             private String cookie;
-            private int timeout;
+            private Integer timeout;
 
             public String getCookie() {
                 return cookie;
@@ -72,11 +72,11 @@ public class CommonWebProperties {
                 this.cookie = cookie;
             }
 
-            public int getTimeout() {
+            public Integer getTimeout() {
                 return timeout;
             }
 
-            public void setTimeout(int timeout) {
+            public void setTimeout(Integer timeout) {
                 this.timeout = timeout;
             }
         }

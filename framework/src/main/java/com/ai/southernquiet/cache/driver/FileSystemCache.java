@@ -1,6 +1,7 @@
 package com.ai.southernquiet.cache.driver;
 
 import com.ai.southernquiet.Constant;
+import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,21 +26,28 @@ import java.util.stream.Stream;
 @Component
 @Qualifier(Constant.DEFAULT_DRIVER_QUALIFIER)
 public class FileSystemCache implements Cache {
-    public final static String DEFAULT_ROOT = "CACHE";
-    public final static String NAME_SEPARATOR = "__";
-
     private FileSystem fileSystem;
-    private String workingRoot;
+    private String workingRoot = "CACHE"; //Cache在FileSystem中的路径
+    private String nameSeparator = "__"; //文件名中不同部分的分隔
 
-    public FileSystemCache() {
-        this(DEFAULT_ROOT);
+    public FileSystemCache(FrameworkProperties properties) {
+        String workingRoot = properties.getCache().getFileSystem().getWorkingRoot();
+        if (StringUtils.hasText(workingRoot)) {
+            setWorkingRoot(workingRoot);
+        }
+
+        String sep = properties.getCache().getFileSystem().getNameSeparator();
+        if (StringUtils.hasText(sep)) {
+            setNameSeparator(sep);
+        }
     }
 
-    /**
-     * @param workingRoot 在哪个目录下工作。
-     */
-    public FileSystemCache(String workingRoot) {
-        this.workingRoot = workingRoot;
+    public String getNameSeparator() {
+        return nameSeparator;
+    }
+
+    public void setNameSeparator(String nameSeparator) {
+        this.nameSeparator = nameSeparator;
     }
 
     public FileSystem getFileSystem() {
@@ -182,12 +191,11 @@ public class FileSystemCache implements Cache {
     }
 
     protected String getFileName(String key, int ttl) {
-        String filename = key + NAME_SEPARATOR + ttl;
-        return filename;
+        return key + getNameSeparator() + ttl;
     }
 
     private String getKeyPrefix(String key) {
-        return key + NAME_SEPARATOR;
+        return key + getNameSeparator();
     }
 
     private String getFilePath(String key, int ttl) {
@@ -195,11 +203,11 @@ public class FileSystemCache implements Cache {
     }
 
     private int getTTLFromFileName(String name) {
-        return Integer.parseInt(name.substring(name.indexOf(NAME_SEPARATOR) + NAME_SEPARATOR.length()));
+        return Integer.parseInt(name.substring(name.indexOf(getNameSeparator()) + getNameSeparator().length()));
     }
 
     private String getKeyFromFileName(String name) {
-        return name.substring(0, name.indexOf(NAME_SEPARATOR));
+        return name.substring(0, name.indexOf(getNameSeparator()));
     }
 
     private Stream<PathMeta> getMetaStream() {

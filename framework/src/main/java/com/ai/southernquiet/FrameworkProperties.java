@@ -10,6 +10,15 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("framework")
 public class FrameworkProperties {
     private FileSystem fileSystem = new FileSystem();
+    private Cache cache = new Cache();
+
+    public Cache getCache() {
+        return cache;
+    }
+
+    public void setCache(Cache cache) {
+        this.cache = cache;
+    }
 
     public FileSystem getFileSystem() {
         return fileSystem;
@@ -32,6 +41,39 @@ public class FrameworkProperties {
 
         public static class DefaultDriver {
             private String workingRoot;
+
+            public String getWorkingRoot() {
+                return workingRoot;
+            }
+
+            public void setWorkingRoot(String workingRoot) {
+                this.workingRoot = workingRoot;
+            }
+        }
+    }
+
+    public static class Cache {
+        private FileSystem fileSystem = new FileSystem();
+
+        public FileSystem getFileSystem() {
+            return fileSystem;
+        }
+
+        public void setFileSystem(FileSystem fileSystem) {
+            this.fileSystem = fileSystem;
+        }
+
+        public static class FileSystem {
+            private String workingRoot;
+            private String nameSeparator;
+
+            public String getNameSeparator() {
+                return nameSeparator;
+            }
+
+            public void setNameSeparator(String nameSeparator) {
+                this.nameSeparator = nameSeparator;
+            }
 
             public String getWorkingRoot() {
                 return workingRoot;
