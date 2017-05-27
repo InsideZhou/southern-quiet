@@ -1,6 +1,8 @@
-package com.ai.southernquiet.filesystem;
+package test.filesystem;
 
 import com.ai.southernquiet.FrameworkProperties;
+import com.ai.southernquiet.filesystem.InvalidFileException;
+import com.ai.southernquiet.filesystem.PathNotFoundException;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import org.junit.Assert;
 import org.junit.Test;
