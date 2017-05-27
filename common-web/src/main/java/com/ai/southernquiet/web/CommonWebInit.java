@@ -9,9 +9,8 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
@@ -21,23 +20,41 @@ import java.util.EnumSet;
 /**
  * 初始化web应用。
  */
-public abstract class WebInit implements ServletContextInitializer, ApplicationContextAware {
-    private Logger logger = LoggerFactory.getLogger(WebInit.class);
+public abstract class CommonWebInit {
+    private Logger logger = LoggerFactory.getLogger(CommonWebInit.class);
 
     private ApplicationContext applicationContext;
     private FileSystem fileSystem;
     private CommonWebProperties webProperties;
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;
+    }
+
+    @Autowired
+    public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
-    @Override
-    public void onStartup(ServletContext servletContext) throws ServletException {
-        fileSystem = applicationContext.getBean(FileSystem.class);
-        webProperties = applicationContext.getBean(CommonWebProperties.class);
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
 
+    @Autowired
+    public void setFileSystem(FileSystem fileSystem) {
+        this.fileSystem = fileSystem;
+    }
+
+    public CommonWebProperties getWebProperties() {
+        return webProperties;
+    }
+
+    @Autowired
+    public void setWebProperties(CommonWebProperties webProperties) {
+        this.webProperties = webProperties;
+    }
+
+    public void onStartup(ServletContext servletContext) throws ServletException {
         setupLogAppender(servletContext);
         setupRequestWrapperFilter(servletContext);
     }

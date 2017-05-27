@@ -3,11 +3,8 @@ package com.ai.southernquiet.web.session;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
 import com.ai.southernquiet.web.CommonWebProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -21,20 +18,9 @@ import java.util.stream.Collectors;
 /**
  * 基于{@link com.ai.southernquiet.filesystem.FileSystem}的Jetty Session持久化.
  */
-@Component
 public class FileSessionDataStore extends AbstractSessionDataStore {
-    private ObjectMapper mapper;
     private FileSystem fileSystem;
     private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
-
-    public ObjectMapper getMapper() {
-        return mapper;
-    }
-
-    @Autowired
-    public void setMapper(ObjectMapper mapper) {
-        this.mapper = mapper;
-    }
 
     public FileSystem getFileSystem() {
         return fileSystem;
@@ -114,9 +100,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     @Override
     public boolean delete(String id) throws Exception {
         Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).stream().findFirst();
-        if (opt.isPresent()) {
-            getFileSystem().delete(opt.get().getPath());
-        }
+        opt.ifPresent(meta -> getFileSystem().delete(meta.getPath()));
 
         return true;
     }

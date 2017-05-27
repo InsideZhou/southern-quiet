@@ -1,17 +1,12 @@
 package app;
 
 import com.ai.southernquiet.util.BCrypt;
-import com.ai.southernquiet.web.JettyConfiguration;
-import com.ai.southernquiet.web.WebInit;
 import com.ai.southernquiet.web.auth.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,35 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
 
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "app"})
-@EnableConfigurationProperties
 public class App implements WebMvcConfigurer {
     public static void main(String[] args) throws Exception {
         SpringApplication.run(App.class);
-    }
-
-    @Bean
-    static ServletContextInitializer servletContextInitializer() {
-        return new WebInit() {
-            @Override
-            public void onStartup(ServletContext servletContext) throws ServletException {
-
-                super.onStartup(servletContext);
-            }
-        };
-    }
-
-    @Bean
-    static JettyServletWebServerFactory servletContainerFactory(JettyConfiguration jettyConfiguration) {
-        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
-        factory.addConfigurations(jettyConfiguration);
-        return factory;
     }
 
     @Bean

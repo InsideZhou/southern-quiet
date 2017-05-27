@@ -15,23 +15,15 @@
 1. Logging 日志
     - 由于Logger初始化时间的原因，基于FileSystem的FileAppender在FileSystem未能初始化时，默认不输出日志。
     
-1. Auth 身份及权限验证
-    > 提供Auth注解来验证身份及权限，使用在Controller及Action上。
+1. Auth 身份及权限验证（可选）
+    - 提供Auth注解来验证身份及权限，使用在Controller及Action上。  
+    - 开启需要提供AuthService类型的Bean，并向SpringMVC注册AuthInterceptor。
 
 
 ### 如何使用
+1. 在应用入口类上使用SpringBootApplication或者EnableAutoConfiguration注解。
+
 1. 向Spring的注解扫描添加com.ai.southernquiet包
-
-1. 开启Spring的Type-Safe配置（@EnableConfigurationProperties）
-
-1. 执行框架初始化
-继承抽象类WebInit，并返回ServletContextInitializer类型的Bean，框架以此介入应用初始化过程。
-
-1. 使用定制的Jetty容器逻辑
-提供JettyServletWebServerFactory类型的Bean，该Bean需调用addConfigurations，添加自定义配置JettyConfiguration。
-
-1. 开启注解身份验证及权限检查（可选）
-提供AuthService类型的Bean，并向SpringMVC注册AuthInterceptor。
 
 
 ### 需要注意的局限

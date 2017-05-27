@@ -1,5 +1,6 @@
 dependencies {
     compile "org.springframework.boot:spring-boot-starter"
+    compile "com.fasterxml.jackson.core:jackson-databind"
 
-    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile "org.springframework.boot:spring-boot-starter-web"
 }

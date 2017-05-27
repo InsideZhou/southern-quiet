@@ -1,13 +1,10 @@
 package com.ai.southernquiet.cache.driver;
 
-import com.ai.southernquiet.Constant;
 import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -23,8 +20,6 @@ import java.util.stream.Stream;
 /**
  * 基于 {@link FileSystem} 的缓存驱动.
  */
-@Component
-@Qualifier(Constant.DEFAULT_DRIVER_QUALIFIER)
 public class FileSystemCache implements Cache {
     private FileSystem fileSystem;
     private String workingRoot = "CACHE"; //Cache在FileSystem中的路径

@@ -1,12 +1,9 @@
 package com.ai.southernquiet.filesystem.driver;
 
-import com.ai.southernquiet.Constant;
 import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.FileSystemException;
 import com.ai.southernquiet.filesystem.*;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.SystemPropertyUtils;
@@ -29,8 +26,6 @@ import java.util.stream.Stream;
 /**
  * 基于操作系统本地文件系统的驱动.
  */
-@Component
-@Qualifier(Constant.DEFAULT_DRIVER_QUALIFIER)
 public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
