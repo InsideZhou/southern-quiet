@@ -39,6 +39,15 @@ public class FrameworkProperties {
 
     public static class Job {
         private Integer retryLimit;
+        private FileSystem fileSystem = new FileSystem();
+
+        public FileSystem getFileSystem() {
+            return fileSystem;
+        }
+
+        public void setFileSystem(FileSystem fileSystem) {
+            this.fileSystem = fileSystem;
+        }
 
         public Integer getRetryLimit() {
             return retryLimit;
@@ -46,6 +55,30 @@ public class FrameworkProperties {
 
         public void setRetryLimit(Integer retryLimit) {
             this.retryLimit = retryLimit;
+        }
+
+        public static class FileSystem {
+            private DefaultDriver defaultDriver = new DefaultDriver();
+
+            public DefaultDriver getDefaultDriver() {
+                return defaultDriver;
+            }
+
+            public void setDefaultDriver(DefaultDriver defaultDriver) {
+                this.defaultDriver = defaultDriver;
+            }
+
+            public static class DefaultDriver {
+                private String workingRoot;
+
+                public String getWorkingRoot() {
+                    return workingRoot;
+                }
+
+                public void setWorkingRoot(String workingRoot) {
+                    this.workingRoot = workingRoot;
+                }
+            }
         }
     }
 

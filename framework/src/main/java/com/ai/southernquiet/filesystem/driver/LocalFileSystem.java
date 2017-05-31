@@ -16,10 +16,7 @@ import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -277,8 +274,12 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public List<PathMeta> paths(String path, String search, boolean recursive) throws PathNotFoundException {
-        Stream<Path> stream = pathStream(path, search, recursive, false);
-        return stream.map(this::meta).collect(Collectors.toList());
+        return pathStream(path, search, recursive, false, -1, -1, null).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PathMeta> paths(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
+        return pathStream(path, search, recursive, false, offset, limit, sort).collect(Collectors.toList());
     }
 
     @Override
@@ -293,8 +294,12 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public List<PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
-        Stream<Path> stream = pathStream(path, search, recursive, true);
-        return stream.map(this::meta).collect(Collectors.toList());
+        return pathStream(path, search, recursive, true, -1, -1, null).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
+        return pathStream(path, search, recursive, true, offset, limit, sort).collect(Collectors.toList());
     }
 
     private Path getWorkingPath(String path) {
@@ -371,7 +376,7 @@ public class LocalFileSystem implements FileSystem {
         }
     }
 
-    private Stream<Path> pathStream(String path, String search, boolean recursive, boolean fileOnly) throws PathNotFoundException {
+    private Stream<PathMeta> pathStream(String path, String search, boolean recursive, boolean fileOnly, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
         Path workingPath = getWorkingPath(path);
         if (Files.notExists(workingPath)) throw new PathNotFoundException(path);
 
@@ -392,7 +397,53 @@ public class LocalFileSystem implements FileSystem {
                 stream = stream.filter(p -> p.getFileName().toString().contains(search));
             }
 
-            return stream;
+            Stream<PathMeta> metaStream = stream.map(this::meta);
+
+            if (null != sort) {
+                switch (sort) {
+                    case Name:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getName));
+                    case NameDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getName).reversed());
+
+                    case IsDirectory:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::isDirectory));
+                    case IsDirectoryDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::isDirectory).reversed());
+
+                    case CreationTime:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getCreationTime));
+                    case CreationTimeDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getCreationTime).reversed());
+
+                    case LastAccessTime:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastAccessTime));
+                    case LastAccessTimeDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastAccessTime).reversed());
+
+                    case LastModifiedTime:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime));
+                    case LastModifiedTimeDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime).reversed());
+
+                    case Size:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getSize));
+                    case SizeDesc:
+                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getSize).reversed());
+                    default:
+                        break;
+                }
+            }
+
+            if (offset > 0) {
+                metaStream = metaStream.skip(offset);
+            }
+
+            if (limit > 0) {
+                metaStream = metaStream.limit(limit);
+            }
+
+            return metaStream;
         }
         catch (IOException e) {
             throw new RuntimeException(e);

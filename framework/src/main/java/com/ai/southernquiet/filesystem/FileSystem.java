@@ -175,21 +175,21 @@ public interface FileSystem {
     PathMeta meta(String path);
 
     /**
-     * 获取目录下所有子路径，非递归。
+     * 获取目录下子路径，非递归。
      *
      * @see #paths(String, String, boolean)
      */
     List<PathMeta> paths(String path) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有子路径，非递归。
+     * 获取目录下子路径，非递归。
      *
      * @see #paths(String, String, boolean)
      */
     List<PathMeta> paths(String path, String search) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有子路径。
+     * 获取目录下子路径。
      *
      * @param path      目录路径
      * @param search    以contains方式查找的名称。如果为空，返回所有结果。
@@ -200,21 +200,31 @@ public interface FileSystem {
     List<PathMeta> paths(String path, String search, boolean recursive) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有文件路径，非递归。
+     * 获取目录下子路径。
+     *
+     * @param offset 开始位置索引
+     * @param limit  数量限制
+     * @param sort   排序选项。选项之间是互斥的。
+     * @see #paths(String, String, boolean)
+     */
+    List<PathMeta> paths(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
+
+    /**
+     * 获取目录下文件路径，非递归。
      *
      * @see #files(String, String, boolean)
      */
     List<PathMeta> files(String path) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有文件路径，非递归。
+     * 获取目录下文件路径，非递归。
      *
      * @see #files(String, String, boolean)
      */
     List<PathMeta> files(String path, String search) throws PathNotFoundException;
 
     /**
-     * 获取目录下所有文件路径。
+     * 获取目录下文件路径。
      *
      * @param path      目录路径
      * @param search    以contains方式查找的名称。如果为空，返回所有结果。
@@ -223,4 +233,14 @@ public interface FileSystem {
      * @throws PathNotFoundException 目录不存在
      */
     List<PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException;
+
+    /**
+     * 获取目录下文件路径。
+     *
+     * @param offset 开始位置索引
+     * @param limit  数量限制
+     * @param sort   排序选项。选项之间是互斥的。
+     * @see #files(String, String, boolean)
+     */
+    List<PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
 }

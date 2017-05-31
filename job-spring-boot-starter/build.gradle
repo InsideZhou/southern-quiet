@@ -1,0 +1,6 @@
+dependencies {
+    compile project(':framework')
+}
+
+group = 'com.ai.southern-quiet'
+version = '0.0.1-SNAPSHOT'
