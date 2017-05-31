@@ -11,6 +11,15 @@ import org.springframework.stereotype.Component;
 public class FrameworkProperties {
     private FileSystem fileSystem = new FileSystem();
     private Cache cache = new Cache();
+    private Job job = new Job();
+
+    public Job getJob() {
+        return job;
+    }
+
+    public void setJob(Job job) {
+        this.job = job;
+    }
 
     public Cache getCache() {
         return cache;
@@ -26,6 +35,18 @@ public class FrameworkProperties {
 
     public void setFileSystem(FileSystem fileSystem) {
         this.fileSystem = fileSystem;
+    }
+
+    public static class Job {
+        private Integer retryLimit;
+
+        public Integer getRetryLimit() {
+            return retryLimit;
+        }
+
+        public void setRetryLimit(Integer retryLimit) {
+            this.retryLimit = retryLimit;
+        }
     }
 
     public static class FileSystem {

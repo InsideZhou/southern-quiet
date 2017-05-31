@@ -18,6 +18,11 @@
 1. Auth 身份及权限验证（可选）
     - 提供Auth注解来验证身份及权限，使用在Controller及Action上。  
     - 开启需要提供AuthService类型的Bean，并向SpringMVC注册AuthInterceptor。
+    
+1. JobQueue 任务队列 （southern-quiet-spring-boot-starter-job）
+    - 实现Job接口完成任务类。
+    - 获取JobScheduler Bean，将Job添加至调度器。
+    - 可以自定义JobQueue实现来决定任务的处理顺序。
 
 
 ### 如何使用
