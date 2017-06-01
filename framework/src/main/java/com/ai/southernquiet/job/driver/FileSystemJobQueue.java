@@ -1,7 +1,9 @@
-package com.ai.southernquiet.job;
+package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.job.Job;
+import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

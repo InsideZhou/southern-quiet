@@ -2,6 +2,7 @@ package com.ai.southernquiet.job;
 
 import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.job.driver.FileSystemJobQueue;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
