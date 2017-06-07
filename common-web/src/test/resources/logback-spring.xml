@@ -1,6 +1,6 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <springProperty scope="context" name="fileLocation" source="test.app.logging.file" defaultValue="test.app.log"/>
+    <springProperty scope="context" name="fileLocation" source="app.logging.file" defaultValue="app.log"/>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

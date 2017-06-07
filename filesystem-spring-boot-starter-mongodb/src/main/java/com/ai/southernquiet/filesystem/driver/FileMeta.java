@@ -8,6 +8,8 @@ import java.util.Map;
 public class FileMeta extends MongoPathMeta {
     private ObjectId fileId;
 
+    public FileMeta() {}
+
     public FileMeta(PathMeta pathMeta) {
         if (pathMeta.isDirectory()) {
             throw new RuntimeException(String.format("该路径%s指向的是目录而不是文件，无法生成FileMeta。", pathMeta.getPath()));

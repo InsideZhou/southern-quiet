@@ -22,7 +22,7 @@ idea {
 }
 
 subprojects {
-    group = 'com.ai.southern-quiet'
+    group = 'com.ai.southernquiet'
     version = '0.0.1-SNAPSHOT'
 
     apply plugin: 'idea'

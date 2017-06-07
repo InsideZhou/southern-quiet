@@ -4,18 +4,17 @@ import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.web.session.FileSessionDataStore;
 import org.eclipse.jetty.server.session.SessionDataStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties
 public class CommonWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SessionDataStore.class)
-    public SessionDataStore sessionDataStore(FileSystem fileSystem, CommonWebProperties properties) {
+    public FileSessionDataStore sessionDataStore(FileSystem fileSystem, Properties properties) {
         return new FileSessionDataStore(fileSystem, properties);
     }
 
@@ -36,5 +35,98 @@ public class CommonWebAutoConfiguration {
         JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);
         return factory;
+    }
+
+    @Bean
+    @ConfigurationProperties("web")
+    public Properties properties() {
+        return new Properties();
+    }
+
+    public static class Properties {
+        private Session session = new Session();
+
+        public Session getSession() {
+            return session;
+        }
+
+        public void setSession(Session session) {
+            this.session = session;
+        }
+
+        public static class Session {
+            private FileSystem fileSystem = new FileSystem();
+            private RememberMe rememberMe = new RememberMe();
+            /**
+             * com.ai.southernquiet.web.auth.User保存为Request attribute时使用的KEY。
+             */
+            private String user;
+
+            public FileSystem getFileSystem() {
+                return fileSystem;
+            }
+
+            public void setFileSystem(FileSystem fileSystem) {
+                this.fileSystem = fileSystem;
+            }
+
+            public RememberMe getRememberMe() {
+                return rememberMe;
+            }
+
+            public void setRememberMe(RememberMe rememberMe) {
+                this.rememberMe = rememberMe;
+            }
+
+            public String getUser() {
+                return user;
+            }
+
+            public void setUser(String user) {
+                this.user = user;
+            }
+
+            public static class FileSystem {
+                /**
+                 * Session持久化在FileSystem中的路径
+                 */
+                private String workingRoot;
+
+                public String getWorkingRoot() {
+                    return workingRoot;
+                }
+
+                public void setWorkingRoot(String workingRoot) {
+                    this.workingRoot = workingRoot;
+                }
+            }
+
+            public static class RememberMe {
+                /**
+                 * 记住我的cookie名称
+                 */
+                private String cookie;
+                /**
+                 * 记住我的cookie有效时间，单位：秒
+                 */
+                private Integer timeout;
+
+                public String getCookie() {
+                    return cookie;
+                }
+
+                public void setCookie(String cookie) {
+                    this.cookie = cookie;
+                }
+
+                public Integer getTimeout() {
+                    return timeout;
+                }
+
+                public void setTimeout(Integer timeout) {
+                    this.timeout = timeout;
+                }
+            }
+        }
     }
 }

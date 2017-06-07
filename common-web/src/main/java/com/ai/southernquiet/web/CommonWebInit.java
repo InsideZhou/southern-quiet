@@ -25,7 +25,7 @@ public abstract class CommonWebInit {
 
     private ApplicationContext applicationContext;
     private FileSystem fileSystem;
-    private CommonWebProperties webProperties;
+    private CommonWebAutoConfiguration.Properties webProperties;
 
     public ApplicationContext getApplicationContext() {
         return applicationContext;
@@ -45,12 +45,12 @@ public abstract class CommonWebInit {
         this.fileSystem = fileSystem;
     }
 
-    public CommonWebProperties getWebProperties() {
+    public CommonWebAutoConfiguration.Properties getWebProperties() {
         return webProperties;
     }
 
     @Autowired
-    public void setWebProperties(CommonWebProperties webProperties) {
+    public void setWebProperties(CommonWebAutoConfiguration.Properties webProperties) {
         this.webProperties = webProperties;
     }
 

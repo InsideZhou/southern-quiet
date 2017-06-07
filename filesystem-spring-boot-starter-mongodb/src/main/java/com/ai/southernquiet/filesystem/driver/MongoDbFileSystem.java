@@ -1,6 +1,5 @@
 package com.ai.southernquiet.filesystem.driver;
 
-import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.*;
 import com.mongodb.gridfs.GridFS;
@@ -39,16 +38,16 @@ public class MongoDbFileSystem implements FileSystem {
     private MongoOperations mongoOperations;
     private GridFsOperations gridFsOperations;
     private GridFS gridFs;
-    private String fileCollection = "DEFAULT";
+    private String fileCollection = "FILE";
     private String directoryCollection = "DIRECTORY";
 
-    public MongoDbFileSystem(FrameworkProperties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
-        String fileCollection = properties.getFileSystem().getMongodb().getFileCollection();
+    public MongoDbFileSystem(MongoDbFileSystemAutoConfiguration.Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
+        String fileCollection = properties.getFileCollection();
         if (StringUtils.hasText(fileCollection)) {
             this.fileCollection = fileCollection;
         }
 
-        String directoryCollection = properties.getFileSystem().getMongodb().getDirectoryCollection();
+        String directoryCollection = properties.getDirectoryCollection();
         if (StringUtils.hasText(directoryCollection)) {
             this.directoryCollection = directoryCollection;
         }
@@ -367,7 +366,7 @@ public class MongoDbFileSystem implements FileSystem {
     private String getParent(String path) {
         Path parent = Paths.get(path).getParent();
 
-        return FileSystem.normalizePath(parent.toString());
+        return null == parent ? "" : FileSystem.normalizePath(parent.toString());
     }
 
     private String getPathName(String path) {

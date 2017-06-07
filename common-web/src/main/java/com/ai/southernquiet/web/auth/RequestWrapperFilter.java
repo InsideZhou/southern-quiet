@@ -1,6 +1,6 @@
 package com.ai.southernquiet.web.auth;
 
-import com.ai.southernquiet.web.CommonWebProperties;
+import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.*;
@@ -10,13 +10,13 @@ import java.io.IOException;
 
 public class RequestWrapperFilter implements Filter {
     private AuthService authService;
-    private CommonWebProperties webProperties;
+    private CommonWebAutoConfiguration.Properties webProperties;
 
-    public CommonWebProperties getWebProperties() {
+    public CommonWebAutoConfiguration.Properties getWebProperties() {
         return webProperties;
     }
 
-    public void setWebProperties(CommonWebProperties webProperties) {
+    public void setWebProperties(CommonWebAutoConfiguration.Properties webProperties) {
         this.webProperties = webProperties;
     }
 

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -14,8 +17,15 @@ import java.util.Set;
 @org.springframework.boot.test.autoconfigure.json.JsonTest
 @RunWith(SpringRunner.class)
 public class JsonTest {
-    @SpringBootConfiguration
-    public static class Config {}
+    @Configuration
+    @EnableAutoConfiguration
+    public static class Config {
+        @Bean
+        @Primary
+        static ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+    }
 
     @Autowired
     private ObjectMapper mapper;

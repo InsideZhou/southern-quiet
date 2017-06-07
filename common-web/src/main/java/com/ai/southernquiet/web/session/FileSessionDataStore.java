@@ -2,7 +2,7 @@ package com.ai.southernquiet.web.session;
 
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
-import com.ai.southernquiet.web.CommonWebProperties;
+import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.util.StreamUtils;
@@ -22,36 +22,20 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     private FileSystem fileSystem;
     private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
 
-    public FileSystem getFileSystem() {
-        return fileSystem;
-    }
-
-    public void setFileSystem(FileSystem fileSystem) {
-        this.fileSystem = fileSystem;
-    }
-
-    public String getWorkingRoot() {
-        return workingRoot;
-    }
-
-    public void setWorkingRoot(String workingRoot) {
-        this.workingRoot = workingRoot;
-    }
-
-    public FileSessionDataStore(FileSystem fileSystem, CommonWebProperties properties) {
+    public FileSessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.Properties properties) {
         String workingRoot = properties.getSession().getFileSystem().getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
-            setWorkingRoot(workingRoot);
+            this.workingRoot = workingRoot;
         }
 
-        fileSystem.create(getWorkingRoot());
-        setFileSystem(fileSystem);
+        this.fileSystem = fileSystem;
 
+        fileSystem.create(this.workingRoot);
     }
 
     @Override
     public void doStore(String id, SessionData data, long lastSaveTime) throws Exception {
-        getFileSystem().put(getFilePath(id), serialize(data));
+        fileSystem.put(getFilePath(id), serialize(data));
     }
 
     @Override
@@ -61,7 +45,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return candidates.stream()
             .map(id -> {
                 try {
-                    return getFileSystem().files(getWorkingRoot(), id);
+                    return fileSystem.files(workingRoot, id);
                 }
                 catch (PathNotFoundException e) {
                     throw new RuntimeException(e);
@@ -82,14 +66,14 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public boolean exists(String id) throws Exception {
         long now = System.currentTimeMillis();
 
-        return getFileSystem().files(getWorkingRoot(), id).anyMatch(meta -> getByMeta(meta).getExpiry() > now);
+        return fileSystem.files(workingRoot, id).anyMatch(meta -> getByMeta(meta).getExpiry() > now);
     }
 
     @Override
     public SessionData load(String id) throws Exception {
-        Optional<? extends PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).findFirst();
+        Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, id).findFirst();
         if (opt.isPresent()) {
-            try (InputStream inputStream = getFileSystem().openReadStream(opt.get().getPath())) {
+            try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
                 return deserialize(inputStream);
             }
         }
@@ -99,8 +83,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public boolean delete(String id) throws Exception {
-        Optional<? extends PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).findFirst();
-        opt.ifPresent(meta -> getFileSystem().delete(meta.getPath()));
+        Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, id).findFirst();
+        opt.ifPresent(meta -> fileSystem.delete(meta.getPath()));
 
         return true;
     }
@@ -111,11 +95,11 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     }
 
     private String getFilePath(String sessionId) {
-        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(sessionId);
+        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(sessionId);
     }
 
     private SessionData getByMeta(PathMeta meta) {
-        try (InputStream inputStream = getFileSystem().openReadStream(meta.getPath())) {
+        try (InputStream inputStream = fileSystem.openReadStream(meta.getPath())) {
             return deserialize(inputStream);
         }
         catch (InvalidFileException | IOException e) {

@@ -1,6 +1,6 @@
 package test.filesystem;
 
-import com.ai.southernquiet.FrameworkProperties;
+import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.filesystem.InvalidFileException;
 import com.ai.southernquiet.filesystem.PathNotFoundException;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
@@ -8,26 +8,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@SpringBootTest
+@SpringBootTest(classes = FrameworkAutoConfiguration.class)
 @RunWith(SpringRunner.class)
 public class LocalFileSystemTest {
-    @Configuration
-    @EnableConfigurationProperties(FrameworkProperties.class)
-    @ComponentScan({"com.ai.southernquiet.filesystem"})
-    public static class Config {
-        @Bean
-        static LocalFileSystem localFileSystem(FrameworkProperties properties) {
-            return new LocalFileSystem(properties);
-        }
-    }
-
     @Autowired
     private LocalFileSystem fileSystem;
 

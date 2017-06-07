@@ -1,8 +1,8 @@
 package com.ai.southernquiet.job.driver;
 
-import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.job.Job;
+import com.ai.southernquiet.job.JobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.slf4j.Logger;
@@ -20,13 +20,21 @@ public class FileSystemJobQueue implements JobQueue {
     private FileSystem fileSystem;
     private String workingRoot = "JOB_QUEUE"; //队列持久化在FileSystem中的路径
 
-    public FileSystemJobQueue(FileSystem fileSystem, FrameworkProperties properties) {
-        String workingRoot = properties.getJob().getFileSystem().getDefaultDriver().getWorkingRoot();
+    public String getWorkingRoot() {
+        return workingRoot;
+    }
+
+    public void setWorkingRoot(String workingRoot) {
+        this.workingRoot = workingRoot;
+    }
+
+    public FileSystemJobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
+        String workingRoot = properties.getFileSystem().getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
-            setWorkingRoot(workingRoot);
+            this.workingRoot = workingRoot;
         }
 
-        fileSystem.create(getWorkingRoot());
+        fileSystem.create(this.workingRoot);
         this.fileSystem = fileSystem;
     }
 
@@ -43,7 +51,7 @@ public class FileSystemJobQueue implements JobQueue {
     @Override
     public Job dequeue() {
         try {
-            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
 
             if (opt.isPresent()) {
                 try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
@@ -68,7 +76,7 @@ public class FileSystemJobQueue implements JobQueue {
     @Override
     public void remove(Job job) {
         try {
-            fileSystem.files(getWorkingRoot(), job.getId())
+            fileSystem.files(workingRoot, job.getId())
                 .findFirst()
                 .ifPresent(meta -> fileSystem.delete(meta.getPath()));
         }
@@ -83,7 +91,7 @@ public class FileSystemJobQueue implements JobQueue {
     }
 
     private String getFilePath(String jobId) {
-        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(jobId);
+        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(jobId);
     }
 
     private InputStream serialize(Job data) {
@@ -92,13 +100,5 @@ public class FileSystemJobQueue implements JobQueue {
 
     private Job deserialize(byte[] bytes) {
         return ((Job) SerializationUtils.deserialize(bytes));
-    }
-
-    public String getWorkingRoot() {
-        return workingRoot;
-    }
-
-    public void setWorkingRoot(String workingRoot) {
-        this.workingRoot = workingRoot;
     }
 }

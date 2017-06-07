@@ -1,6 +1,6 @@
 package com.ai.southernquiet.filesystem.driver;
 
-import com.ai.southernquiet.FrameworkProperties;
+import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.FileSystemException;
 import com.ai.southernquiet.filesystem.*;
@@ -30,8 +30,8 @@ import java.util.stream.Stream;
 public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
-    public LocalFileSystem(FrameworkProperties frameworkProperties) {
-        String workingRoot = frameworkProperties.getFileSystem().getDefaultDriver().getWorkingRoot();
+    public LocalFileSystem(FrameworkAutoConfiguration.Properties properties) {
+        String workingRoot = properties.getFileSystem().getDefaultDriver().getWorkingRoot();
         if (!StringUtils.hasLength(workingRoot)) {
             workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
         }

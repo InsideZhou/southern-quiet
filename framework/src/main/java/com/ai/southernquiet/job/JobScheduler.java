@@ -1,6 +1,5 @@
 package com.ai.southernquiet.job;
 
-import com.ai.southernquiet.FrameworkProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -27,13 +26,13 @@ public class JobScheduler {
     private ApplicationContext context;
     private int retryLimit;
 
-    public JobScheduler(JobQueue queue, JobQueue retryQueue, ApplicationContext context, FrameworkProperties properties) {
+    public JobScheduler(JobQueue queue, JobQueue retryQueue, ApplicationContext context, JobAutoConfiguration.Properties properties) {
         this.queue = queue;
         this.retryQueue = retryQueue;
         this.context = context;
 
-        if (null != properties.getJob().getRetryLimit()) {
-            this.retryLimit = properties.getJob().getRetryLimit();
+        if (null != properties.getRetryLimit()) {
+            this.retryLimit = properties.getRetryLimit();
         }
     }
 

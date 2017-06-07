@@ -2,6 +2,3 @@ dependencies {
     compile project(':framework')
     compile "org.springframework.boot:spring-boot-starter-data-mongodb"
 }
-
-group = 'com.ai.southern-quiet'
-version = '0.0.1-SNAPSHOT'

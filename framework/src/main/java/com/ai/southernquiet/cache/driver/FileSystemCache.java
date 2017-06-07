@@ -1,6 +1,6 @@
 package com.ai.southernquiet.cache.driver;
 
-import com.ai.southernquiet.FrameworkProperties;
+import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
@@ -24,34 +24,18 @@ public class FileSystemCache implements Cache {
     private String workingRoot = "CACHE"; //Cache在FileSystem中的路径
     private String nameSeparator = "__"; //文件名中不同部分的分隔
 
-    public FileSystemCache(FrameworkProperties properties, FileSystem fileSystem) {
+    public FileSystemCache(FrameworkAutoConfiguration.Properties properties, FileSystem fileSystem) {
         String workingRoot = properties.getCache().getFileSystem().getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
-            setWorkingRoot(workingRoot);
+            this.workingRoot = workingRoot;
         }
 
         String sep = properties.getCache().getFileSystem().getNameSeparator();
         if (StringUtils.hasText(sep)) {
-            setNameSeparator(sep);
+            this.nameSeparator = sep;
         }
 
         this.fileSystem = fileSystem;
-    }
-
-    public String getNameSeparator() {
-        return nameSeparator;
-    }
-
-    public void setNameSeparator(String nameSeparator) {
-        this.nameSeparator = nameSeparator;
-    }
-
-    public String getWorkingRoot() {
-        return workingRoot;
-    }
-
-    public void setWorkingRoot(String workingRoot) {
-        this.workingRoot = workingRoot;
     }
 
     @Override
@@ -77,7 +61,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Object get(String key) {
         try {
-            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, getKeyPrefix(key)).findFirst();
 
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
@@ -108,7 +92,7 @@ public class FileSystemCache implements Cache {
     @Override
     public void touch(String key, Integer ttl) {
         try {
-            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, getKeyPrefix(key)).findFirst();
 
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
@@ -159,7 +143,7 @@ public class FileSystemCache implements Cache {
     public void remove(String... keys) {
         Stream.of(keys).forEach(key -> {
             try {
-                fileSystem.files(getWorkingRoot(), getKeyPrefix(key))
+                fileSystem.files(workingRoot, getKeyPrefix(key))
                     .findFirst()
                     .ifPresent(meta -> fileSystem.delete(meta.getPath()));
             }
@@ -172,7 +156,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Map<String, Object> find(String search) {
         try {
-            return fileSystem.files(getWorkingRoot(), search).collect(collector);
+            return fileSystem.files(workingRoot, search).collect(collector);
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
@@ -180,28 +164,28 @@ public class FileSystemCache implements Cache {
     }
 
     protected String getFileName(String key, int ttl) {
-        return key + getNameSeparator() + ttl;
+        return key + nameSeparator + ttl;
     }
 
     private String getKeyPrefix(String key) {
-        return key + getNameSeparator();
+        return key + nameSeparator;
     }
 
     private String getFilePath(String key, int ttl) {
-        return getWorkingRoot() + FileSystem.PATH_SEPARATOR + getFileName(key, ttl);
+        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(key, ttl);
     }
 
     private int getTTLFromFileName(String name) {
-        return Integer.parseInt(name.substring(name.indexOf(getNameSeparator()) + getNameSeparator().length()));
+        return Integer.parseInt(name.substring(name.indexOf(nameSeparator) + nameSeparator.length()));
     }
 
     private String getKeyFromFileName(String name) {
-        return name.substring(0, name.indexOf(getNameSeparator()));
+        return name.substring(0, name.indexOf(nameSeparator));
     }
 
     private Stream<? extends PathMeta> getMetaStream() {
         try {
-            return fileSystem.files(getWorkingRoot());
+            return fileSystem.files(workingRoot);
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
