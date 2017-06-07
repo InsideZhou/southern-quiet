@@ -84,6 +84,15 @@ public class FrameworkProperties {
 
     public static class FileSystem {
         private DefaultDriver defaultDriver = new DefaultDriver();
+        private Mongodb mongodb = new Mongodb();
+
+        public Mongodb getMongodb() {
+            return mongodb;
+        }
+
+        public void setMongodb(Mongodb mongodb) {
+            this.mongodb = mongodb;
+        }
 
         public DefaultDriver getDefaultDriver() {
             return defaultDriver;
@@ -102,6 +111,27 @@ public class FrameworkProperties {
 
             public void setWorkingRoot(String workingRoot) {
                 this.workingRoot = workingRoot;
+            }
+        }
+
+        public static class Mongodb {
+            private String fileCollection;
+            private String directoryCollection;
+
+            public String getDirectoryCollection() {
+                return directoryCollection;
+            }
+
+            public void setDirectoryCollection(String directoryCollection) {
+                this.directoryCollection = directoryCollection;
+            }
+
+            public String getFileCollection() {
+                return fileCollection;
+            }
+
+            public void setFileCollection(String fileCollection) {
+                this.fileCollection = fileCollection;
             }
         }
     }

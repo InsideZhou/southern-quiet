@@ -16,8 +16,8 @@ import java.io.IOException;
 public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(Cache.class)
-    public Cache cache(FrameworkProperties properties) {
-        return new FileSystemCache(properties);
+    public Cache cache(FrameworkProperties properties, FileSystem fileSystem) {
+        return new FileSystemCache(properties, fileSystem);
     }
 
     @Bean

@@ -27,13 +27,13 @@ public class FileSystemJobQueue implements JobQueue {
         }
 
         fileSystem.create(getWorkingRoot());
-        setFileSystem(fileSystem);
+        this.fileSystem = fileSystem;
     }
 
     @Override
     public void enqueue(Job job) {
         try {
-            getFileSystem().put(getFilePath(job.getId()), serialize(job));
+            fileSystem.put(getFilePath(job.getId()), serialize(job));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -43,14 +43,16 @@ public class FileSystemJobQueue implements JobQueue {
     @Override
     public Job dequeue() {
         try {
-            Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), "", false, 0, 1, PathMetaSort.CreationTime).stream().findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
 
             if (opt.isPresent()) {
-                byte[] bytes = StreamUtils.copyToByteArray(getFileSystem().read(opt.get().getPath()));
+                try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
+                    byte[] bytes = StreamUtils.copyToByteArray(inputStream);
 
-                Job job = deserialize(bytes);
-                remove(job);
-                return job;
+                    Job job = deserialize(bytes);
+                    remove(job);
+                    return job;
+                }
             }
         }
         catch (PathNotFoundException e) {
@@ -66,7 +68,9 @@ public class FileSystemJobQueue implements JobQueue {
     @Override
     public void remove(Job job) {
         try {
-            getFileSystem().files(getWorkingRoot(), job.getId()).stream().findFirst().ifPresent(meta -> getFileSystem().delete(meta.getPath()));
+            fileSystem.files(getWorkingRoot(), job.getId())
+                .findFirst()
+                .ifPresent(meta -> fileSystem.delete(meta.getPath()));
         }
         catch (PathNotFoundException e) {
             logger.info(String.format("没有找到要删除的Job %s", job.getId()), e);
@@ -88,14 +92,6 @@ public class FileSystemJobQueue implements JobQueue {
 
     private Job deserialize(byte[] bytes) {
         return ((Job) SerializationUtils.deserialize(bytes));
-    }
-
-    public FileSystem getFileSystem() {
-        return fileSystem;
-    }
-
-    public void setFileSystem(FileSystem fileSystem) {
-        this.fileSystem = fileSystem;
     }
 
     public String getWorkingRoot() {

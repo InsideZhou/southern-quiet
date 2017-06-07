@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -20,7 +21,12 @@ public class LocalFileSystemTest {
     @Configuration
     @EnableConfigurationProperties(FrameworkProperties.class)
     @ComponentScan({"com.ai.southernquiet.filesystem"})
-    public static class Config {}
+    public static class Config {
+        @Bean
+        static LocalFileSystem localFileSystem(FrameworkProperties properties) {
+            return new LocalFileSystem(properties);
+        }
+    }
 
     @Autowired
     private LocalFileSystem fileSystem;
@@ -47,7 +53,7 @@ public class LocalFileSystemTest {
 
         Assert.assertTrue(fileSystem.exists(file));
         try {
-            Assert.assertTrue(fileSystem.files("/", file).stream().anyMatch(meta -> meta.getName().equals(file)));
+            Assert.assertTrue(fileSystem.files("/", file).anyMatch(meta -> meta.getName().equals(file)));
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);

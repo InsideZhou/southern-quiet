@@ -1,15 +1,62 @@
 package com.ai.southernquiet.filesystem;
 
+import org.springframework.util.StringUtils;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.List;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 /**
  * 文件系统。
  */
 public interface FileSystem {
-    String PATH_SEPARATOR = "/";
+    char PATH_SEPARATOR = '/';
+
+    static String normalizePath(String path) {
+        if (null == path) return "";
+
+        path = path.replace("\\", "" + PATH_SEPARATOR);
+
+        return StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(path, PATH_SEPARATOR), PATH_SEPARATOR);
+    }
+
+    static <T extends PathMeta> Stream<T> sort(Stream<T> stream, PathMetaSort sort) {
+        switch (sort) {
+            case Name:
+                return stream.sorted(Comparator.comparing(PathMeta::getName));
+            case NameDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::getName).reversed());
+
+            case IsDirectory:
+                return stream.sorted(Comparator.comparing(PathMeta::isDirectory));
+            case IsDirectoryDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::isDirectory).reversed());
+
+            case CreationTime:
+                return stream.sorted(Comparator.comparing(PathMeta::getCreationTime));
+            case CreationTimeDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::getCreationTime).reversed());
+
+            case LastAccessTime:
+                return stream.sorted(Comparator.comparing(PathMeta::getLastAccessTime));
+            case LastAccessTimeDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::getLastAccessTime).reversed());
+
+            case LastModifiedTime:
+                return stream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime));
+            case LastModifiedTimeDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime).reversed());
+
+            case Size:
+                return stream.sorted(Comparator.comparing(PathMeta::getSize));
+            case SizeDesc:
+                return stream.sorted(Comparator.comparing(PathMeta::getSize).reversed());
+            default:
+                throw new RuntimeException();
+        }
+    }
 
     /**
      * 创建目录。目录已存在则忽略。
@@ -17,24 +64,6 @@ public interface FileSystem {
      * @param path 路径
      */
     void create(String path);
-
-    /**
-     * 创建文件。
-     *
-     * @param path   要写入的路径
-     * @param stream 输入流
-     * @throws PathAlreadyExistsException 文件已存在
-     */
-    void create(String path, InputStream stream) throws PathAlreadyExistsException;
-
-    /**
-     * 创建文件。以UTF-8写入文本。
-     *
-     * @param path 要写入的路径
-     * @param txt  输入文本
-     * @throws PathAlreadyExistsException 文件已存在
-     */
-    void create(String path, CharSequence txt) throws PathAlreadyExistsException;
 
     /**
      * 如果文件未存在，则创建；否则替换。
@@ -62,25 +91,19 @@ public interface FileSystem {
     boolean exists(String path);
 
     /**
-     * @param path 文件路径
-     * @throws InvalidFileException 无效文件
-     */
-    InputStream read(String path) throws InvalidFileException;
-
-    /**
      * 使用UTF8编码读取文件。
      *
      * @param path 文件路径
      * @throws InvalidFileException 无效文件
      */
-    String readString(String path) throws InvalidFileException;
+    String read(String path) throws InvalidFileException;
 
     /**
      * @param path    文件路径
      * @param charset 文件编码
      * @throws InvalidFileException 无效文件
      */
-    String readString(String path, Charset charset) throws InvalidFileException;
+    String read(String path, Charset charset) throws InvalidFileException;
 
     /**
      * 用流的方式读取文件内容，调用方负责流的关闭。
@@ -175,72 +198,70 @@ public interface FileSystem {
     PathMeta meta(String path);
 
     /**
-     * 获取目录下子路径，非递归。
+     * 获取目录下子目录，非递归。
      *
-     * @see #paths(String, String, boolean)
+     * @see #directories(String, String, boolean, int, int, PathMetaSort)
      */
-    List<PathMeta> paths(String path) throws PathNotFoundException;
+    Stream<? extends PathMeta> directories(String path) throws PathNotFoundException;
 
     /**
-     * 获取目录下子路径，非递归。
+     * 获取目录下子目录，非递归。
      *
-     * @see #paths(String, String, boolean)
+     * @see #directories(String, String, boolean, int, int, PathMetaSort)
      */
-    List<PathMeta> paths(String path, String search) throws PathNotFoundException;
+    Stream<? extends PathMeta> directories(String path, String search) throws PathNotFoundException;
 
     /**
-     * 获取目录下子路径。
+     * 获取目录下子目录。
+     *
+     * @see #directories(String, String, boolean, int, int, PathMetaSort)
+     */
+    Stream<? extends PathMeta> directories(String path, String search, boolean recursive) throws PathNotFoundException;
+
+    /**
+     * 获取目录下文件。
      *
      * @param path      目录路径
-     * @param search    以contains方式查找的名称。如果为空，返回所有结果。
-     * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @return 文件名中包含 {@code search} 的文件列表。
+     * @param search    以contains方式查找目录名。如果为空，返回所有结果。
+     * @param recursive 如果true，则递归搜索所有子目录。
+     * @param offset    开始位置索引。小于0则忽略。
+     * @param limit     数量限制。小于0则忽略。
+     * @param sort      排序选项。选项之间是互斥的。
      * @throws PathNotFoundException 目录不存在
      */
-    List<PathMeta> paths(String path, String search, boolean recursive) throws PathNotFoundException;
+    Stream<? extends PathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
 
     /**
-     * 获取目录下子路径。
+     * 获取目录下文件，非递归。
      *
-     * @param offset 开始位置索引
-     * @param limit  数量限制
-     * @param sort   排序选项。选项之间是互斥的。
-     * @see #paths(String, String, boolean)
+     * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    List<PathMeta> paths(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
+    Stream<? extends PathMeta> files(String path) throws PathNotFoundException;
 
     /**
-     * 获取目录下文件路径，非递归。
+     * 获取目录下文件，非递归。
      *
-     * @see #files(String, String, boolean)
+     * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    List<PathMeta> files(String path) throws PathNotFoundException;
+    Stream<? extends PathMeta> files(String path, String search) throws PathNotFoundException;
 
     /**
-     * 获取目录下文件路径，非递归。
+     * 获取目录下文件。
      *
-     * @see #files(String, String, boolean)
+     * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    List<PathMeta> files(String path, String search) throws PathNotFoundException;
+    Stream<? extends PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException;
 
     /**
-     * 获取目录下文件路径。
+     * 获取目录下文件。
      *
      * @param path      目录路径
-     * @param search    以contains方式查找的名称。如果为空，返回所有结果。
-     * @param recursive 如果true，则递归搜索所有子目录，广度优先。
-     * @return 文件名中包含 {@code search} 的文件列表。
+     * @param search    以contains方式查找文件名。如果为空，返回所有结果。
+     * @param recursive 如果true，则递归搜索所有子目录。
+     * @param offset    开始位置索引。小于0则忽略。
+     * @param limit     数量限制。小于0则忽略。
+     * @param sort      排序选项。选项之间是互斥的。
      * @throws PathNotFoundException 目录不存在
      */
-    List<PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException;
-
-    /**
-     * 获取目录下文件路径。
-     *
-     * @param offset 开始位置索引
-     * @param limit  数量限制
-     * @param sort   排序选项。选项之间是互斥的。
-     * @see #files(String, String, boolean)
-     */
-    List<PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
+    Stream<? extends PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
 }

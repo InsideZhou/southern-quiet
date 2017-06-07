@@ -4,7 +4,6 @@ import com.ai.southernquiet.FrameworkProperties;
 import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -25,7 +24,7 @@ public class FileSystemCache implements Cache {
     private String workingRoot = "CACHE"; //Cache在FileSystem中的路径
     private String nameSeparator = "__"; //文件名中不同部分的分隔
 
-    public FileSystemCache(FrameworkProperties properties) {
+    public FileSystemCache(FrameworkProperties properties, FileSystem fileSystem) {
         String workingRoot = properties.getCache().getFileSystem().getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
             setWorkingRoot(workingRoot);
@@ -35,6 +34,8 @@ public class FileSystemCache implements Cache {
         if (StringUtils.hasText(sep)) {
             setNameSeparator(sep);
         }
+
+        this.fileSystem = fileSystem;
     }
 
     public String getNameSeparator() {
@@ -43,15 +44,6 @@ public class FileSystemCache implements Cache {
 
     public void setNameSeparator(String nameSeparator) {
         this.nameSeparator = nameSeparator;
-    }
-
-    public FileSystem getFileSystem() {
-        return fileSystem;
-    }
-
-    @Autowired
-    public void setFileSystem(FileSystem fileSystem) {
-        this.fileSystem = fileSystem;
     }
 
     public String getWorkingRoot() {
@@ -65,7 +57,7 @@ public class FileSystemCache implements Cache {
     @Override
     public void put(String key, Object value, int ttl) {
         try {
-            getFileSystem().put(getFilePath(key, ttl), serialize(value));
+            fileSystem.put(getFilePath(key, ttl), serialize(value));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -75,7 +67,7 @@ public class FileSystemCache implements Cache {
     @Override
     public void set(String key, Object value) {
         try {
-            getFileSystem().put(getFilePath(key, -1), serialize(value));
+            fileSystem.put(getFilePath(key, -1), serialize(value));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -85,7 +77,8 @@ public class FileSystemCache implements Cache {
     @Override
     public Object get(String key) {
         try {
-            Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).findFirst();
+
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
                 String filename = meta.getName();
@@ -97,13 +90,15 @@ public class FileSystemCache implements Cache {
                     return null;
                 }
 
-                return deserialize(getFileSystem().read(meta.getPath()));
+                try (InputStream inputStream = fileSystem.openReadStream(meta.getPath())) {
+                    return deserialize(inputStream);
+                }
             }
         }
         catch (PathNotFoundException e) {
             return null;
         }
-        catch (InvalidFileException e) {
+        catch (InvalidFileException | IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -113,13 +108,14 @@ public class FileSystemCache implements Cache {
     @Override
     public void touch(String key, Integer ttl) {
         try {
-            Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+            Optional<? extends PathMeta> opt = fileSystem.files(getWorkingRoot(), getKeyPrefix(key)).findFirst();
+
             if (opt.isPresent()) {
                 PathMeta meta = opt.get();
 
-                getFileSystem().touchCreation(meta.getPath());
+                fileSystem.touchCreation(meta.getPath());
                 if (null != ttl) {
-                    getFileSystem().move(meta.getPath(), getFilePath(key, ttl));
+                    fileSystem.move(meta.getPath(), getFilePath(key, ttl));
                 }
             }
 
@@ -133,7 +129,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Map<String, Object> getAlive() {
         long now = System.currentTimeMillis();
-        Stream<PathMeta> stream = getMetaStream();
+        Stream<? extends PathMeta> stream = getMetaStream();
 
         return stream.filter(meta -> {
             String filename = meta.getName();
@@ -147,7 +143,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Map<String, Object> getExpired() {
         long now = System.currentTimeMillis();
-        Stream<PathMeta> stream = getMetaStream();
+        Stream<? extends PathMeta> stream = getMetaStream();
 
         return stream.filter(meta -> {
             String filename = meta.getName();
@@ -159,18 +155,16 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
+    @SuppressWarnings("all")
     public void remove(String... keys) {
         Stream.of(keys).forEach(key -> {
-            Optional<PathMeta> opt = null;
             try {
-                opt = getFileSystem().files(getWorkingRoot(), getKeyPrefix(key)).stream().findFirst();
+                fileSystem.files(getWorkingRoot(), getKeyPrefix(key))
+                    .findFirst()
+                    .ifPresent(meta -> fileSystem.delete(meta.getPath()));
             }
             catch (PathNotFoundException e) {
                 return;
-            }
-
-            if (opt.isPresent()) {
-                getFileSystem().delete(opt.get().getPath());
             }
         });
     }
@@ -178,7 +172,7 @@ public class FileSystemCache implements Cache {
     @Override
     public Map<String, Object> find(String search) {
         try {
-            return getFileSystem().files(getWorkingRoot(), search).stream().collect(collector);
+            return fileSystem.files(getWorkingRoot(), search).collect(collector);
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
@@ -205,17 +199,13 @@ public class FileSystemCache implements Cache {
         return name.substring(0, name.indexOf(getNameSeparator()));
     }
 
-    private Stream<PathMeta> getMetaStream() {
-        Stream<PathMeta> stream;
-
+    private Stream<? extends PathMeta> getMetaStream() {
         try {
-            stream = getFileSystem().files(getWorkingRoot()).stream();
+            return fileSystem.files(getWorkingRoot());
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
         }
-
-        return stream;
     }
 
     private InputStream serialize(Object data) {
@@ -235,10 +225,10 @@ public class FileSystemCache implements Cache {
         Collectors.toMap(
             meta -> getKeyFromFileName(meta.getName()),
             meta -> {
-                try {
-                    return deserialize(getFileSystem().read(meta.getPath()));
+                try (InputStream inputStream = fileSystem.openReadStream(meta.getPath())) {
+                    return deserialize(inputStream);
                 }
-                catch (InvalidFileException e) {
+                catch (InvalidFileException | IOException e) {
                     throw new RuntimeException(e);
                 }
             }

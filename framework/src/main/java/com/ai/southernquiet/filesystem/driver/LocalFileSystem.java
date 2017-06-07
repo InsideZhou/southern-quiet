@@ -8,7 +8,10 @@ import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.SystemPropertyUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -16,8 +19,9 @@ import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -26,19 +30,21 @@ import java.util.stream.Stream;
 public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
-    public LocalFileSystem(FrameworkProperties frameworkProperties) throws IOException {
+    public LocalFileSystem(FrameworkProperties frameworkProperties) {
         String workingRoot = frameworkProperties.getFileSystem().getDefaultDriver().getWorkingRoot();
         if (!StringUtils.hasLength(workingRoot)) {
             workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
         }
 
-        if (!workingRoot.endsWith(FileSystem.PATH_SEPARATOR)) {
-            workingRoot += FileSystem.PATH_SEPARATOR;
-        }
-        workingRoot = workingRoot.replace("/", FileSystem.PATH_SEPARATOR);
+        workingRoot = FileSystem.normalizePath(workingRoot);
 
         Path workingPath = Paths.get(workingRoot);
-        createDirectory(workingPath);
+        try {
+            createDirectory(workingPath);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         this.workingRoot = workingRoot;
     }
@@ -47,34 +53,6 @@ public class LocalFileSystem implements FileSystem {
     public void create(String path) {
         try {
             Files.createDirectories(getWorkingPath(path));
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void create(String path, InputStream stream) throws PathAlreadyExistsException {
-        Path workingPath = getWorkingPath(path);
-        if (Files.exists(workingPath)) throw new PathAlreadyExistsException(path);
-
-        try {
-            createDirectory(workingPath.getParent());
-            Files.write(workingPath, StreamUtils.copyToByteArray(stream), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void create(String path, CharSequence txt) throws PathAlreadyExistsException {
-        Path workingPath = getWorkingPath(path);
-        if (Files.exists(workingPath)) throw new PathAlreadyExistsException(path);
-
-        try {
-            createDirectory(workingPath.getParent());
-            Files.write(workingPath, txt.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -112,24 +90,12 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public InputStream read(String path) throws InvalidFileException {
-        Path workingPath = getWorkingPath(path);
-
-        try {
-            return new ByteArrayInputStream(Files.readAllBytes(workingPath));
-        }
-        catch (IOException e) {
-            throw new InvalidFileException(path, e);
-        }
+    public String read(String path) throws InvalidFileException {
+        return read(path, StandardCharsets.UTF_8);
     }
 
     @Override
-    public String readString(String path) throws InvalidFileException {
-        return readString(path, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public String readString(String path, Charset charset) throws InvalidFileException {
+    public String read(String path, Charset charset) throws InvalidFileException {
         Path workingPath = getWorkingPath(path);
 
         try {
@@ -263,47 +229,65 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public List<PathMeta> paths(String path) throws PathNotFoundException {
-        return paths(path, null, false);
+    public Stream<? extends PathMeta> directories(String path) throws PathNotFoundException {
+        return directories(path, "", false, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> paths(String path, String search) throws PathNotFoundException {
-        return paths(path, search, false);
+    public Stream<? extends PathMeta> directories(String path, String search) throws PathNotFoundException {
+        return directories(path, search, false, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> paths(String path, String search, boolean recursive) throws PathNotFoundException {
-        return pathStream(path, search, recursive, false, -1, -1, null).collect(Collectors.toList());
+    public Stream<? extends PathMeta> directories(String path, String search, boolean recursive) throws PathNotFoundException {
+        return directories(path, search, recursive, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> paths(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
-        return pathStream(path, search, recursive, false, offset, limit, sort).collect(Collectors.toList());
+    public Stream<? extends PathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
+        Stream<PathMeta> stream = pathStream(path, search, recursive, sort).filter(m -> m.isDirectory());
+        if (offset > 0) {
+            stream = stream.skip(offset);
+        }
+
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+
+        return stream;
     }
 
     @Override
-    public List<PathMeta> files(String path) throws PathNotFoundException {
-        return files(path, null, false);
+    public Stream<? extends PathMeta> files(String path) throws PathNotFoundException {
+        return files(path, "", false, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> files(String path, String search) throws PathNotFoundException {
-        return files(path, search, false);
+    public Stream<? extends PathMeta> files(String path, String search) throws PathNotFoundException {
+        return files(path, search, false, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
-        return pathStream(path, search, recursive, true, -1, -1, null).collect(Collectors.toList());
+    public Stream<? extends PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
+        return files(path, search, recursive, -1, -1, null);
     }
 
     @Override
-    public List<PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
-        return pathStream(path, search, recursive, true, offset, limit, sort).collect(Collectors.toList());
+    public Stream<? extends PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
+        Stream<PathMeta> stream = pathStream(path, search, recursive, sort).filter(m -> !m.isDirectory());
+        if (offset > 0) {
+            stream = stream.skip(offset);
+        }
+
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+
+        return stream;
     }
 
     private Path getWorkingPath(String path) {
-        return Paths.get(workingRoot + path);
+        return Paths.get(workingRoot + FileSystem.PATH_SEPARATOR + path);
     }
 
     private void moveOrCopy(boolean move, String source, String destination, boolean replaceExisting) throws FileSystemException {
@@ -376,7 +360,7 @@ public class LocalFileSystem implements FileSystem {
         }
     }
 
-    private Stream<PathMeta> pathStream(String path, String search, boolean recursive, boolean fileOnly, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
+    private Stream<PathMeta> pathStream(String path, String search, boolean recursive, PathMetaSort sort) throws PathNotFoundException {
         Path workingPath = getWorkingPath(path);
         if (Files.notExists(workingPath)) throw new PathNotFoundException(path);
 
@@ -389,10 +373,6 @@ public class LocalFileSystem implements FileSystem {
                 stream = Files.list(workingPath);
             }
 
-            if (fileOnly) {
-                stream = stream.filter(p -> !Files.isDirectory(p));
-            }
-
             if (StringUtils.hasText(search)) {
                 stream = stream.filter(p -> p.getFileName().toString().contains(search));
             }
@@ -400,47 +380,7 @@ public class LocalFileSystem implements FileSystem {
             Stream<PathMeta> metaStream = stream.map(this::meta);
 
             if (null != sort) {
-                switch (sort) {
-                    case Name:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getName));
-                    case NameDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getName).reversed());
-
-                    case IsDirectory:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::isDirectory));
-                    case IsDirectoryDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::isDirectory).reversed());
-
-                    case CreationTime:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getCreationTime));
-                    case CreationTimeDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getCreationTime).reversed());
-
-                    case LastAccessTime:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastAccessTime));
-                    case LastAccessTimeDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastAccessTime).reversed());
-
-                    case LastModifiedTime:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime));
-                    case LastModifiedTimeDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getLastModifiedTime).reversed());
-
-                    case Size:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getSize));
-                    case SizeDesc:
-                        metaStream = metaStream.sorted(Comparator.comparing(PathMeta::getSize).reversed());
-                    default:
-                        break;
-                }
-            }
-
-            if (offset > 0) {
-                metaStream = metaStream.skip(offset);
-            }
-
-            if (limit > 0) {
-                metaStream = metaStream.limit(limit);
+                metaStream = FileSystem.sort(metaStream, sort);
             }
 
             return metaStream;
@@ -471,8 +411,12 @@ public class LocalFileSystem implements FileSystem {
 
         PathMeta meta = new PathMeta();
 
-        meta.setPath(workingPath.toString().substring(workingRoot.length()));
-        meta.setName(file.getName());
+        Path parent = workingPath.getParent();
+        if (null != parent) {
+            meta.setParent(parent.toString().substring(workingRoot.length()));
+        }
+
+        meta.setName(workingPath.getFileName().toString());
         meta.setDirectory(file.isDirectory());
         meta.setCreationTime(attributes.creationTime().toInstant());
         meta.setLastAccessTime(attributes.lastAccessTime().toInstant());

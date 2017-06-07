@@ -1,4 +1,4 @@
-package app;
+package test.app;
 
 import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.auth.*;
@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
 
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "app"})
+@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "test.app"})
 public class App implements WebMvcConfigurer {
     public static void main(String[] args) throws Exception {
         SpringApplication.run(App.class);

@@ -67,7 +67,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
                     throw new RuntimeException(e);
                 }
             })
-            .flatMap(metas -> metas.stream())
+            .flatMap(metas -> metas)
             .filter(meta -> getByMeta(meta).getExpiry() <= now)
             .map(meta -> meta.getName())
             .collect(Collectors.toSet());
@@ -82,16 +82,16 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     public boolean exists(String id) throws Exception {
         long now = System.currentTimeMillis();
 
-        return getFileSystem().files(getWorkingRoot(), id).stream()
-            .anyMatch(meta -> getByMeta(meta).getExpiry() > now);
+        return getFileSystem().files(getWorkingRoot(), id).anyMatch(meta -> getByMeta(meta).getExpiry() > now);
     }
 
     @Override
     public SessionData load(String id) throws Exception {
-        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).stream().findFirst();
+        Optional<? extends PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).findFirst();
         if (opt.isPresent()) {
-            InputStream stream = getFileSystem().read(opt.get().getPath());
-            return deserialize(stream);
+            try (InputStream inputStream = getFileSystem().openReadStream(opt.get().getPath())) {
+                return deserialize(inputStream);
+            }
         }
 
         return null;
@@ -99,7 +99,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
 
     @Override
     public boolean delete(String id) throws Exception {
-        Optional<PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).stream().findFirst();
+        Optional<? extends PathMeta> opt = getFileSystem().files(getWorkingRoot(), id).findFirst();
         opt.ifPresent(meta -> getFileSystem().delete(meta.getPath()));
 
         return true;
@@ -115,15 +115,13 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     }
 
     private SessionData getByMeta(PathMeta meta) {
-        InputStream inputStream;
-        try {
-            inputStream = getFileSystem().read(meta.getPath());
+        try (InputStream inputStream = getFileSystem().openReadStream(meta.getPath())) {
+            return deserialize(inputStream);
         }
-        catch (InvalidFileException e) {
+        catch (InvalidFileException | IOException e) {
             throw new RuntimeException(e);
         }
 
-        return deserialize(inputStream);
     }
 
     private InputStream serialize(SessionData data) {
