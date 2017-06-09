@@ -18,7 +18,11 @@
         </encoder>
     </appender>
 
-    <logger name="app" level="debug" additivity="false">
+    <logger name="com.ai.southernquiet" level="debug" additivity="false">
+        <appender-ref ref="console"/>
+    </logger>
+
+    <logger name="test.app" level="debug" additivity="false">
         <appender-ref ref="file"/>
         <appender-ref ref="console"/>
     </logger>

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
 
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet", "test.app"})
+@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
+@EnableScheduling
 public class App implements WebMvcConfigurer {
     public static void main(String[] args) throws Exception {
         SpringApplication.run(App.class);

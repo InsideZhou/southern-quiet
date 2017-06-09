@@ -1,8 +1,11 @@
 package test.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +20,8 @@ import java.util.Set;
 @org.springframework.boot.test.autoconfigure.json.JsonTest
 @RunWith(SpringRunner.class)
 public class JsonTest {
+    private Logger logger = LoggerFactory.getLogger(JsonTest.class);
+
     @Configuration
     @EnableAutoConfiguration
     public static class Config {
@@ -85,8 +90,11 @@ public class JsonTest {
 
         try {
             String json = mapper.writeValueAsString(account);
-            Account other = (Account) mapper.readValue(json, Object.class);
-            System.out.println(other);
+            logger.info(json);
+            Account other = mapper.readValue(json, Account.class);
+            Role otherRole = (Role) other.getRoles().toArray()[0];
+            Assert.assertEquals(otherRole.getId(), role.getId());
+            Assert.assertEquals(otherRole.getName(), role.getName());
         }
         catch (IOException e) {
             throw new RuntimeException(e);

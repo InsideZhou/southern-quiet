@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -29,17 +30,13 @@ public class MongoDbFileSystemAutoConfiguration {
         return new GridFS(factory.getLegacyDb());
     }
 
-    @Bean
-    @ConfigurationProperties("framework.file-system.mongodb")
-    @ConditionalOnBean(MongoDbFileSystem.class)
-    public Properties properties() {
-        return new Properties();
-    }
-
     /**
      * @see org.springframework.boot.autoconfigure.mongo.MongoProperties
      */
-    public static class Properties {
+    @Component
+    @ConfigurationProperties("framework.file-system.mongodb")
+    @ConditionalOnBean(MongoDbFileSystem.class)
+    public class Properties {
         /**
          * 文件集合
          */

@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -25,13 +26,9 @@ public class FrameworkAutoConfiguration {
         return new LocalFileSystem(properties);
     }
 
-    @Bean
+    @Component
     @ConfigurationProperties("framework")
-    public Properties properties() {
-        return new Properties();
-    }
-
-    public static class Properties {
+    public class Properties {
         private FileSystem fileSystem = new FileSystem();
         private Cache cache = new Cache();
 
@@ -51,18 +48,18 @@ public class FrameworkAutoConfiguration {
             this.fileSystem = fileSystem;
         }
 
-        public static class FileSystem {
-            private DefaultDriver defaultDriver = new DefaultDriver();
+        public class FileSystem {
+            private Local local = new Local();
 
-            public DefaultDriver getDefaultDriver() {
-                return defaultDriver;
+            public Local getLocal() {
+                return local;
             }
 
-            public void setDefaultDriver(DefaultDriver defaultDriver) {
-                this.defaultDriver = defaultDriver;
+            public void setLocal(Local local) {
+                this.local = local;
             }
 
-            public static class DefaultDriver {
+            public class Local {
                 /**
                  * FileSystem默认驱动在本地文件系统中的实际路径
                  */
@@ -78,7 +75,7 @@ public class FrameworkAutoConfiguration {
             }
         }
 
-        public static class Cache {
+        public class Cache {
             private FileSystem fileSystem = new FileSystem();
 
             public FileSystem getFileSystem() {
@@ -89,7 +86,7 @@ public class FrameworkAutoConfiguration {
                 this.fileSystem = fileSystem;
             }
 
-            public static class FileSystem {
+            public class FileSystem {
                 /**
                  * Cache在FileSystem中的路径
                  */

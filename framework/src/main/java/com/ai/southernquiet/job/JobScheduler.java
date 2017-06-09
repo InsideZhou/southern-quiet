@@ -3,6 +3,7 @@ package com.ai.southernquiet.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -44,9 +45,11 @@ public class JobScheduler {
     }
 
     /**
-     * 将一项任务安排进计划，并使用全局计划配置覆盖任务状态（如最大重试次数）。
+     * 将一项任务安排进计划，并用默认计划配置覆盖任务状态（如最大重试次数）。
+     *
+     * @see JobAutoConfiguration.Properties
      */
-    public <T extends Job> void scheduleWithGlobal(T job) {
+    public <T extends Job> void scheduleWithDefault(T job) {
         job.setRetryLimit(retryLimit);
         queue.enqueue(job);
     }
@@ -58,7 +61,8 @@ public class JobScheduler {
         queue.remove(job);
     }
 
-    protected synchronized void process() {
+    @Scheduled(fixedDelayString = "${framework.job.delay:1}")
+    public void process() {
         Job job = queue.dequeue();
         if (null == job) return;
 
@@ -75,7 +79,8 @@ public class JobScheduler {
         }
     }
 
-    protected synchronized void processRetry() {
+    @Scheduled(initialDelayString = "${framework.job.retryDelay:10000}", fixedDelayString = "${framework.job.retryDelay:10000}")
+    public void processRetry() {
         Job job = retryQueue.dequeue();
         if (null == job) return;
 

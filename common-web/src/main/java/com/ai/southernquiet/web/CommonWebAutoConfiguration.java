@@ -9,6 +9,7 @@ import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 @Configuration
 public class CommonWebAutoConfiguration {
@@ -37,13 +38,9 @@ public class CommonWebAutoConfiguration {
         return factory;
     }
 
-    @Bean
+    @Component
     @ConfigurationProperties("web")
-    public Properties properties() {
-        return new Properties();
-    }
-
-    public static class Properties {
+    public class Properties {
         private Session session = new Session();
 
         public Session getSession() {
@@ -54,7 +51,7 @@ public class CommonWebAutoConfiguration {
             this.session = session;
         }
 
-        public static class Session {
+        public class Session {
             private FileSystem fileSystem = new FileSystem();
             private RememberMe rememberMe = new RememberMe();
             /**
@@ -86,7 +83,7 @@ public class CommonWebAutoConfiguration {
                 this.user = user;
             }
 
-            public static class FileSystem {
+            public class FileSystem {
                 /**
                  * Session持久化在FileSystem中的路径
                  */
@@ -101,7 +98,7 @@ public class CommonWebAutoConfiguration {
                 }
             }
 
-            public static class RememberMe {
+            public class RememberMe {
                 /**
                  * 记住我的cookie名称
                  */
