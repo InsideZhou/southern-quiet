@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -26,8 +25,12 @@ public class FrameworkAutoConfiguration {
         return new LocalFileSystem(properties);
     }
 
-    @Component
+    @Bean
     @ConfigurationProperties("framework")
+    public Properties properties() {
+        return new Properties();
+    }
+
     public class Properties {
         private FileSystem fileSystem = new FileSystem();
         private Cache cache = new Cache();

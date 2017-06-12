@@ -12,7 +12,6 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
@@ -47,6 +46,12 @@ public class JobAutoConfiguration {
     @ConditionalOnMissingBean(TaskScheduler.class)
     public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
         return new ThreadPoolTaskScheduler();
+    }
+
+    @Bean
+    @ConfigurationProperties("framework.job")
+    public Properties properties() {
+        return new Properties();
     }
 
     public static class DefaultJobQueueCondition implements Condition {
@@ -97,8 +102,6 @@ public class JobAutoConfiguration {
         }
     }
 
-    @Component
-    @ConfigurationProperties("framework.job")
     public class Properties {
         /**
          * 任务最大重试次数。

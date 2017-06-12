@@ -9,7 +9,6 @@ import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 @Configuration
 public class CommonWebAutoConfiguration {
@@ -38,8 +37,12 @@ public class CommonWebAutoConfiguration {
         return factory;
     }
 
-    @Component
+    @Bean
     @ConfigurationProperties("web")
+    public Properties properties() {
+        return new Properties();
+    }
+
     public class Properties {
         private Session session = new Session();
 
