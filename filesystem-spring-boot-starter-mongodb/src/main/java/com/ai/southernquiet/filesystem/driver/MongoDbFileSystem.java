@@ -147,7 +147,7 @@ public class MongoDbFileSystem implements FileSystem {
 
         OutputStream out;
         try {
-            out = new FileOutputStream(tmp);
+            out = new FileOutputStream(tmp, true);
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException(e);
