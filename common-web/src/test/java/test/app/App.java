@@ -61,6 +61,8 @@ public class App implements WebMvcConfigurer {
         };
     }
 
+    private Logger logger = LoggerFactory.getLogger(App.class);
+
     @Autowired
     private AuthService authService;
 
@@ -68,8 +70,6 @@ public class App implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new AuthInterceptor(authService));
     }
-
-    private Logger logger = LoggerFactory.getLogger(App.class);
 
     @RequestMapping("/")
     String home() {
