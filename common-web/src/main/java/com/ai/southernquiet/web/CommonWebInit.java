@@ -3,6 +3,7 @@ package com.ai.southernquiet.web;
 import ch.qos.logback.classic.LoggerContext;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.logging.FileAppender;
+import com.ai.southernquiet.logging.SpringProxyAppender;
 import com.ai.southernquiet.web.auth.AuthService;
 import com.ai.southernquiet.web.auth.RequestWrapperFilter;
 import org.slf4j.ILoggerFactory;
@@ -69,10 +70,18 @@ public abstract class CommonWebInit {
 
             loggerContext.getLoggerList().forEach(logger -> {
                 logger.iteratorForAppenders().forEachRemaining(appender -> {
-                    if (FileAppender.class.isAssignableFrom(appender.getClass())) {
+                    Class<?> cls = appender.getClass();
+
+                    if (FileAppender.class.isAssignableFrom(cls)) {
                         FileAppender fileAppender = (FileAppender) appender;
                         if (null == fileAppender.getFileSystem()) {
                             fileAppender.setFileSystem(fileSystem);
+                        }
+                    }
+                    else if (SpringProxyAppender.class.isAssignableFrom(cls)) {
+                        SpringProxyAppender proxyAppender = (SpringProxyAppender) appender;
+                        if (null == proxyAppender.getApplicationContext()) {
+                            proxyAppender.setApplicationContext(applicationContext);
                         }
                     }
                 });

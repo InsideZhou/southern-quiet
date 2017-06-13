@@ -18,12 +18,15 @@
         </encoder>
     </appender>
 
+    <appender name="mongodb" class="com.ai.southernquiet.logging.SpringProxyAppender">
+        <beanName>mongoDbAppender</beanName>
+    </appender>
+
     <logger name="com.ai.southernquiet" level="debug" additivity="false">
         <appender-ref ref="console"/>
     </logger>
 
     <logger name="test.app" level="debug" additivity="false">
-        <appender-ref ref="file"/>
         <appender-ref ref="console"/>
     </logger>
 

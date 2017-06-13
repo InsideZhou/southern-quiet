@@ -39,6 +39,8 @@
 
 1. build.gradle与buildscript.gradle有重复，是因为gradle当前路径计算的限制。
 
+1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。
+
 
 ### 编码及设计风格
 1. 在文件系统上的目录，如果是框架自动创建的，应该统一用大写路径名，保持适当的特征有助于应用维护时大致区分某个目录来自何处。

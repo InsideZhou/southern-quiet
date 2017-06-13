@@ -1,2 +1,2 @@
 rootProject.name = 'southern-quiet'
-include 'framework', 'common-biz', 'common-web', 'filesystem-spring-boot-starter-mongodb'
+include 'framework', 'common-biz', 'common-web', 'filesystem-spring-boot-starter-mongodb', 'logging-spring-boot-starter-mongodb'
