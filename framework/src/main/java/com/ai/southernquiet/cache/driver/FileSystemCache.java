@@ -24,13 +24,13 @@ public class FileSystemCache implements Cache {
     private String workingRoot = "CACHE"; //Cache在FileSystem中的路径
     private String nameSeparator = "__"; //文件名中不同部分的分隔
 
-    public FileSystemCache(FrameworkAutoConfiguration.Properties properties, FileSystem fileSystem) {
-        String workingRoot = properties.getCache().getFileSystem().getWorkingRoot();
+    public FileSystemCache(FrameworkAutoConfiguration.FileSystemCacheProperties properties, FileSystem fileSystem) {
+        String workingRoot = properties.getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
             this.workingRoot = workingRoot;
         }
 
-        String sep = properties.getCache().getFileSystem().getNameSeparator();
+        String sep = properties.getNameSeparator();
         if (StringUtils.hasText(sep)) {
             this.nameSeparator = sep;
         }

@@ -1,9 +1,13 @@
+### 必须知道的细节
+1. 版本控制中忽略了application-default.properties文件，意味着开发者本地调试时，可以往该文件中写入配置，覆盖一些值来配合本地开发。
+
+1. 每个模块都有与之对应的*AutoConfiguration类，模块依赖的外部配置使用*AutoConfiguration.*Properties来管理。
+
 ### 提供的特性
 1. FileSystem 文件系统
     > 屏蔽底层细节，提供文件读写的支持，并且由于驱动的不同，可以做到不同机器上的应用共享同一个文件系统。
 
-    - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。
-    - 默认的驱动是本地文件系统，限制了文件名只能是数字、字母、下划线。查看FileSystemHelper类。
+    - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemHelper类。
 
 1. Session 会话
     > 基于FileSystem扩展Jetty的SessionDataStore，意味着对使用方透明，并且可以做到多应用会话共享。
@@ -37,7 +41,7 @@
 1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Sprint Boot的[约定]。
 (http://docs.spring.io/spring-boot/docs/1.5.3.RELEASE/reference/htmlsingle/#boot-features-logging)
 
-1. build.gradle与buildscript.gradle有重复，是因为gradle当前路径计算的限制。
+1. build.gradle与buildscript.gradle有重复代码，是因为gradle composite build功能当前路径计算的限制。
 
 1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。
 

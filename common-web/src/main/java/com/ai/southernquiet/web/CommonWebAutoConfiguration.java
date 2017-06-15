@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class CommonWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SessionDataStore.class)
-    public FileSessionDataStore sessionDataStore(FileSystem fileSystem, Properties properties) {
+    public FileSessionDataStore sessionDataStore(FileSystem fileSystem, FileSessionProperties properties) {
         return new FileSessionDataStore(fileSystem, properties);
     }
 
@@ -39,91 +39,66 @@ public class CommonWebAutoConfiguration {
     }
 
     @Component
+    @ConfigurationProperties("web.session.file-system")
+    public static class FileSessionProperties {
+        /**
+         * Session持久化在FileSystem中的路径
+         */
+        private String workingRoot;
+
+        public String getWorkingRoot() {
+            return workingRoot;
+        }
+
+        public void setWorkingRoot(String workingRoot) {
+            this.workingRoot = workingRoot;
+        }
+    }
+
+    @Component
     @ConfigurationProperties("web")
-    public static class Properties {
-        private Session session = new Session();
+    public class WebProperties {
+        /**
+         * com.ai.southernquiet.web.auth.User保存为Request attribute时使用的KEY。
+         */
+        private String user;
 
-        public Session getSession() {
-            return session;
+        public String getUser() {
+            return user;
         }
 
-        public void setSession(Session session) {
-            this.session = session;
+        public void setUser(String user) {
+            this.user = user;
         }
 
-        public class Session {
-            private FileSystem fileSystem = new FileSystem();
-            private RememberMe rememberMe = new RememberMe();
-            /**
-             * com.ai.southernquiet.web.auth.User保存为Request attribute时使用的KEY。
-             */
-            private String user;
+    }
 
-            public FileSystem getFileSystem() {
-                return fileSystem;
-            }
+    @Component
+    @ConfigurationProperties("web.session.remember-me")
+    public class SessionRememberMeProperties {
+        /**
+         * 记住我的cookie名称
+         */
+        private String cookie;
+        /**
+         * 记住我的cookie有效时间，单位：秒
+         */
+        private Integer timeout;
 
-            public void setFileSystem(FileSystem fileSystem) {
-                this.fileSystem = fileSystem;
-            }
+        public String getCookie() {
+            return cookie;
+        }
 
-            public RememberMe getRememberMe() {
-                return rememberMe;
-            }
+        public void setCookie(String cookie) {
+            this.cookie = cookie;
+        }
 
-            public void setRememberMe(RememberMe rememberMe) {
-                this.rememberMe = rememberMe;
-            }
+        public Integer getTimeout() {
+            return timeout;
+        }
 
-            public String getUser() {
-                return user;
-            }
-
-            public void setUser(String user) {
-                this.user = user;
-            }
-
-            public class FileSystem {
-                /**
-                 * Session持久化在FileSystem中的路径
-                 */
-                private String workingRoot;
-
-                public String getWorkingRoot() {
-                    return workingRoot;
-                }
-
-                public void setWorkingRoot(String workingRoot) {
-                    this.workingRoot = workingRoot;
-                }
-            }
-
-            public class RememberMe {
-                /**
-                 * 记住我的cookie名称
-                 */
-                private String cookie;
-                /**
-                 * 记住我的cookie有效时间，单位：秒
-                 */
-                private Integer timeout;
-
-                public String getCookie() {
-                    return cookie;
-                }
-
-                public void setCookie(String cookie) {
-                    this.cookie = cookie;
-                }
-
-                public Integer getTimeout() {
-                    return timeout;
-                }
-
-                public void setTimeout(Integer timeout) {
-                    this.timeout = timeout;
-                }
-            }
+        public void setTimeout(Integer timeout) {
+            this.timeout = timeout;
         }
     }
 }

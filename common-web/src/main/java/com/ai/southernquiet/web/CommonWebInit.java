@@ -24,15 +24,27 @@ import java.util.EnumSet;
 public abstract class CommonWebInit {
     private Logger logger = LoggerFactory.getLogger(CommonWebInit.class);
 
+    @Autowired
     private ApplicationContext applicationContext;
+    @Autowired
     private FileSystem fileSystem;
-    private CommonWebAutoConfiguration.Properties webProperties;
+    @Autowired
+    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
+    @Autowired
+    private CommonWebAutoConfiguration.WebProperties webProperties;
+
+    public CommonWebAutoConfiguration.WebProperties getWebProperties() {
+        return webProperties;
+    }
+
+    public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
+        this.webProperties = webProperties;
+    }
 
     public ApplicationContext getApplicationContext() {
         return applicationContext;
     }
 
-    @Autowired
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
@@ -41,18 +53,16 @@ public abstract class CommonWebInit {
         return fileSystem;
     }
 
-    @Autowired
     public void setFileSystem(FileSystem fileSystem) {
         this.fileSystem = fileSystem;
     }
 
-    public CommonWebAutoConfiguration.Properties getWebProperties() {
-        return webProperties;
+    public CommonWebAutoConfiguration.SessionRememberMeProperties getRememberMeProperties() {
+        return rememberMeProperties;
     }
 
-    @Autowired
-    public void setWebProperties(CommonWebAutoConfiguration.Properties webProperties) {
-        this.webProperties = webProperties;
+    public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+        this.rememberMeProperties = rememberMeProperties;
     }
 
     public void onStartup(ServletContext servletContext) throws ServletException {
@@ -94,6 +104,7 @@ public abstract class CommonWebInit {
             AuthService authService = applicationContext.getBean(AuthService.class);
             RequestWrapperFilter filter = new RequestWrapperFilter();
             filter.setAuthService(authService);
+            filter.setRememberMeProperties(rememberMeProperties);
             filter.setWebProperties(webProperties);
 
             servletContext.addFilter("requestWrapper", filter).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");

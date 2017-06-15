@@ -30,8 +30,8 @@ import java.util.stream.Stream;
 public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
-    public LocalFileSystem(FrameworkAutoConfiguration.Properties properties) {
-        String workingRoot = properties.getFileSystem().getLocal().getWorkingRoot();
+    public LocalFileSystem(FrameworkAutoConfiguration.LocalFileSystemProperties properties) {
+        String workingRoot = properties.getWorkingRoot();
         if (!StringUtils.hasLength(workingRoot)) {
             workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
         }

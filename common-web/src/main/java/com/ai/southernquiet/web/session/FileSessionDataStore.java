@@ -22,8 +22,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     private FileSystem fileSystem;
     private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
 
-    public FileSessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.Properties properties) {
-        String workingRoot = properties.getSession().getFileSystem().getWorkingRoot();
+    public FileSessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
+        String workingRoot = properties.getWorkingRoot();
         if (StringUtils.hasText(workingRoot)) {
             this.workingRoot = workingRoot;
         }

@@ -10,13 +10,14 @@ import java.io.IOException;
 
 public class RequestWrapperFilter implements Filter {
     private AuthService authService;
-    private CommonWebAutoConfiguration.Properties webProperties;
+    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
+    private CommonWebAutoConfiguration.WebProperties webProperties;
 
-    public CommonWebAutoConfiguration.Properties getWebProperties() {
+    public CommonWebAutoConfiguration.WebProperties getWebProperties() {
         return webProperties;
     }
 
-    public void setWebProperties(CommonWebAutoConfiguration.Properties webProperties) {
+    public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
         this.webProperties = webProperties;
     }
 
@@ -28,11 +29,19 @@ public class RequestWrapperFilter implements Filter {
         this.authService = authService;
     }
 
+    public CommonWebAutoConfiguration.SessionRememberMeProperties getRememberMeProperties() {
+        return rememberMeProperties;
+    }
+
+    public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+        this.rememberMeProperties = rememberMeProperties;
+    }
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        Integer timeout = getWebProperties().getSession().getRememberMe().getTimeout();
-        String cookie = getWebProperties().getSession().getRememberMe().getCookie();
-        String user = getWebProperties().getSession().getUser();
+        Integer timeout = rememberMeProperties.getTimeout();
+        String cookie = rememberMeProperties.getCookie();
+        String user = webProperties.getUser();
 
         if (null != timeout) Request.REMEMBER_ME_TIMEOUT = timeout;
         if (StringUtils.hasText(cookie)) Request.KEY_REMEMBER_ME_COOKIE = cookie;
