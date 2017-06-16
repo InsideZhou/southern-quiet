@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 public class FileSystemJobQueue implements JobQueue {
-    private Logger logger = LoggerFactory.getLogger(FileSystemJobQueue.class);
+    private static Logger logger = LoggerFactory.getLogger(FileSystemJobQueue.class);
 
     private FileSystem fileSystem;
     private String workingRoot = "JOB_QUEUE"; //队列持久化在FileSystem中的路径

@@ -43,6 +43,18 @@ public class MongoDbFileSystemAutoConfiguration {
          * 目录集合
          */
         private String directoryCollection;
+        /**
+         * 文件大小阈值，大于该阈值的使用GridFs而不是普通Document。阈值上限是mongodb上限16m。
+         */
+        private Integer fileSizeThreshold;
+
+        public Integer getFileSizeThreshold() {
+            return fileSizeThreshold;
+        }
+
+        public void setFileSizeThreshold(Integer fileSizeThreshold) {
+            this.fileSizeThreshold = fileSizeThreshold;
+        }
 
         public String getDirectoryCollection() {
             return directoryCollection;

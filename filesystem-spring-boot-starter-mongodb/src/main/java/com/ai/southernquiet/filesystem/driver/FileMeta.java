@@ -1,12 +1,14 @@
 package com.ai.southernquiet.filesystem.driver;
 
 import com.ai.southernquiet.filesystem.PathMeta;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 
 import java.util.Map;
 
 public class FileMeta extends MongoPathMeta {
     private ObjectId fileId;
+    private Binary fileData;
 
     public FileMeta() {}
 
@@ -34,6 +36,7 @@ public class FileMeta extends MongoPathMeta {
     public Map<String, Object> toMap() {
         Map<String, Object> map = super.toMap();
         map.put("fileId", getFileId());
+        map.put("fileData", getFileData());
         return map;
     }
 
@@ -43,5 +46,13 @@ public class FileMeta extends MongoPathMeta {
 
     public void setFileId(ObjectId fileId) {
         this.fileId = fileId;
+    }
+
+    public Binary getFileData() {
+        return fileData;
+    }
+
+    public void setFileData(Binary fileData) {
+        this.fileData = fileData;
     }
 }

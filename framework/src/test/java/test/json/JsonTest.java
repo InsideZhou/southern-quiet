@@ -20,7 +20,7 @@ import java.util.Set;
 @org.springframework.boot.test.autoconfigure.json.JsonTest
 @RunWith(SpringRunner.class)
 public class JsonTest {
-    private Logger logger = LoggerFactory.getLogger(JsonTest.class);
+    private static Logger logger = LoggerFactory.getLogger(JsonTest.class);
 
     @Configuration
     @EnableAutoConfiguration

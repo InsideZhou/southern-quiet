@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * <p>当超过重试次数时，调用{@link Job#onFail()}通知任务做最终处理，然后将该任务移出执行计划。</p>
  */
 public class JobScheduler {
-    private Logger logger = LoggerFactory.getLogger(JobScheduler.class);
+    private static Logger logger = LoggerFactory.getLogger(JobScheduler.class);
 
     private JobQueue queue;
     private JobQueue retryQueue;

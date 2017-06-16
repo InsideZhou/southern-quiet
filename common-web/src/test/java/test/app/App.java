@@ -22,6 +22,8 @@ import java.util.Set;
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableScheduling
 public class App implements WebMvcConfigurer {
+    private static Logger logger = LoggerFactory.getLogger(App.class);
+
     public static void main(String[] args) throws Exception {
         SpringApplication.run(App.class);
     }
@@ -60,8 +62,6 @@ public class App implements WebMvcConfigurer {
             }
         };
     }
-
-    private Logger logger = LoggerFactory.getLogger(App.class);
 
     @Autowired
     private AuthService authService;

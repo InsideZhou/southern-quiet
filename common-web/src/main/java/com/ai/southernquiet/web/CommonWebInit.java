@@ -22,7 +22,7 @@ import java.util.EnumSet;
  * 初始化web应用。
  */
 public abstract class CommonWebInit {
-    private Logger logger = LoggerFactory.getLogger(CommonWebInit.class);
+    private static Logger logger = LoggerFactory.getLogger(CommonWebInit.class);
 
     @Autowired
     private ApplicationContext applicationContext;
