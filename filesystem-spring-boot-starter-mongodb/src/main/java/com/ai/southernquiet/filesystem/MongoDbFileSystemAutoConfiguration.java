@@ -19,6 +19,7 @@ import java.io.IOException;
 @AutoConfigureAfter(MongoDataAutoConfiguration.class)
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
+    @ConditionalOnMissingBean
     public MongoDbFileSystem fileSystem(Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) throws IOException {
         return new MongoDbFileSystem(properties, mongoOperations, gridFsOperations, gridFS);
     }

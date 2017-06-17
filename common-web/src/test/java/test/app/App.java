@@ -1,10 +1,10 @@
 package test.app;
 
 import com.ai.southernquiet.util.BCrypt;
+import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.auth.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +12,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
@@ -21,7 +19,7 @@ import java.util.Set;
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableScheduling
-public class App implements WebMvcConfigurer {
+public class App extends AbstractWebApp {
     private static Logger logger = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) throws Exception {
@@ -61,14 +59,6 @@ public class App implements WebMvcConfigurer {
                 return true;
             }
         };
-    }
-
-    @Autowired
-    private AuthService authService;
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor(authService));
     }
 
     @RequestMapping("/")

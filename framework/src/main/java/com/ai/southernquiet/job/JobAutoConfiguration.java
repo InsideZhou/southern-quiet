@@ -19,7 +19,7 @@ import java.util.Arrays;
 @Configuration
 public class JobAutoConfiguration {
     @Bean
-    @ConditionalOnMissingBean(JobScheduler.class)
+    @ConditionalOnMissingBean
     public JobScheduler jobScheduler(@Qualifier(DefaultJobQueueCondition.QUALIFIER) JobQueue queue,
                                      @Qualifier(RetryJobQueueCondition.QUALIFIER) JobQueue retryQueue,
                                      ApplicationContext context,

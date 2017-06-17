@@ -9,7 +9,6 @@ import com.ai.southernquiet.web.auth.RequestWrapperFilter;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
@@ -24,47 +23,6 @@ import java.util.EnumSet;
 public abstract class CommonWebInit {
     private static Logger logger = LoggerFactory.getLogger(CommonWebInit.class);
 
-    @Autowired
-    private ApplicationContext applicationContext;
-    @Autowired
-    private FileSystem fileSystem;
-    @Autowired
-    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
-    @Autowired
-    private CommonWebAutoConfiguration.WebProperties webProperties;
-
-    public CommonWebAutoConfiguration.WebProperties getWebProperties() {
-        return webProperties;
-    }
-
-    public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
-        this.webProperties = webProperties;
-    }
-
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
-
-    public FileSystem getFileSystem() {
-        return fileSystem;
-    }
-
-    public void setFileSystem(FileSystem fileSystem) {
-        this.fileSystem = fileSystem;
-    }
-
-    public CommonWebAutoConfiguration.SessionRememberMeProperties getRememberMeProperties() {
-        return rememberMeProperties;
-    }
-
-    public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
-        this.rememberMeProperties = rememberMeProperties;
-    }
-
     public void onStartup(ServletContext servletContext) throws ServletException {
         setupLogAppender(servletContext);
         setupRequestWrapperFilter(servletContext);
@@ -72,8 +30,6 @@ public abstract class CommonWebInit {
 
     @SuppressWarnings("unused")
     protected void setupLogAppender(ServletContext servletContext) {
-        if (null == fileSystem) return;
-
         ILoggerFactory factory = LoggerFactory.getILoggerFactory();
         if (LoggerContext.class.isAssignableFrom(factory.getClass())) {
             LoggerContext loggerContext = (LoggerContext) factory;
@@ -82,13 +38,13 @@ public abstract class CommonWebInit {
                 logger.iteratorForAppenders().forEachRemaining(appender -> {
                     Class<?> cls = appender.getClass();
 
-                    if (FileAppender.class.isAssignableFrom(cls)) {
+                    if (FileAppender.class.isAssignableFrom(cls) && null != fileSystem) {
                         FileAppender fileAppender = (FileAppender) appender;
                         if (null == fileAppender.getFileSystem()) {
                             fileAppender.setFileSystem(fileSystem);
                         }
                     }
-                    else if (SpringProxyAppender.class.isAssignableFrom(cls)) {
+                    else if (SpringProxyAppender.class.isAssignableFrom(cls) && null != applicationContext) {
                         SpringProxyAppender proxyAppender = (SpringProxyAppender) appender;
                         if (null == proxyAppender.getApplicationContext()) {
                             proxyAppender.setApplicationContext(applicationContext);
@@ -100,17 +56,67 @@ public abstract class CommonWebInit {
     }
 
     protected void setupRequestWrapperFilter(ServletContext servletContext) {
-        try {
-            AuthService authService = applicationContext.getBean(AuthService.class);
-            RequestWrapperFilter filter = new RequestWrapperFilter();
-            filter.setAuthService(authService);
-            filter.setRememberMeProperties(rememberMeProperties);
-            filter.setWebProperties(webProperties);
-
-            servletContext.addFilter("requestWrapper", filter).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
-        }
-        catch (BeansException e) {
+        if (null == authService) {
             logger.warn("无法获取AuthService，身份验证关闭。");
+            return;
         }
+
+        RequestWrapperFilter filter = new RequestWrapperFilter();
+        filter.setAuthService(authService);
+        filter.setRememberMeProperties(rememberMeProperties);
+        filter.setWebProperties(webProperties);
+
+        servletContext.addFilter("requestWrapper", filter).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
+    }
+
+    private ApplicationContext applicationContext;
+    private FileSystem fileSystem;
+    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
+    private CommonWebAutoConfiguration.WebProperties webProperties;
+    private AuthService authService;
+
+    public AuthService getAuthService() {
+        return authService;
+    }
+
+    @Autowired(required = false)
+    public void setAuthService(AuthService authService) {
+        this.authService = authService;
+    }
+
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;
+    }
+
+    @Autowired(required = false)
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
+
+    @Autowired(required = false)
+    public void setFileSystem(FileSystem fileSystem) {
+        this.fileSystem = fileSystem;
+    }
+
+    public CommonWebAutoConfiguration.SessionRememberMeProperties getRememberMeProperties() {
+        return rememberMeProperties;
+    }
+
+    @Autowired
+    public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+        this.rememberMeProperties = rememberMeProperties;
+    }
+
+    public CommonWebAutoConfiguration.WebProperties getWebProperties() {
+        return webProperties;
+    }
+
+    @Autowired
+    public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
+        this.webProperties = webProperties;
     }
 }

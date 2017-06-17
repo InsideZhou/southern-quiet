@@ -20,7 +20,7 @@ public class CommonWebAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(CommonWebInit.class)
+    @ConditionalOnMissingBean
     public CommonWebInit webInit() {
         return new CommonWebInit() {};
     }
@@ -31,7 +31,13 @@ public class CommonWebAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(JettyServletWebServerFactory.class)
+    @ConditionalOnMissingBean
+    public JettyConfiguration jettyConfiguration() {
+        return new JettyConfiguration();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public JettyServletWebServerFactory servletContainerFactory(JettyConfiguration jettyConfiguration) {
         JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);

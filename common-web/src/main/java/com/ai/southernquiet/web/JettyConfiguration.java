@@ -7,17 +7,21 @@ import org.eclipse.jetty.server.session.SessionDataStore;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.webapp.AbstractConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 
-@Component
 public class JettyConfiguration extends AbstractConfiguration {
     private SessionDataStore sessionDataStore;
 
-    public JettyConfiguration(SessionDataStore sessionDataStore) {
+    public SessionDataStore getSessionDataStore() {
+        return sessionDataStore;
+    }
+
+    @Autowired(required = false)
+    public void setSessionDataStore(SessionDataStore sessionDataStore) {
         this.sessionDataStore = sessionDataStore;
     }
 
@@ -37,6 +41,8 @@ public class JettyConfiguration extends AbstractConfiguration {
     }
 
     private void configureSessionHandler(WebAppContext context) {
+        if (null == sessionDataStore) return;
+
         SessionHandler handler = context.getSessionHandler();
         SessionCache sessionCache = new DefaultSessionCache(handler);
         sessionCache.setSessionDataStore(sessionDataStore);
