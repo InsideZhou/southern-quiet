@@ -1,7 +1,6 @@
 package com.ai.southernquiet.web;
 
 import com.ai.southernquiet.web.auth.AuthInterceptor;
-import com.ai.southernquiet.web.auth.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -9,19 +8,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class AbstractWebApp implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        if (null != authService) {
-            registry.addInterceptor(new AuthInterceptor(authService));
+        if (null != authInterceptor) {
+            registry.addInterceptor(authInterceptor);
         }
     }
 
-    private AuthService authService;
+    private AuthInterceptor authInterceptor;
 
-    public AuthService getAuthService() {
-        return authService;
+    public AuthInterceptor getAuthInterceptor() {
+        return authInterceptor;
     }
 
     @Autowired(required = false)
-    public void setAuthService(AuthService authService) {
-        this.authService = authService;
+    public void setAuthInterceptor(AuthInterceptor authInterceptor) {
+        this.authInterceptor = authInterceptor;
     }
 }

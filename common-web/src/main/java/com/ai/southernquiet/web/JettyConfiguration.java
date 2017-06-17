@@ -31,7 +31,7 @@ public class JettyConfiguration extends AbstractConfiguration {
         configureSessionHandler(context);
     }
 
-    private void configureErrorHandler(WebAppContext context) {
+    protected void configureErrorHandler(WebAppContext context) {
         context.setErrorHandler(new ErrorHandler() {
             @Override
             protected void writeErrorPage(HttpServletRequest request, Writer writer, int code, String message, boolean showStacks) throws IOException {
@@ -40,7 +40,7 @@ public class JettyConfiguration extends AbstractConfiguration {
         });
     }
 
-    private void configureSessionHandler(WebAppContext context) {
+    protected void configureSessionHandler(WebAppContext context) {
         if (null == sessionDataStore) return;
 
         SessionHandler handler = context.getSessionHandler();

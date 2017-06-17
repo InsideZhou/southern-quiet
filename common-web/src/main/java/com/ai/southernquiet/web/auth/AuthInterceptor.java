@@ -1,6 +1,7 @@
 package com.ai.southernquiet.web.auth;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -18,6 +19,7 @@ import java.util.Set;
 public class AuthInterceptor extends HandlerInterceptorAdapter {
     private AuthService authService;
 
+    @Autowired
     public AuthInterceptor(AuthService authService) {
         this.authService = authService;
     }

@@ -7,5 +7,8 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-jetty"
     compile "org.springframework.boot:spring-boot-starter-actuator"
 
+    optional 'org.springframework.session:spring-session'
+
+    testCompile project(':filesystem-spring-boot-starter-mongodb')
     testCompile project(':logging-spring-boot-starter-mongodb')
 }

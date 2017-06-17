@@ -1,22 +1,34 @@
 package com.ai.southernquiet.web;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.web.session.FileSessionDataStore;
+import com.ai.southernquiet.web.session.jetty.FileSessionDataStore;
+import com.ai.southernquiet.web.session.spring.FileSessionRepository;
 import org.eclipse.jetty.server.session.SessionDataStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.session.Session;
 import org.springframework.stereotype.Component;
 
 @Configuration
 public class CommonWebAutoConfiguration {
     @Bean
-    @ConditionalOnMissingBean(SessionDataStore.class)
+    @ConditionalOnMissingBean({SessionDataStore.class})
+    @ConditionalOnMissingClass("org.springframework.session.Session")
     public FileSessionDataStore sessionDataStore(FileSystem fileSystem, FileSessionProperties properties) {
         return new FileSessionDataStore(fileSystem, properties);
+    }
+
+    @Bean
+    @ConditionalOnClass(Session.class)
+    @ConditionalOnMissingBean
+    public FileSessionRepository fileSessionRepository(FileSystem fileSystem, FileSessionProperties properties) {
+        return new FileSessionRepository(fileSystem, properties);
     }
 
     @Bean
@@ -68,6 +80,15 @@ public class CommonWebAutoConfiguration {
          * com.ai.southernquiet.web.auth.User保存为Request attribute时使用的KEY。
          */
         private String user;
+        private int defaultFilterOrder;
+
+        public int getDefaultFilterOrder() {
+            return defaultFilterOrder;
+        }
+
+        public void setDefaultFilterOrder(int defaultFilterOrder) {
+            this.defaultFilterOrder = defaultFilterOrder;
+        }
 
         public String getUser() {
             return user;

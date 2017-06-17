@@ -1,4 +1,4 @@
-package com.ai.southernquiet.web.session;
+package com.ai.southernquiet.web.session.jetty;
 
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;

@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.session.config.annotation.web.http.EnableSpringHttpSession;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +21,7 @@ import java.util.Set;
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableScheduling
+@EnableSpringHttpSession
 public class App extends AbstractWebApp {
     private static Logger logger = LoggerFactory.getLogger(App.class);
 
@@ -26,39 +29,41 @@ public class App extends AbstractWebApp {
         SpringApplication.run(App.class);
     }
 
-    @Bean
-    static AuthService authService() {
-        Logger logger = LoggerFactory.getLogger(App.class);
+    @Configuration
+    public static class Config {
+        @Bean
+        public AuthService authService() {
+            return new AuthService() {
+                private Logger logger = LoggerFactory.getLogger(App.class);
+                private User user = new User("superman", "2636d11c-7e52-4d12-80b5-893116c20cce");
 
-        return new AuthService() {
-            private User user = new User("superman", "2636d11c-7e52-4d12-80b5-893116c20cce");
+                @Override
+                public User authenticate(String username, String password, boolean remember) throws AuthException {
+                    user.setAuthenticationTime(System.currentTimeMillis());
 
-            @Override
-            public User authenticate(String username, String password, boolean remember) throws AuthException {
-                user.setAuthenticationTime(System.currentTimeMillis());
+                    if (!user.getUsername().equals(username)) throw new UserNotFoundException(username);
+                    String hashed = BCrypt.hashpw("givemefive", BCrypt.gensalt());
+                    logger.debug(hashed);
+                    if (!BCrypt.checkpw(password, hashed)) {
+                        throw new IncorrectPasswordException("");
+                    }
 
-                if (!user.getUsername().equals(username)) throw new UserNotFoundException(username);
-                String hashed = BCrypt.hashpw("givemefive", BCrypt.gensalt());
-                logger.debug(hashed);
-                if (!BCrypt.checkpw(password, hashed)) {
-                    throw new IncorrectPasswordException("");
+                    return user;
                 }
 
-                return user;
-            }
+                @Override
+                public User getUserByRememberToken(String token) {
+                    if (!token.equals(user.getRememberToken())) return null;
 
-            @Override
-            public User getUserByRememberToken(String token) {
-                if (!token.equals(user.getRememberToken())) return null;
+                    return user;
+                }
 
-                return user;
-            }
-
-            @Override
-            public boolean checkAuthorization(String username, Set<String> authNames) {
-                return true;
-            }
-        };
+                @Override
+                public boolean checkAuthorization(String username, Set<String> authNames) {
+                    return true;
+                }
+            };
+        }
     }
 
     @RequestMapping("/")

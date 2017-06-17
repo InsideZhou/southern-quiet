@@ -2,9 +2,7 @@ package com.ai.southernquiet.filesystem;
 
 import com.ai.southernquiet.filesystem.driver.MongoDbFileSystem;
 import com.mongodb.gridfs.GridFS;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,11 +14,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Configuration
-@AutoConfigureAfter(MongoDataAutoConfiguration.class)
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public MongoDbFileSystem fileSystem(Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) throws IOException {
+    public MongoDbFileSystem mongoDbFileSystem(Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) throws IOException {
         return new MongoDbFileSystem(properties, mongoOperations, gridFsOperations, gridFS);
     }
 
