@@ -41,8 +41,6 @@
 1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Sprint Boot的[约定]。
 (http://docs.spring.io/spring-boot/docs/1.5.3.RELEASE/reference/htmlsingle/#boot-features-logging)
 
-1. build.gradle与buildscript.gradle有重复代码，是因为gradle composite build功能当前路径计算的限制。
-
 1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。
 
 

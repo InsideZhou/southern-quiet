@@ -7,6 +7,6 @@ repositories {
     maven { url 'http://repo.spring.io/plugins-release' }
 }
 dependencies {
-    classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.0.M1'
+    classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.0.M2'
     classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
 }

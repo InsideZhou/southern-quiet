@@ -1,13 +1,12 @@
 buildscript {
-    repositories {
-        mavenLocal()
-        jcenter()
-        maven { url "http://repo.spring.io/milestone" }
-        maven { url 'http://repo.spring.io/plugins-release' }
+    def path = 'buildscript.gradle'
+
+    if (this.name != 'southern-quiet') {
+        path = "southern-quiet/buildscript.gradle"
     }
-    dependencies {
-        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.0.M1'
-        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+
+    buildscript { scriptHandler ->
+        apply from: path, to: scriptHandler
     }
 }
 
@@ -44,6 +43,7 @@ subprojects {
 
     dependencies {
         optional "org.springframework.boot:spring-boot-configuration-processor"
+        optional "org.springframework.boot:spring-boot-devtools"
 
         testCompile "org.springframework.boot:spring-boot-starter-test"
     }
