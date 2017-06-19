@@ -28,6 +28,7 @@
 
     <logger name="test.app" level="debug" additivity="false">
         <appender-ref ref="console"/>
+        <appender-ref ref="mongodb"/>
     </logger>
 
     <root level="info">

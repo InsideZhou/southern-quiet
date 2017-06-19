@@ -1,4 +1,6 @@
 dependencies {
     compile project(':framework')
     compile "org.springframework.boot:spring-boot-starter-data-mongodb"
+
+    testCompile project(':framework').sourceSets.test.output
 }

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Configuration
-@AutoConfigureAfter({MongoDataAutoConfiguration.class, MongoAutoConfiguration.class})
 public class MongoDbLoggingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

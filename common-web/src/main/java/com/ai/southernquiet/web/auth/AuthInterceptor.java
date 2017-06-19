@@ -110,7 +110,10 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
     }
 
     private void rebuildUserFromRememberCookie(Request request) {
-        Optional<Cookie> opt = Arrays.stream(request.getCookies()).filter(c -> Request.KEY_REMEMBER_ME_COOKIE.equals(c.getName())).findFirst();
+        Cookie[] cookies = request.getCookies();
+        if (null == cookies) return;
+
+        Optional<Cookie> opt = Arrays.stream(cookies).filter(c -> Request.KEY_REMEMBER_ME_COOKIE.equals(c.getName())).findFirst();
         if (opt.isPresent()) {
             User user = authService.getUserByRememberToken(opt.get().getValue());
             if (null != user) {
