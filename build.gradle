@@ -2,7 +2,7 @@ buildscript {
     def path = 'buildscript.gradle'
 
     if (this.name != 'southern-quiet') {
-        path = "southern-quiet/buildscript.gradle"
+        path = "deps/southern-quiet/buildscript.gradle"
     }
 
     buildscript { scriptHandler ->
