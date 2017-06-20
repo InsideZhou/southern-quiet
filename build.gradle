@@ -42,6 +42,12 @@ subprojects {
     }
 
     dependencies {
+        compile('de.ruedigermoeller:fst:2.50') {
+            exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+            exclude group: 'org.javassist', module: 'javassist'
+            exclude group: 'org.objenesis', module: 'objenesis'
+        }
+
         optional "org.springframework.boot:spring-boot-configuration-processor"
 
         testCompile "org.springframework.boot:spring-boot-starter-test"

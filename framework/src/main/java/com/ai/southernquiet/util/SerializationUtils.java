@@ -1,19 +1,9 @@
 package com.ai.southernquiet.util;
 
-import org.springframework.core.ConfigurableObjectInputStream;
+import org.nustaq.serialization.FSTConfiguration;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-
-/**
- * 为了解决原版本在与devtools共同使用时，deserialization过程中因ClassLoader不同而导致的class cast exception。
- * <p>https://github.com/spring-projects/spring-boot/issues/3805</p>
- *
- * @see org.springframework.util.SerializationUtils
- */
 public abstract class SerializationUtils {
+    private static FSTConfiguration fstConf = FSTConfiguration.createDefaultConfiguration();
 
     /**
      * Serialize the given object to a byte array.
@@ -25,16 +15,8 @@ public abstract class SerializationUtils {
         if (object == null) {
             return null;
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(object);
-            oos.flush();
-        }
-        catch (IOException ex) {
-            throw new IllegalArgumentException("Failed to serialize object of type: " + object.getClass(), ex);
-        }
-        return baos.toByteArray();
+
+        return fstConf.asByteArray(object);
     }
 
     /**
@@ -47,15 +29,7 @@ public abstract class SerializationUtils {
         if (bytes == null) {
             return null;
         }
-        try {
-            ConfigurableObjectInputStream ois = new ConfigurableObjectInputStream(new ByteArrayInputStream(bytes), Thread.currentThread().getContextClassLoader());
-            return ois.readObject();
-        }
-        catch (IOException ex) {
-            throw new IllegalArgumentException("Failed to deserialize object", ex);
-        }
-        catch (ClassNotFoundException ex) {
-            throw new IllegalStateException("Failed to deserialize object type", ex);
-        }
+
+        return fstConf.asObject(bytes);
     }
 }
