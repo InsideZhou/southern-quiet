@@ -1,6 +1,7 @@
 package com.ai.southernquiet.filesystem;
 
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -10,7 +11,7 @@ public abstract class FileSystemHelper {
      *
      * @see com.ai.southernquiet.FrameworkAutoConfiguration.FileSystemProperties#nameRegex
      */
-    private static Pattern namePattern = Pattern.compile("[\\w\\-]+");
+    private static Pattern namePattern = Pattern.compile("^[\\w\\-]+(\\.?[\\w\\-])*$");
 
     public static Pattern getNamePattern() {
         return namePattern;
@@ -26,5 +27,9 @@ public abstract class FileSystemHelper {
 
     public static void assertFileNameValid(String filename) {
         Assert.isTrue(isFileNameValid(filename), "非法的FileSystem文件名格式");
+    }
+
+    public static String trimLeadingAndTrailingPathSeparator(String txt) {
+        return StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(txt, FileSystem.PATH_SEPARATOR), FileSystem.PATH_SEPARATOR);
     }
 }

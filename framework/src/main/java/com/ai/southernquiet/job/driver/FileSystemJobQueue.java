@@ -35,6 +35,8 @@ public class FileSystemJobQueue implements JobQueue {
             this.workingRoot = workingRoot;
         }
 
+        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
+
         fileSystem.create(this.workingRoot);
         this.fileSystem = fileSystem;
     }
@@ -93,7 +95,6 @@ public class FileSystemJobQueue implements JobQueue {
     }
 
     private String getFileName(String jobId) {
-        FileSystemHelper.assertFileNameValid(jobId);
         return jobId;
     }
 

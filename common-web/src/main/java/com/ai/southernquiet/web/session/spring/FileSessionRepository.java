@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 基于{@link com.ai.southernquiet.filesystem.FileSystem}的Spring Session持久化.
+ */
 public class FileSessionRepository implements SessionRepository<ExpiringSession> {
     private FileSystem fileSystem;
     private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
@@ -29,6 +32,8 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
         if (StringUtils.hasText(workingRoot)) {
             this.workingRoot = workingRoot;
         }
+
+        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
 
         this.fileSystem = fileSystem;
 

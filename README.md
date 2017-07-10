@@ -7,7 +7,7 @@
 1. FileSystem 文件系统
     > 屏蔽底层细节，提供文件读写的支持，并且由于驱动的不同，可以做到不同机器上的应用共享同一个文件系统。
 
-    - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemHelper类。
+    - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemHelper.assertFileNameValid。
 
 1. Session 会话
     > 基于FileSystem扩展Jetty的SessionDataStore，意味着对使用方透明，并且可以做到多应用会话共享。

@@ -28,6 +28,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
             this.workingRoot = workingRoot;
         }
 
+        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
+
         this.fileSystem = fileSystem;
 
         fileSystem.create(this.workingRoot);
