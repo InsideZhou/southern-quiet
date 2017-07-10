@@ -10,7 +10,7 @@
     - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemHelper.assertFileNameValid。
 
 1. Session 会话
-    > 基于FileSystem扩展Jetty的SessionDataStore，意味着对使用方透明，并且可以做到多应用会话共享。
+    > 基于FileSystem持久化的Spring Session。
 
 1. Cache 缓存
     - 默认驱动基于FileSystem，所以会有缓存KEY规范的问题需要考虑。
