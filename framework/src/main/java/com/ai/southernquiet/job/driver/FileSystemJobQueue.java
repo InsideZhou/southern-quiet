@@ -35,8 +35,6 @@ public class FileSystemJobQueue implements JobQueue {
             this.workingRoot = workingRoot;
         }
 
-        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
-
         fileSystem.create(this.workingRoot);
         this.fileSystem = fileSystem;
     }
@@ -94,12 +92,8 @@ public class FileSystemJobQueue implements JobQueue {
         }
     }
 
-    private String getFileName(String jobId) {
-        return jobId;
-    }
-
     private String getFilePath(String jobId) {
-        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(jobId);
+        return workingRoot + FileSystem.PATH_SEPARATOR + jobId;
     }
 
     private InputStream serialize(Job data) {

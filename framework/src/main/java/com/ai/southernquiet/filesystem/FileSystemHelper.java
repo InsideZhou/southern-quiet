@@ -1,7 +1,6 @@
 package com.ai.southernquiet.filesystem;
 
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -27,9 +26,5 @@ public abstract class FileSystemHelper {
 
     public static void assertFileNameValid(String filename) {
         Assert.isTrue(isFileNameValid(filename), "非法的FileSystem文件名格式");
-    }
-
-    public static String trimLeadingAndTrailingPathSeparator(String txt) {
-        return StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(txt, FileSystem.PATH_SEPARATOR), FileSystem.PATH_SEPARATOR);
     }
 }

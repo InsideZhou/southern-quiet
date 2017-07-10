@@ -25,15 +25,48 @@ public class FileSystemTest {
     private FileSystem fileSystem;
 
     @Before
-    public void before() {
-        System.out.println(fileSystem);
+    public void before() {}
+
+    @Test
+    public void path() {
+        String normalizedPath = FileSystem.normalizePath("hello.text");
+        Assert.assertEquals("/hello.text", normalizedPath);
+
+        normalizedPath = FileSystem.normalizePath("");
+        Assert.assertEquals("/", normalizedPath);
+
+        normalizedPath = FileSystem.normalizePath("/");
+        Assert.assertEquals("/", normalizedPath);
+
+        normalizedPath = FileSystem.normalizePath("//test////hello.text/");
+        Assert.assertEquals(normalizedPath, "/test/hello.text");
+
+        Assert.assertTrue("/".split("/").length == 0);
+        Assert.assertTrue("/abc".split("/").length == 2);
+        Assert.assertTrue("abc/".split("/").length == 1);
+
+        normalizedPath = FileSystem.normalizePath("hello.text");
+        Assert.assertEquals("/", FileSystem.getPathParent(normalizedPath));
+        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
+
+        normalizedPath = FileSystem.normalizePath("/");
+        Assert.assertEquals("", FileSystem.getPathParent(normalizedPath));
+        Assert.assertEquals("/", FileSystem.getPathName(normalizedPath));
+
+        normalizedPath = FileSystem.normalizePath("/hello.text");
+        Assert.assertEquals("/", FileSystem.getPathParent(normalizedPath));
+        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
+
+        normalizedPath = FileSystem.normalizePath("/test/hello.text");
+        Assert.assertEquals("/test", FileSystem.getPathParent(normalizedPath));
+        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
     }
 
     @Test
     public void simpleIO() {
         try {
             fileSystem.put("hello.txt", "你好，Spring Boot。");
-            Assert.assertEquals(fileSystem.read("hello.txt"), "你好，Spring Boot。");
+            Assert.assertEquals("你好，Spring Boot。", fileSystem.read("hello.txt"));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -45,7 +78,7 @@ public class FileSystemTest {
 
     @Test
     public void streamingIO() {
-        String path = "streaming/hello.txt";
+        String path = "streaming/hello/world.txt";
 
         fileSystem.delete(path);
 

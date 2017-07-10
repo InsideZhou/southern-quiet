@@ -47,7 +47,12 @@ public class PathMeta {
     }
 
     public void setParent(String parent) {
-        this.parent = FileSystem.normalizePath(parent);
+        if (StringUtils.hasText(parent)) {
+            this.parent = FileSystem.normalizePath(parent);
+        }
+        else {
+            this.parent = "";
+        }
     }
 
     public String getPath() {

@@ -93,8 +93,8 @@ public class JsonTest {
             logger.info(json);
             Account other = mapper.readValue(json, Account.class);
             Role otherRole = (Role) other.getRoles().toArray()[0];
-            Assert.assertEquals(otherRole.getId(), role.getId());
-            Assert.assertEquals(otherRole.getName(), role.getName());
+            Assert.assertEquals(role.getId(), otherRole.getId());
+            Assert.assertEquals(role.getName(), otherRole.getName());
         }
         catch (IOException e) {
             throw new RuntimeException(e);

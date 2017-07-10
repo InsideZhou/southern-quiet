@@ -36,11 +36,9 @@ public class LocalFileSystem implements FileSystem {
             workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
         }
 
-        workingRoot = FileSystem.normalizePath(workingRoot);
-
         Path workingPath = Paths.get(workingRoot);
         try {
-            createDirectory(workingPath);
+            createDirectories(workingPath);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -51,6 +49,8 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public void create(String path) {
+        if (!StringUtils.hasText(path)) return;
+
         try {
             Files.createDirectories(getWorkingPath(path));
         }
@@ -123,7 +123,7 @@ public class LocalFileSystem implements FileSystem {
         Path workingPath = getWorkingPath(path);
 
         try {
-            createDirectory(workingPath.getParent());
+            createDirectories(workingPath.getParent());
             return Files.newOutputStream(workingPath, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         }
         catch (IOException e) {
@@ -390,9 +390,9 @@ public class LocalFileSystem implements FileSystem {
         }
     }
 
-    private void createDirectory(Path dir) throws IOException {
+    private void createDirectories(Path dir) throws IOException {
         if (Files.notExists(dir)) {
-            Files.createDirectory(dir);
+            Files.createDirectories(dir);
         }
     }
 

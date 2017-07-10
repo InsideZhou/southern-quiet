@@ -1,7 +1,6 @@
 package com.ai.southernquiet.web.session.spring;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.filesystem.FileSystemHelper;
 import com.ai.southernquiet.filesystem.InvalidFileException;
 import com.ai.southernquiet.util.SerializationUtils;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
@@ -32,8 +31,6 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
         if (StringUtils.hasText(workingRoot)) {
             this.workingRoot = workingRoot;
         }
-
-        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
 
         this.fileSystem = fileSystem;
 
@@ -74,13 +71,8 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
         fileSystem.delete(getFilePath(id));
     }
 
-    private String getFileName(String sessionId) {
-        FileSystemHelper.assertFileNameValid(sessionId);
-        return sessionId;
-    }
-
     private String getFilePath(String sessionId) {
-        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(sessionId);
+        return workingRoot + FileSystem.PATH_SEPARATOR + sessionId;
     }
 
     private InputStream serialize(ExpiringSession session) {

@@ -1,6 +1,9 @@
 package com.ai.southernquiet.web.session.jetty;
 
-import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.filesystem.InvalidFileException;
+import com.ai.southernquiet.filesystem.PathMeta;
+import com.ai.southernquiet.filesystem.PathNotFoundException;
 import com.ai.southernquiet.util.SerializationUtils;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
@@ -27,8 +30,6 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         if (StringUtils.hasText(workingRoot)) {
             this.workingRoot = workingRoot;
         }
-
-        this.workingRoot = FileSystemHelper.trimLeadingAndTrailingPathSeparator(this.workingRoot);
 
         this.fileSystem = fileSystem;
 
@@ -91,13 +92,8 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         return true;
     }
 
-    private String getFileName(String sessionId) {
-        FileSystemHelper.assertFileNameValid(sessionId);
-        return sessionId;
-    }
-
     private String getFilePath(String sessionId) {
-        return workingRoot + FileSystem.PATH_SEPARATOR + getFileName(sessionId);
+        return workingRoot + FileSystem.PATH_SEPARATOR + sessionId;
     }
 
     private SessionData getByMeta(PathMeta meta) {

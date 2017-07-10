@@ -5,6 +5,7 @@ import org.springframework.util.StringUtils;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -13,13 +14,49 @@ import java.util.stream.Stream;
  */
 public interface FileSystem {
     char PATH_SEPARATOR = '/';
+    String PATH_SEPARATOR_STRING = String.valueOf(PATH_SEPARATOR);
 
+    /**
+     * 总是生成以 {@link #PATH_SEPARATOR} 开头且不以其结尾的路径字符串。
+     */
     static String normalizePath(String path) {
-        if (null == path) return "";
+        if (null == path) return PATH_SEPARATOR_STRING;
 
-        path = path.replace("\\", "" + PATH_SEPARATOR);
+        path = path.replace("\\", PATH_SEPARATOR_STRING);
+        path = path.replaceAll("/+", PATH_SEPARATOR_STRING);
 
-        return StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(path, PATH_SEPARATOR), PATH_SEPARATOR);
+        return PATH_SEPARATOR + StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(path, PATH_SEPARATOR), PATH_SEPARATOR);
+    }
+
+    /**
+     * 获取路径的父路径。
+     *
+     * @param normalizedPath 已规格化的路径
+     * @return 如果父路径不存在，返回空字符串，否则返回以 {@link #PATH_SEPARATOR} 开头的路径。
+     * @see #normalizePath(String)
+     */
+    static String getPathParent(String normalizedPath) {
+        if (PATH_SEPARATOR_STRING.equals(normalizedPath)) return ""; //已经是根路径，则认为父路径不存在。
+
+        String[] items = normalizedPath.split("/");
+
+        return PATH_SEPARATOR_STRING + Arrays.stream(items).skip(1).limit(items.length - 2).reduce((prev, current) -> {
+            return prev + PATH_SEPARATOR_STRING + current;
+        }).orElse("");
+    }
+
+    /**
+     * 获取路径的名字。
+     *
+     * @param normalizedPath 已规格化的路径
+     * @return 如果 {@param normalizedPath} 是根路径，返回{@param normalizedPath}。
+     * @see #normalizePath(String)
+     */
+    static String getPathName(String normalizedPath) {
+        if (PATH_SEPARATOR_STRING.equals(normalizedPath)) return PATH_SEPARATOR_STRING;
+
+        String[] items = normalizedPath.split("/");
+        return items[items.length - 1];
     }
 
     static <T extends PathMeta> Stream<T> sort(Stream<T> stream, PathMetaSort sort) {
