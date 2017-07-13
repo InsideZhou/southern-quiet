@@ -9,7 +9,6 @@ import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,14 +22,10 @@ import java.util.stream.Collectors;
  */
 public class FileSessionDataStore extends AbstractSessionDataStore {
     private FileSystem fileSystem;
-    private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
+    private String workingRoot; //Session持久化在FileSystem中的路径
 
     public FileSessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
-        String workingRoot = properties.getWorkingRoot();
-        if (StringUtils.hasText(workingRoot)) {
-            this.workingRoot = workingRoot;
-        }
-
+        this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 
         fileSystem.create(this.workingRoot);

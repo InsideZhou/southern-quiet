@@ -41,29 +41,20 @@ public class MongoDbFileSystem implements FileSystem {
     private MongoOperations mongoOperations;
     private GridFsOperations gridFsOperations;
     private GridFS gridFs;
-    private String fileCollection = "FILE";
-    private String directoryCollection = "DIRECTORY";
-    private int fileSizeThreshold = 15 * 1024 * 1024;
+    private String fileCollection;
+    private String directoryCollection;
+    private int fileSizeThreshold;
 
     public MongoDbFileSystem(MongoDbFileSystemAutoConfiguration.Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
-        String fileCollection = properties.getFileCollection();
-        if (StringUtils.hasText(fileCollection)) {
-            this.fileCollection = fileCollection;
-        }
-
-        String directoryCollection = properties.getDirectoryCollection();
-        if (StringUtils.hasText(directoryCollection)) {
-            this.directoryCollection = directoryCollection;
-        }
+        this.fileCollection = properties.getFileCollection();
+        this.directoryCollection = properties.getDirectoryCollection();
 
         Integer threshHold = properties.getFileSizeThreshold();
-        if (null != threshHold) {
-            if (16 * 1024 * 1024 <= threshHold) {
-                logger.warn("阈值{}无效，mongodb限制必须小于16m，目前使用默认值。", threshHold);
-            }
-            else {
-                this.fileSizeThreshold = threshHold;
-            }
+        if (16 * 1024 * 1024 <= threshHold) {
+            logger.warn("阈值{}无效，mongodb限制必须小于16m，目前使用默认值。", threshHold);
+        }
+        else {
+            this.fileSizeThreshold = threshHold;
         }
 
         this.mongoOperations = mongoOperations;

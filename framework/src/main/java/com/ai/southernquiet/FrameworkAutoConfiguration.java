@@ -56,7 +56,7 @@ public class FrameworkAutoConfiguration {
         /**
          * FileSystem默认驱动在本地文件系统中的实际路径
          */
-        private String workingRoot;
+        private String workingRoot = "${user.home}/sq_filesystem";
 
         public String getWorkingRoot() {
             return workingRoot;
@@ -73,11 +73,11 @@ public class FrameworkAutoConfiguration {
         /**
          * Cache在FileSystem中的路径
          */
-        private String workingRoot;
+        private String workingRoot = "CACHE";
         /**
          * 文件名中不同部分的分隔
          */
-        private String nameSeparator;
+        private String nameSeparator = "__";
 
         public String getNameSeparator() {
             return nameSeparator;

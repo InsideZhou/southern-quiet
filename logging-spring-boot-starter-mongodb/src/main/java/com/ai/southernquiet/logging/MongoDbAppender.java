@@ -6,16 +6,12 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.util.StringUtils;
 
 public class MongoDbAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private String logCollection = "LOG";
+    private String logCollection;
     private MongoOperations mongoOperations;
 
     public MongoDbAppender(MongoDbLoggingAutoConfiguration.Properties properties, MongoOperations mongoOperations) {
         this.mongoOperations = mongoOperations;
-
-        String logCollection = properties.getCollection();
-        if (StringUtils.hasText(logCollection)) {
-            this.logCollection = logCollection;
-        }
+        this.logCollection = properties.getCollection();
 
         if (!mongoOperations.collectionExists(this.logCollection)) {
             mongoOperations.createCollection(this.logCollection);

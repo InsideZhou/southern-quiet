@@ -8,7 +8,6 @@ import org.springframework.session.ExpiringSession;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,14 +23,10 @@ import java.util.UUID;
  */
 public class FileSessionRepository implements SessionRepository<ExpiringSession> {
     private FileSystem fileSystem;
-    private String workingRoot = "SESSION"; //Session持久化在FileSystem中的路径
+    private String workingRoot; //Session持久化在FileSystem中的路径
 
     public FileSessionRepository(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
-        String workingRoot = properties.getWorkingRoot();
-        if (StringUtils.hasText(workingRoot)) {
-            this.workingRoot = workingRoot;
-        }
-
+        this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 
         fileSystem.create(this.workingRoot);

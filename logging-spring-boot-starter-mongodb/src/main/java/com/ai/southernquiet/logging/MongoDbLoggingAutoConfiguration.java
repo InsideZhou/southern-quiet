@@ -35,7 +35,7 @@ public class MongoDbLoggingAutoConfiguration {
         /**
          * 日志集合
          */
-        private String collection;
+        private String collection = "LOG";
         /**
          * 数据库连接uri，如果使用了这个uri，则使用独立的MongoOperation实例连接独立的数据源，忽略全局bean定义。
          */

@@ -31,11 +31,7 @@ public class LocalFileSystem implements FileSystem {
     private String workingRoot;
 
     public LocalFileSystem(FrameworkAutoConfiguration.LocalFileSystemProperties properties) {
-        String workingRoot = properties.getWorkingRoot();
-        if (!StringUtils.hasLength(workingRoot)) {
-            workingRoot = SystemPropertyUtils.resolvePlaceholders("${user.home}/sq_filesystem");
-        }
-
+        String workingRoot = SystemPropertyUtils.resolvePlaceholders(properties.getWorkingRoot());
         Path workingPath = Paths.get(workingRoot);
         try {
             createDirectories(workingPath);

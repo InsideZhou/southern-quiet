@@ -22,7 +22,7 @@ public class AuthAutoConfiguration {
     @Bean
     public FilterRegistrationBean<AuthFilter> authFilterFilterRegistration(AuthFilter authFilter, CommonWebAutoConfiguration.WebProperties webProperties) {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>(authFilter);
-        registration.setOrder(webProperties.getDefaultFilterOrder());
+        registration.setOrder(webProperties.getFilterOrder());
         return registration;
     }
 }

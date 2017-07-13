@@ -10,9 +10,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Request extends HttpServletRequestWrapper {
-    static String KEY_USER = "com.ai.southernquiet.web.auth.User"; //User在session中的key
-    static String KEY_REMEMBER_ME_COOKIE = "remember_me"; //记住我的cookie名称
-    static int REMEMBER_ME_TIMEOUT = 31536000; //记住我的cookie有效时间，单位：秒
+    static String KEY_USER; //User在session中的key
+    static String KEY_REMEMBER_ME_COOKIE; //记住我的cookie名称
+    static int REMEMBER_ME_TIMEOUT; //记住我的cookie有效时间，单位：秒
 
     private AuthService authService;
     private HttpServletResponse response;

@@ -8,7 +8,6 @@ import com.ai.southernquiet.util.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,7 +18,7 @@ public class FileSystemJobQueue implements JobQueue {
     private static Logger logger = LoggerFactory.getLogger(FileSystemJobQueue.class);
 
     private FileSystem fileSystem;
-    private String workingRoot = "JOB_QUEUE"; //队列持久化在FileSystem中的路径
+    private String workingRoot; //队列持久化在FileSystem中的路径
 
     public String getWorkingRoot() {
         return workingRoot;
@@ -30,10 +29,7 @@ public class FileSystemJobQueue implements JobQueue {
     }
 
     public FileSystemJobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
-        String workingRoot = properties.getFileSystem().getWorkingRoot();
-        if (StringUtils.hasText(workingRoot)) {
-            this.workingRoot = workingRoot;
-        }
+        this.workingRoot = properties.getFileSystem().getWorkingRoot();
 
         fileSystem.create(this.workingRoot);
         this.fileSystem = fileSystem;

@@ -62,7 +62,7 @@ public class CommonWebAutoConfiguration {
         /**
          * Session持久化在FileSystem中的路径
          */
-        private String workingRoot;
+        private String workingRoot = "SESSION";
 
         public String getWorkingRoot() {
             return workingRoot;
@@ -77,17 +77,20 @@ public class CommonWebAutoConfiguration {
     @ConfigurationProperties("web")
     public class WebProperties {
         /**
-         * com.ai.southernquiet.web.auth.User保存为Request attribute时使用的KEY。
+         * com.ai.southernquiet.web.auth.User在Request attribute中的KEY。
          */
-        private String user;
-        private int defaultFilterOrder;
+        private String user = "com.ai.southernquiet.web.auth.User";
+        /**
+         * 框架自身所用Filter的注册次序。
+         */
+        private int filterOrder = 0;
 
-        public int getDefaultFilterOrder() {
-            return defaultFilterOrder;
+        public int getFilterOrder() {
+            return filterOrder;
         }
 
-        public void setDefaultFilterOrder(int defaultFilterOrder) {
-            this.defaultFilterOrder = defaultFilterOrder;
+        public void setFilterOrder(int filterOrder) {
+            this.filterOrder = filterOrder;
         }
 
         public String getUser() {
@@ -106,11 +109,11 @@ public class CommonWebAutoConfiguration {
         /**
          * 记住我的cookie名称
          */
-        private String cookie;
+        private String cookie = "remember_me";
         /**
          * 记住我的cookie有效时间，单位：秒
          */
-        private Integer timeout;
+        private Integer timeout = 31536000;
 
         public String getCookie() {
             return cookie;

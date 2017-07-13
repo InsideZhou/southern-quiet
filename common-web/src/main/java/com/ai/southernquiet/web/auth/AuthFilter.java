@@ -2,7 +2,6 @@ package com.ai.southernquiet.web.auth;
 
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -25,7 +24,7 @@ public class AuthFilter extends OncePerRequestFilter {
         return webProperties;
     }
 
-    @Autowired(required = false)
+    @Autowired
     public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
         this.webProperties = webProperties;
     }
@@ -34,25 +33,16 @@ public class AuthFilter extends OncePerRequestFilter {
         return rememberMeProperties;
     }
 
-    @Autowired(required = false)
+    @Autowired
     public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
         this.rememberMeProperties = rememberMeProperties;
     }
 
     @Override
     protected void initFilterBean() throws ServletException {
-        if (null != rememberMeProperties) {
-            Integer timeout = rememberMeProperties.getTimeout();
-            if (null != timeout) Request.REMEMBER_ME_TIMEOUT = timeout;
-
-            String cookie = rememberMeProperties.getCookie();
-            if (StringUtils.hasText(cookie)) Request.KEY_REMEMBER_ME_COOKIE = cookie;
-        }
-
-        if (null != webProperties) {
-            String user = webProperties.getUser();
-            if (StringUtils.hasText(user)) Request.KEY_USER = user;
-        }
+        Request.REMEMBER_ME_TIMEOUT = rememberMeProperties.getTimeout();
+        Request.KEY_REMEMBER_ME_COOKIE = rememberMeProperties.getCookie();
+        Request.KEY_USER = webProperties.getUser();
     }
 
     @Override

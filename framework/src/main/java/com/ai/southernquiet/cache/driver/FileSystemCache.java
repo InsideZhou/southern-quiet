@@ -5,7 +5,6 @@ import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,19 +20,12 @@ import java.util.stream.Stream;
  */
 public class FileSystemCache implements Cache {
     private FileSystem fileSystem;
-    private String workingRoot = "CACHE"; //Cache在FileSystem中的路径
-    private String nameSeparator = "__"; //文件名中不同部分的分隔
+    private String workingRoot; //Cache在FileSystem中的路径
+    private String nameSeparator; //文件名中不同部分的分隔
 
     public FileSystemCache(FrameworkAutoConfiguration.FileSystemCacheProperties properties, FileSystem fileSystem) {
-        String workingRoot = properties.getWorkingRoot();
-        if (StringUtils.hasText(workingRoot)) {
-            this.workingRoot = workingRoot;
-        }
-
-        String sep = properties.getNameSeparator();
-        if (StringUtils.hasText(sep)) {
-            this.nameSeparator = sep;
-        }
+        this.workingRoot = properties.getWorkingRoot();
+        this.nameSeparator = properties.getNameSeparator();
 
         this.fileSystem = fileSystem;
     }

@@ -28,13 +28,11 @@ public class JobScheduler {
     private int retryLimit;
 
     public JobScheduler(JobQueue queue, JobQueue retryQueue, ApplicationContext context, JobAutoConfiguration.Properties properties) {
+        this.retryLimit = properties.getRetryLimit();
+
         this.queue = queue;
         this.retryQueue = retryQueue;
         this.context = context;
-
-        if (null != properties.getRetryLimit()) {
-            this.retryLimit = properties.getRetryLimit();
-        }
     }
 
     /**

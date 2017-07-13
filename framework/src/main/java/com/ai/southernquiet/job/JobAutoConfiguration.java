@@ -103,19 +103,21 @@ public class JobAutoConfiguration {
         /**
          * 任务最大重试次数。
          */
-        private Integer retryLimit;
+        private int retryLimit = 3;
         /**
          * 重试队列的延迟，单位，毫秒。
+         * <p>注意：这个配置项只做参考，并不能实际生效，因为{@link org.springframework.scheduling.annotation.Scheduled}以PlaceHolder的方式直接访问了配置。</p>
          *
          * @see JobScheduler#processRetry()
          */
-        private Integer retryDelay;
+        private int retryDelay = 10000;
         /**
          * 队列每次处理完毕后的延迟，单位，毫秒。
+         * <p>注意：这个配置项只做参考，并不能实际生效，因为{@link org.springframework.scheduling.annotation.Scheduled}以PlaceHolder的方式直接访问了配置。</p>
          *
          * @see JobScheduler#process()
          */
-        private Integer delay;
+        private int delay = 1;
         private FileSystem fileSystem = new FileSystem();
 
         public Integer getRetryDelay() {
@@ -154,7 +156,7 @@ public class JobAutoConfiguration {
             /**
              * 任务队列持久化在FileSystem中的路径
              */
-            private String workingRoot;
+            private String workingRoot = "JOB_QUEUE";
 
             public String getWorkingRoot() {
                 return workingRoot;

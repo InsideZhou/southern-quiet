@@ -49,6 +49,7 @@ subprojects {
         }
 
         optional "org.springframework.boot:spring-boot-configuration-processor"
+        optional "org.springframework.boot:spring-boot-devtools"
 
         testCompile "org.springframework.boot:spring-boot-starter-test"
     }
