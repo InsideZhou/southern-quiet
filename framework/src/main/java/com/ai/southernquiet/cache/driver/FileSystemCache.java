@@ -9,10 +9,7 @@ import org.springframework.util.StreamUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -28,6 +25,11 @@ public class FileSystemCache implements Cache {
         this.nameSeparator = properties.getNameSeparator();
 
         this.fileSystem = fileSystem;
+    }
+
+    @Override
+    public void put(String key, Object value) {
+        put(key, value, 0);
     }
 
     @Override
@@ -103,34 +105,6 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
-    public Map<String, Object> getAlive() {
-        long now = System.currentTimeMillis();
-        Stream<? extends PathMeta> stream = getMetaStream();
-
-        return stream.filter(meta -> {
-            String filename = meta.getName();
-            long creationTime = meta.getCreationTime().toEpochMilli();
-            int ttl = getTTLFromFileName(filename);
-
-            return creationTime + ttl > now;
-        }).collect(collector);
-    }
-
-    @Override
-    public Map<String, Object> getExpired() {
-        long now = System.currentTimeMillis();
-        Stream<? extends PathMeta> stream = getMetaStream();
-
-        return stream.filter(meta -> {
-            String filename = meta.getName();
-            long creationTime = meta.getCreationTime().toEpochMilli();
-            int ttl = getTTLFromFileName(filename);
-
-            return creationTime + ttl <= now;
-        }).collect(collector);
-    }
-
-    @Override
     @SuppressWarnings("all")
     public void remove(String... keys) {
         Stream.of(keys).forEach(key -> {
@@ -145,18 +119,8 @@ public class FileSystemCache implements Cache {
         });
     }
 
-    @Override
-    public Map<String, Object> find(String search) {
-        try {
-            return fileSystem.files(workingRoot, search).collect(collector);
-        }
-        catch (PathNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     protected String getFileName(String key, int ttl) {
-        return key + nameSeparator + ttl;
+        return key + nameSeparator + (ttl < 0 ? 0 : ttl);
     }
 
     private String getKeyPrefix(String key) {
@@ -196,17 +160,4 @@ public class FileSystemCache implements Cache {
             throw new RuntimeException(e);
         }
     }
-
-    private Collector<PathMeta, ?, Map<String, Object>> collector =
-        Collectors.toMap(
-            meta -> getKeyFromFileName(meta.getName()),
-            meta -> {
-                try (InputStream inputStream = fileSystem.openReadStream(meta.getPath())) {
-                    return deserialize(inputStream);
-                }
-                catch (InvalidFileException | IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        );
 }

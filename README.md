@@ -12,10 +12,6 @@
 1. Session 会话
     > 基于FileSystem持久化的Spring Session。
 
-1. Cache 缓存
-    - 默认驱动基于FileSystem，所以会有缓存KEY规范的问题需要考虑。
-    - 默认驱动未处理缓存KEY。
-
 1. Logging 日志
     - 由于Logger初始化时间的原因，基于FileSystem的FileAppender在FileSystem未能初始化时，默认不输出日志。
     
@@ -38,8 +34,8 @@
 
 
 ### 需要注意的局限
-1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Sprint Boot的[约定]。
-(http://docs.spring.io/spring-boot/docs/1.5.3.RELEASE/reference/htmlsingle/#boot-features-logging)
+1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Sprint Boot的
+[约定](http://docs.spring.io/spring-boot/docs/1.5.3.RELEASE/reference/htmlsingle/#boot-features-logging)。
 
 1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。
 
