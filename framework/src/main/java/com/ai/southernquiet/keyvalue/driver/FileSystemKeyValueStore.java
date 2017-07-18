@@ -1,8 +1,8 @@
-package com.ai.southernquiet.cache.driver;
+package com.ai.southernquiet.keyvalue.driver;
 
 import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.cache.Cache;
 import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
 
@@ -13,14 +13,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * 基于 {@link FileSystem} 的缓存驱动.
+ * 基于 {@link FileSystem} 的键值对驱动.
  */
-public class FileSystemCache implements Cache {
+public class FileSystemKeyValueStore implements KeyValueStore {
     private FileSystem fileSystem;
-    private String workingRoot; //Cache在FileSystem中的路径
+    private String workingRoot; //Store在FileSystem中的路径
     private String nameSeparator; //文件名中不同部分的分隔
 
-    public FileSystemCache(FrameworkAutoConfiguration.FileSystemCacheProperties properties, FileSystem fileSystem) {
+    public FileSystemKeyValueStore(FrameworkAutoConfiguration.FileSystemKeyValueStoreProperties properties, FileSystem fileSystem) {
         this.workingRoot = properties.getWorkingRoot();
         this.nameSeparator = properties.getNameSeparator();
 
@@ -84,6 +84,11 @@ public class FileSystemCache implements Cache {
     }
 
     @Override
+    public void touch(String key) {
+        touch(key, null);
+    }
+
+    @Override
     public void touch(String key, Integer ttl) {
         try {
             Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, getKeyPrefix(key)).findFirst();
@@ -96,8 +101,9 @@ public class FileSystemCache implements Cache {
                     fileSystem.move(meta.getPath(), getFilePath(key, ttl));
                 }
             }
-
-            throw new InvalidFileException("找不到cache key：" + key);
+            else {
+                throw new InvalidFileException("找不到key：" + key);
+            }
         }
         catch (FileSystemException e) {
             throw new RuntimeException(e);
