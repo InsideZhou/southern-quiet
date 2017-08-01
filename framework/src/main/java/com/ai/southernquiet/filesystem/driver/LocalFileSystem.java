@@ -86,11 +86,6 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public String read(String path) throws InvalidFileException {
-        return read(path, StandardCharsets.UTF_8);
-    }
-
-    @Override
     public String read(String path, Charset charset) throws InvalidFileException {
         Path workingPath = getWorkingPath(path);
 
@@ -128,18 +123,8 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public void move(String source, String destination) throws FileSystemException {
-        move(source, destination, false);
-    }
-
-    @Override
     public void move(String source, String destination, boolean replaceExisting) throws FileSystemException {
         moveOrCopy(true, source, destination, replaceExisting);
-    }
-
-    @Override
-    public void copy(String source, String destination) throws FileSystemException {
-        copy(source, destination, false);
     }
 
     @Override
@@ -225,21 +210,6 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public Stream<? extends PathMeta> directories(String path) throws PathNotFoundException {
-        return directories(path, "", false, -1, -1, null);
-    }
-
-    @Override
-    public Stream<? extends PathMeta> directories(String path, String search) throws PathNotFoundException {
-        return directories(path, search, false, -1, -1, null);
-    }
-
-    @Override
-    public Stream<? extends PathMeta> directories(String path, String search, boolean recursive) throws PathNotFoundException {
-        return directories(path, search, recursive, -1, -1, null);
-    }
-
-    @Override
     public Stream<? extends PathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
         Stream<PathMeta> stream = pathStream(path, search, recursive, sort).filter(m -> m.isDirectory());
         if (offset > 0) {
@@ -251,21 +221,6 @@ public class LocalFileSystem implements FileSystem {
         }
 
         return stream;
-    }
-
-    @Override
-    public Stream<? extends PathMeta> files(String path) throws PathNotFoundException {
-        return files(path, "", false, -1, -1, null);
-    }
-
-    @Override
-    public Stream<? extends PathMeta> files(String path, String search) throws PathNotFoundException {
-        return files(path, search, false, -1, -1, null);
-    }
-
-    @Override
-    public Stream<? extends PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
-        return files(path, search, recursive, -1, -1, null);
     }
 
     @Override

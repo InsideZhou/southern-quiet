@@ -5,6 +5,7 @@ import org.springframework.util.StringUtils;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.Stream;
@@ -133,7 +134,9 @@ public interface FileSystem {
      * @param path 文件路径
      * @throws InvalidFileException 无效文件
      */
-    String read(String path) throws InvalidFileException;
+    default String read(String path) throws InvalidFileException {
+        return read(path, StandardCharsets.UTF_8);
+    }
 
     /**
      * @param path    文件路径
@@ -167,7 +170,9 @@ public interface FileSystem {
      *
      * @see #move(String, String, boolean)
      */
-    void move(String source, String destination) throws FileSystemException;
+    default void move(String source, String destination) throws FileSystemException {
+        move(source, destination, false);
+    }
 
     /**
      * 移动文件或目录，{@link PathMeta}保持不变。
@@ -185,7 +190,9 @@ public interface FileSystem {
      *
      * @see #copy(String, String, boolean)
      */
-    void copy(String source, String destination) throws FileSystemException;
+    default void copy(String source, String destination) throws FileSystemException {
+        copy(source, destination, false);
+    }
 
     /**
      * 复制文件或目录，{@link PathMeta}保持不变。
@@ -239,21 +246,27 @@ public interface FileSystem {
      *
      * @see #directories(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> directories(String path) throws PathNotFoundException;
+    default Stream<? extends PathMeta> directories(String path) throws PathNotFoundException {
+        return directories(path, "", false);
+    }
 
     /**
      * 获取目录下子目录，非递归。
      *
      * @see #directories(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> directories(String path, String search) throws PathNotFoundException;
+    default Stream<? extends PathMeta> directories(String path, String search) throws PathNotFoundException {
+        return directories(path, search, false);
+    }
 
     /**
      * 获取目录下子目录。
      *
      * @see #directories(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> directories(String path, String search, boolean recursive) throws PathNotFoundException;
+    default Stream<? extends PathMeta> directories(String path, String search, boolean recursive) throws PathNotFoundException {
+        return directories(path, search, recursive, -1, -1, null);
+    }
 
     /**
      * 获取目录下文件。
@@ -273,21 +286,27 @@ public interface FileSystem {
      *
      * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> files(String path) throws PathNotFoundException;
+    default Stream<? extends PathMeta> files(String path) throws PathNotFoundException {
+        return files(path, "", false);
+    }
 
     /**
      * 获取目录下文件，非递归。
      *
      * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> files(String path, String search) throws PathNotFoundException;
+    default Stream<? extends PathMeta> files(String path, String search) throws PathNotFoundException {
+        return files(path, search, false);
+    }
 
     /**
      * 获取目录下文件。
      *
      * @see #files(String, String, boolean, int, int, PathMetaSort)
      */
-    Stream<? extends PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException;
+    default Stream<? extends PathMeta> files(String path, String search, boolean recursive) throws PathNotFoundException {
+        return files(path, search, recursive, -1, -1, null);
+    }
 
     /**
      * 获取目录下文件。

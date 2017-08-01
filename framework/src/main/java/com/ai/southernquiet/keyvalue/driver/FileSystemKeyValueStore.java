@@ -28,11 +28,6 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     }
 
     @Override
-    public void put(String key, Object value) {
-        put(key, value, 0);
-    }
-
-    @Override
     public void put(String key, Object value, int ttl) {
         try {
             fileSystem.put(getFilePath(key, ttl), serialize(value));
@@ -81,11 +76,6 @@ public class FileSystemKeyValueStore implements KeyValueStore {
         }
 
         return null;
-    }
-
-    @Override
-    public void touch(String key) {
-        touch(key, null);
     }
 
     @Override

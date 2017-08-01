@@ -10,7 +10,9 @@ public interface KeyValueStore {
      *
      * @see #put(String, Object, int)
      */
-    void put(String key, Object value);
+    default void put(String key, Object value) {
+        put(key, value, 0);
+    }
 
     /**
      * 设置带ttl控制的键值对。
@@ -32,7 +34,9 @@ public interface KeyValueStore {
     /**
      * 刷新键值对创建时间。
      */
-    void touch(String key);
+    default void touch(String key) {
+        touch(key, null);
+    }
 
     /**
      * 刷新键值对创建时间，以及更改ttl。注意，不保证这是一个原子操作。
