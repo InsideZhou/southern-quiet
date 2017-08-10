@@ -38,7 +38,7 @@ public class JobScheduler {
         queue.remove(job);
     }
 
-    @Scheduled
+    @Scheduled(cron = "${framework.job.cron:* * * * * *}")
     public void process() {
         Job job = queue.dequeue();
         if (null == job) return;

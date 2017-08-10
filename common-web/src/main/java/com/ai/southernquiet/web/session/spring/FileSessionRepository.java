@@ -87,7 +87,6 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
      * @see org.springframework.session.MapSession
      */
     public static class FileSession implements ExpiringSession, Serializable {
-        @SuppressWarnings("all")
         private final static long serialVersionUID = -4029548868967931682L;
 
         private long creationTime;

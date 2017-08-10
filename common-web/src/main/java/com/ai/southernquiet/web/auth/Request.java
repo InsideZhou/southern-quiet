@@ -1,6 +1,7 @@
 package com.ai.southernquiet.web.auth;
 
 import org.springframework.util.StringUtils;
+import org.springframework.web.util.WebUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -14,14 +15,22 @@ public class Request extends HttpServletRequestWrapper {
     static String KEY_REMEMBER_ME_COOKIE; //记住我的cookie名称
     static int REMEMBER_ME_TIMEOUT; //记住我的cookie有效时间，单位：秒
 
-    private AuthService authService;
-    private HttpServletResponse response;
+    @SuppressWarnings("unchecked")
+    public static <T extends Request> T build(HttpServletRequest request, HttpServletResponse response, AuthService authService, Class<T> cls) {
+        T req = WebUtils.getNativeRequest(request, cls);
+        if (null != req) return req;
 
-    public Request(HttpServletRequest request, HttpServletResponse response, AuthService authService) {
+        return (T) new Request(request, response, authService);
+    }
+
+    private HttpServletResponse response;
+    private AuthService authService;
+
+    protected Request(HttpServletRequest request, HttpServletResponse response, AuthService authService) {
         super(request);
 
-        this.response = response;
         this.authService = authService;
+        this.response = response;
     }
 
     @Override
@@ -31,10 +40,10 @@ public class Request extends HttpServletRequestWrapper {
 
     @Override
     public String getRemoteUser() {
-        User user = getUser();
+        User<?> user = getUser();
         if (null == user) return null;
 
-        return user.getUsername();
+        return user.getAccount().getName();
     }
 
     @Override
@@ -44,10 +53,10 @@ public class Request extends HttpServletRequestWrapper {
 
     @Override
     public Principal getUserPrincipal() {
-        User user = getUser();
+        User<?> user = getUser();
         if (null == user) return null;
 
-        return user::getUsername;
+        return user.getAccount();
     }
 
     @Override
@@ -59,7 +68,7 @@ public class Request extends HttpServletRequestWrapper {
     @Override
     public void login(String username, String password) throws ServletException {
         try {
-            login(username, password, false);
+            login(username, password, true);
         }
         catch (AuthException e) {
             throw new ServletException(e);
@@ -74,7 +83,8 @@ public class Request extends HttpServletRequestWrapper {
         writeRememberMeCookie("");
     }
 
-    public User getUser() {
+    @SuppressWarnings("unchecked")
+    public User<? extends Account> getUser() {
         HttpSession session = getSession();
         Object u = session.getAttribute(KEY_USER);
 
@@ -82,11 +92,11 @@ public class Request extends HttpServletRequestWrapper {
             return null;
         }
 
-        return (User) u;
+        return (User<? extends Account>) u;
     }
 
     public Set<String> getUserRoles() {
-        User user = getUser();
+        User<?> user = getUser();
         if (null == user) return new HashSet<>();
 
         return user.getRoles();
@@ -98,7 +108,7 @@ public class Request extends HttpServletRequestWrapper {
         writeRememberMeCookie(user.getRememberToken());
     }
 
-    public void writeUser(User user) {
+    protected void writeUser(User<?> user) {
         HttpSession session = getSession();
         session.setAttribute(KEY_USER, user);
     }

@@ -27,16 +27,16 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         HandlerMethod handlerMethod = (HandlerMethod) handler;
-        Request req = (Request) request;
-
-        if (null == request.getRemoteUser()) {
-            rebuildUserFromRememberCookie(req);
-        }
-
         Auth beanAuth = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), Auth.class);
         Auth methodAuth = handlerMethod.getMethodAnnotation(Auth.class);
 
         if (null == beanAuth && null == methodAuth) return true;
+
+        Request req = Request.build(request, response, authService, getRequestClass());
+
+        if (null == request.getRemoteUser()) {
+            rebuildUserFromRememberCookie(req);
+        }
 
         Set<String> authNames = new HashSet<>();
         Set<String> whiteRoles = new HashSet<>();
@@ -96,6 +96,10 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
     protected boolean onAuthorizationFail(Request request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "");
         return false;
+    }
+
+    protected Class<? extends Request> getRequestClass() {
+        return Request.class;
     }
 
     private void collectAuthData(Set<String> authNames, Set<String> whiteRoles, Set<String> blackRoles, Auth auth) {

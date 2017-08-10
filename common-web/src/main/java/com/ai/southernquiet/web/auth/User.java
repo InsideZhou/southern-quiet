@@ -1,34 +1,44 @@
 package com.ai.southernquiet.web.auth;
 
+import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class User implements Serializable {
+/**
+ * 会话用户
+ *
+ * @param <T> 关联的账号。
+ */
+public class User<T extends Account> implements Serializable {
     private final static long serialVersionUID = -2874340118038495940L;
 
-    public static int AuthenticationTTL = 86400;
+    static int AuthenticationTTL;
 
-    public User(String username) {
-        setUsername(username);
+    public User(T account) {
+        this(account, null);
     }
 
-    public User(String username, String rememberToken) {
-        setUsername(username);
+    public User(T account, String rememberToken) {
+        setAccount(account);
         setRememberToken(rememberToken);
     }
 
-    private String username;
+    private T account;
     private Set<String> roles = new HashSet<>();
     private long authenticationTime;
     private String rememberToken;
 
-    public String getUsername() {
-        return username;
+    public T getAccount() {
+        return account;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setAccount(T account) {
+        this.account = account;
     }
 
     public Set<String> getRoles() {
@@ -65,5 +75,19 @@ public class User implements Serializable {
 
     public boolean isAuthenticated() {
         return System.currentTimeMillis() < getAuthenticationTime() + AuthenticationTTL; //距离上次验证时间超过限制则视为验证已过期。
+    }
+
+    public static class HandlerMethodArgumentResolver implements org.springframework.web.method.support.HandlerMethodArgumentResolver {
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return User.class.isAssignableFrom(parameter.getParameterType());
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public User<?> resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+            Request request = webRequest.getNativeRequest(Request.class);
+            return null == request ? null : request.getUser();
+        }
     }
 }

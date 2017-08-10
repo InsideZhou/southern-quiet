@@ -14,13 +14,13 @@ public interface AuthService {
      * @throws IncorrectPasswordException 密码不正确
      * @throws AuthException              验证失败
      */
-    User authenticate(String username, String password, boolean remember) throws AuthException;
+    User<? extends Account> authenticate(String username, String password, boolean remember) throws AuthException;
 
     /**
      * 通过remember token的方式获取用户。
      * <p>此时{@link User#isAuthenticated()}应为false。</p>
      */
-    User getUserByRememberToken(String token);
+    User<? extends Account> getUserByRememberToken(String token);
 
     /**
      * 检查用户是否具备所有指定的权限。

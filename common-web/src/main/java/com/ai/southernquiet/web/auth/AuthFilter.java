@@ -43,10 +43,16 @@ public class AuthFilter extends OncePerRequestFilter {
         Request.REMEMBER_ME_TIMEOUT = rememberMeProperties.getTimeout();
         Request.KEY_REMEMBER_ME_COOKIE = rememberMeProperties.getCookie();
         Request.KEY_USER = webProperties.getUser();
+
+        User.AuthenticationTTL = webProperties.getAuthenticationTTL();
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        filterChain.doFilter(new Request(request, response, authService), response);
+        filterChain.doFilter(Request.build(request, response, authService, getRequestClass()), response);
+    }
+
+    protected Class<? extends Request> getRequestClass() {
+        return Request.class;
     }
 }

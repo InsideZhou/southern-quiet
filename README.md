@@ -17,12 +17,13 @@
     
 1. Auth 身份及权限验证（可选）
     - 提供Auth注解来验证身份及权限，使用在Controller及Action上。  
-    - 要打开这个特性，需要提供AuthService类型的Bean，并向SpringMVC注册AuthInterceptor。
+    - 要打开这个特性，需要提供AuthService类型的Bean。
     
 1. KeyValueStore 键值对存储
-    - 默认驱动基于FileSystem，所以会有KEY规范的问题需要考虑。
+    - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
     
 1. JobQueue 任务队列
+    - 默认驱动基于FileSystem，会有KEY规范（Job.getId）的问题需要考虑。
     - 继承Job完成任务类。
     - 获取JobScheduler Bean，将Job添加至调度器。
     - 要启用这个特性，添加EnableScheduling注解。

@@ -85,6 +85,21 @@ public class CommonWebAutoConfiguration {
          */
         private int filterOrder = 0;
 
+        /**
+         * 用户身份验证的过期时间，单位：秒。
+         * <p>虽然Session长时间保持活跃，但一定时间过后用户身份会被视为未验证的。</p>
+         * <p>从remember_me中重建用户时，该用户被视为未验证的。</p>
+         */
+        private int authenticationTTL = 86400;
+
+        public int getAuthenticationTTL() {
+            return authenticationTTL;
+        }
+
+        public void setAuthenticationTTL(int authenticationTTL) {
+            this.authenticationTTL = authenticationTTL;
+        }
+
         public int getFilterOrder() {
             return filterOrder;
         }

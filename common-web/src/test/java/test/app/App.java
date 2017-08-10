@@ -35,13 +35,17 @@ public class App extends AbstractWebApp {
         public AuthService authService() {
             return new AuthService() {
                 private Logger logger = LoggerFactory.getLogger(App.class);
-                private User user = new User("superman", "2636d11c-7e52-4d12-80b5-893116c20cce");
+
+                private User<Account> user = new User<>(
+                    () -> "superman",
+                    "2636d11c-7e52-4d12-80b5-893116c20cce"
+                );
 
                 @Override
-                public User authenticate(String username, String password, boolean remember) throws AuthException {
+                public User<Account> authenticate(String username, String password, boolean remember) throws AuthException {
                     user.setAuthenticationTime(System.currentTimeMillis());
 
-                    if (!user.getUsername().equals(username)) throw new UserNotFoundException(username);
+                    if (!user.getAccount().getName().equals(username)) throw new UserNotFoundException(username);
                     String hashed = BCrypt.hashpw("givemefive", BCrypt.gensalt());
                     logger.debug(hashed);
                     if (!BCrypt.checkpw(password, hashed)) {
@@ -52,7 +56,7 @@ public class App extends AbstractWebApp {
                 }
 
                 @Override
-                public User getUserByRememberToken(String token) {
+                public User<Account> getUserByRememberToken(String token) {
                     if (!token.equals(user.getRememberToken())) return null;
 
                     return user;
