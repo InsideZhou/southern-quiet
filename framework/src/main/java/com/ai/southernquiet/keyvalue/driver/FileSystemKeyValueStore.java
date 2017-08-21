@@ -20,7 +20,7 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     private String workingRoot; //Store在FileSystem中的路径
     private String nameSeparator; //文件名中不同部分的分隔
 
-    public FileSystemKeyValueStore(FrameworkAutoConfiguration.FileSystemKeyValueStoreProperties properties, FileSystem fileSystem) {
+    public FileSystemKeyValueStore(FrameworkAutoConfiguration.KeyValueStoreProperties.FileSystem properties, FileSystem fileSystem) {
         this.workingRoot = properties.getWorkingRoot();
         this.nameSeparator = properties.getNameSeparator();
 

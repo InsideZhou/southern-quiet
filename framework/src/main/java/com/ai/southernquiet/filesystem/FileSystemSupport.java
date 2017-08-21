@@ -4,7 +4,7 @@ import org.springframework.util.Assert;
 
 import java.util.regex.Pattern;
 
-public abstract class FileSystemHelper {
+public abstract class FileSystemSupport {
     /**
      * 默认的文件名格式，可以被外部配置覆盖。
      *
@@ -17,7 +17,7 @@ public abstract class FileSystemHelper {
     }
 
     public static void setNamePattern(Pattern namePattern) {
-        FileSystemHelper.namePattern = namePattern;
+        FileSystemSupport.namePattern = namePattern;
     }
 
     public static boolean isFileNameValid(String filename) {

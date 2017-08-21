@@ -1,11 +1,12 @@
 package com.ai.southernquiet;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.filesystem.FileSystemHelper;
+import com.ai.southernquiet.filesystem.FileSystemSupport;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,9 +19,10 @@ import java.util.regex.Pattern;
 @Configuration
 public class FrameworkAutoConfiguration {
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = "framework.key-value")
     @ConditionalOnMissingBean(KeyValueStore.class)
-    public FileSystemKeyValueStore keyValueStore(FileSystemKeyValueStoreProperties properties, FileSystem fileSystem) {
-        return new FileSystemKeyValueStore(properties, fileSystem);
+    public FileSystemKeyValueStore keyValueStore(KeyValueStoreProperties properties, FileSystem fileSystem) {
+        return new FileSystemKeyValueStore(properties.getFileSystem(), fileSystem);
     }
 
     @Bean
@@ -45,7 +47,7 @@ public class FrameworkAutoConfiguration {
             this.nameRegex = nameRegex;
 
             if (StringUtils.hasText(nameRegex)) {
-                FileSystemHelper.setNamePattern(Pattern.compile(nameRegex));
+                FileSystemSupport.setNamePattern(Pattern.compile(nameRegex));
             }
         }
     }
@@ -68,31 +70,56 @@ public class FrameworkAutoConfiguration {
     }
 
     @Component
-    @ConfigurationProperties("framework.key-value.file-system")
-    public class FileSystemKeyValueStoreProperties {
+    @ConfigurationProperties("framework.key-value")
+    public static class KeyValueStoreProperties {
         /**
-         * KeyValueStore在FileSystem中的路径
+         * 是否启用本模块
          */
-        private String workingRoot = "KEY_VALUE";
-        /**
-         * 文件名中不同部分的分隔
-         */
-        private String nameSeparator = "__";
+        private boolean enable = true;
 
-        public String getNameSeparator() {
-            return nameSeparator;
+        private FileSystem fileSystem = new FileSystem();
+
+        public boolean isEnable() {
+            return enable;
         }
 
-        public void setNameSeparator(String nameSeparator) {
-            this.nameSeparator = nameSeparator;
+        public void setEnable(boolean enable) {
+            this.enable = enable;
         }
 
-        public String getWorkingRoot() {
-            return workingRoot;
+        public FileSystem getFileSystem() {
+            return fileSystem;
         }
 
-        public void setWorkingRoot(String workingRoot) {
-            this.workingRoot = workingRoot;
+        public void setFileSystem(FileSystem fileSystem) {
+            this.fileSystem = fileSystem;
+        }
+
+        public static class FileSystem {
+            /**
+             * KeyValueStore在FileSystem中的路径
+             */
+            private String workingRoot = "KEY_VALUE";
+            /**
+             * 文件名中不同部分的分隔
+             */
+            private String nameSeparator = "__";
+
+            public String getNameSeparator() {
+                return nameSeparator;
+            }
+
+            public void setNameSeparator(String nameSeparator) {
+                this.nameSeparator = nameSeparator;
+            }
+
+            public String getWorkingRoot() {
+                return workingRoot;
+            }
+
+            public void setWorkingRoot(String workingRoot) {
+                this.workingRoot = workingRoot;
+            }
         }
     }
 }

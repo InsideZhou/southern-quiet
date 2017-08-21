@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 @RestController
 @SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableScheduling
@@ -31,6 +32,7 @@ public class App extends AbstractWebApp {
 
     @Configuration
     public static class Config {
+        @SuppressWarnings("Duplicates")
         @Bean
         public AuthService authService() {
             return new AuthService() {
