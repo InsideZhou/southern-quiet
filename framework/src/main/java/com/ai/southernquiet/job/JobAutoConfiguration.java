@@ -3,7 +3,6 @@ package com.ai.southernquiet.job;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.job.driver.FileSystemJobQueue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +12,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 
 @Configuration
-@ConditionalOnProperty(value = "enable", prefix = "framework.job")
 public class JobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

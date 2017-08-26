@@ -2,8 +2,8 @@ package com.ai.southernquiet.filesystem;
 
 import com.ai.southernquiet.filesystem.driver.MongoDbFileSystem;
 import com.mongodb.gridfs.GridFS;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@SuppressWarnings("SpringJavaAutowiringInspection")
 @Configuration
-@ConditionalOnProperty(value = "enable", prefix = "framework.file-system.mongodb")
+@ConditionalOnBean({MongoOperations.class, MongoDbFactory.class, GridFsOperations.class, GridFS.class})
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -47,18 +48,6 @@ public class MongoDbFileSystemAutoConfiguration {
          * 文件大小阈值，大于该阈值的使用GridFs而不是普通Document。阈值上限是mongodb上限16m。
          */
         private Integer fileSizeThreshold = 15 * 1024 * 1024;
-        /**
-         * 是否启用本模块
-         */
-        private boolean enable = true;
-
-        public boolean isEnable() {
-            return enable;
-        }
-
-        public void setEnable(boolean enable) {
-            this.enable = enable;
-        }
 
         public Integer getFileSizeThreshold() {
             return fileSizeThreshold;

@@ -73,7 +73,7 @@ public class FrameworkAutoConfiguration {
     @ConfigurationProperties("framework.key-value")
     public static class KeyValueStoreProperties {
         /**
-         * 是否启用本模块
+         * 是否启用key-value特性
          */
         private boolean enable = true;
 

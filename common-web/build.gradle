@@ -1,13 +1,11 @@
 dependencies {
     compile project(':common-biz')
 
-    compile("org.springframework.boot:spring-boot-starter-web") {
-        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
-    }
-    compile "org.springframework.boot:spring-boot-starter-jetty"
+    compile "org.springframework.boot:spring-boot-starter-web"
     compile "org.springframework.boot:spring-boot-starter-actuator"
+    compile 'org.springframework.session:spring-session'
 
-    optional 'org.springframework.session:spring-session'
+    optional "org.springframework.boot:spring-boot-starter-jetty"
 
     testCompile project(':filesystem-spring-boot-starter-mongodb')
     testCompile project(':logging-spring-boot-starter-mongodb')

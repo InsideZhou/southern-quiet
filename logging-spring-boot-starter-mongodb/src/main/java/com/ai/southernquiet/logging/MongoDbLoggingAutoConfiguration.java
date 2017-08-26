@@ -1,8 +1,9 @@
 package com.ai.southernquiet.logging;
 
 import com.mongodb.MongoClientURI;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +14,10 @@ import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+@SuppressWarnings("SpringJavaAutowiringInspection")
 @Configuration
-@ConditionalOnProperty(value = "enable", prefix = "framework.logging.mongodb")
+@ConditionalOnBean(MongoOperations.class)
+@ConditionalOnClass({SimpleMongoDbFactory.class, MongoClientURI.class, MongoTemplate.class})
 public class MongoDbLoggingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -39,18 +42,6 @@ public class MongoDbLoggingAutoConfiguration {
          * 数据库连接uri，如果使用了这个uri，则使用独立的MongoOperation实例连接独立的数据源，忽略全局bean定义。
          */
         private String uri;
-        /**
-         * 是否启用本模块
-         */
-        private boolean enable = true;
-
-        public boolean isEnable() {
-            return enable;
-        }
-
-        public void setEnable(boolean enable) {
-            this.enable = enable;
-        }
 
         public String getUri() {
             return uri;

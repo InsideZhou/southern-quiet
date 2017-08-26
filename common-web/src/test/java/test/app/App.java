@@ -1,5 +1,6 @@
 package test.app;
 
+import com.ai.southernquiet.logging.MongoDbLoggingAutoConfiguration;
 import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.auth.*;

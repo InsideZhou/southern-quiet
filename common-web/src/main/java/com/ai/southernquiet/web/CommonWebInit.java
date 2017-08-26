@@ -15,6 +15,7 @@ import javax.servlet.ServletException;
 /**
  * 初始化web应用。
  */
+@SuppressWarnings({"unused", "WeakerAccess", "CodeBlock2Expr"})
 public abstract class CommonWebInit {
     public void onStartup(ServletContext servletContext) throws ServletException {
         setupLogAppender(servletContext);
@@ -36,7 +37,7 @@ public abstract class CommonWebInit {
                             fileAppender.setFileSystem(fileSystem);
                         }
                     }
-                    else if (SpringProxyAppender.class.isAssignableFrom(cls) && null != applicationContext) {
+                    else if (SpringProxyAppender.class.isAssignableFrom(cls)) {
                         SpringProxyAppender proxyAppender = (SpringProxyAppender) appender;
                         if (null == proxyAppender.getApplicationContext()) {
                             proxyAppender.setApplicationContext(applicationContext);
@@ -54,7 +55,7 @@ public abstract class CommonWebInit {
         return applicationContext;
     }
 
-    @Autowired(required = false)
+    @Autowired
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }

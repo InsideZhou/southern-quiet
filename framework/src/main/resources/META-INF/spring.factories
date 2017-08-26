@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.ai.southernquiet.FrameworkAutoConfiguration,\
+  com.ai.southernquiet.job.JobAutoConfiguration
