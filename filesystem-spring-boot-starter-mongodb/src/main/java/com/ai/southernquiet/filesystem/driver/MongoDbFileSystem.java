@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.gridfs.GridFsCriteria;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
 import org.springframework.data.util.CloseableIterator;
+import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -75,6 +76,8 @@ public class MongoDbFileSystem implements FileSystem {
 
     @Override
     public void put(String path, InputStream stream) throws InvalidFileException {
+        Assert.notNull(stream, InputStream.class.toString());
+
         String normalizedPath = FileSystem.normalizePath(path);
         put(stream, newPathQuery(normalizedPath), normalizedPath);
     }
@@ -154,6 +157,9 @@ public class MongoDbFileSystem implements FileSystem {
 
                     try (FileInputStream fileInputStream = new FileInputStream(tmp)) {
                         put(fileInputStream, query, normalizePath);
+                    }
+                    catch (InvalidFileException e) {
+                        throw new IOException(e);
                     }
                 }
             };
@@ -396,8 +402,9 @@ public class MongoDbFileSystem implements FileSystem {
     /**
      * 务必保证fileId、fileData其中之一不为空，读取时会依赖这个假设。
      */
-    private void put(InputStream stream, Query query, String normalizedPath) {
+    private void put(InputStream stream, Query query, String normalizedPath) throws InvalidFileException {
         MongoPathMeta pathMeta = meta(normalizedPath);
+
         FileMeta fileMeta = new FileMeta();
         if (null == pathMeta) {
             createAndGetDirectory(FileSystem.getPathParent(normalizedPath));
@@ -414,6 +421,8 @@ public class MongoDbFileSystem implements FileSystem {
                 throw new RuntimeException(e);
             }
         }
+
+        if (pathMeta.isDirectory()) throw new InvalidFileException(normalizedPath);
 
         if (fileMeta.getSize() >= 0 && fileMeta.getSize() <= fileSizeThreshold) {
             try {
@@ -578,15 +587,14 @@ public class MongoDbFileSystem implements FileSystem {
 
     @SuppressWarnings("UnusedReturnValue")
     private MongoPathMeta createAndGetDirectory(String path) {
-        String normalizedPath = FileSystem.normalizePath(path);
-
-        MongoPathMeta meta = meta(normalizedPath);
+        MongoPathMeta meta = meta(path);
         if (null != meta) {
             if (!meta.isDirectory()) throw new RuntimeException(String.format("该路径%s指向一个已经存在的文件。", path));
 
             return meta;
         }
 
+        String normalizedPath = FileSystem.normalizePath(path);
         createAndGetDirectory(FileSystem.getPathParent(normalizedPath));
         meta = newPathMeta(normalizedPath, null);
         mongoOperations.insert(meta, directoryCollection);
