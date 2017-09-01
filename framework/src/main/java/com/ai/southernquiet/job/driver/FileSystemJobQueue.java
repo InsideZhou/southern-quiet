@@ -31,7 +31,7 @@ public class FileSystemJobQueue implements JobQueue {
     public FileSystemJobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
         this.workingRoot = properties.getFileSystem().getWorkingRoot();
 
-        fileSystem.create(this.workingRoot);
+        fileSystem.createDirectory(this.workingRoot);
         this.fileSystem = fileSystem;
     }
 
