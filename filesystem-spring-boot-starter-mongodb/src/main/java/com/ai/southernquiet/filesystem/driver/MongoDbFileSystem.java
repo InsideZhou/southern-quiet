@@ -9,6 +9,7 @@ import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -22,10 +23,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -71,31 +69,14 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     @Override
-    public void create(String path) {
-        for (String current : generateDirectories(FileSystem.normalizePath(path))) {
-            if (!mongoOperations.exists(newPathQuery(current), directoryCollection)) {
-                MongoPathMeta meta = newPathMeta(current, null);
-                meta.setDirectory(true);
-
-                mongoOperations.insert(meta, directoryCollection);
-            }
-        }
+    public void createDirectory(String path) {
+        createAndGetDirectory(path);
     }
 
     @Override
     public void put(String path, InputStream stream) throws InvalidFileException {
         String normalizedPath = FileSystem.normalizePath(path);
         put(stream, newPathQuery(normalizedPath), normalizedPath);
-    }
-
-    @Override
-    public void put(String path, CharSequence txt) throws InvalidFileException {
-        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(txt.toString().getBytes(StandardCharsets.UTF_8))) {
-            put(path, byteArrayInputStream);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -203,9 +184,10 @@ public class MongoDbFileSystem implements FileSystem {
                 copyDirectoryToPath(normalizedSrc, normalizedDest, replaceExisting);
             }
             else {
-                create(normalizedDest);
+                createDirectory(normalizedDest);
 
-                destFileMeta = new FileMeta(sourceFileMeta);
+                destFileMeta = new FileMeta();
+                BeanUtils.copyProperties(sourceFileMeta, destFileMeta);
                 destFileMeta.setParent(normalizedDest);
 
                 ObjectId fileId = gridFsOperations.store(
@@ -224,7 +206,8 @@ public class MongoDbFileSystem implements FileSystem {
                     destFileMeta.getPath()
                 );
 
-                FileMeta newFile = new FileMeta(sourceFileMeta);
+                FileMeta newFile = new FileMeta();
+                BeanUtils.copyProperties(sourceFileMeta, newFile);
                 newFile.setFileId(fileId);
                 newFile.setParent(destFileMeta.getParent());
 
@@ -286,7 +269,7 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     @Override
-    public PathMeta meta(String path) {
+    public MongoPathMeta meta(String path) {
         String normalizePath = FileSystem.normalizePath(path);
         MongoPathMeta pathMeta = queryFileMeta(normalizePath);
 
@@ -348,7 +331,7 @@ public class MongoDbFileSystem implements FileSystem {
             return iteratorToStream(mongoOperations.stream(query.addCriteria(criteria), FileMeta.class, fileCollection));
         }
 
-        List<String> directories = directories(root, "", true).map(m -> m.getPath()).collect(Collectors.toList());
+        List<String> directories = directories(root, "", true).map(PathMeta::getPath).collect(Collectors.toList());
         directories.add(root.getPath());
         query = query.addCriteria(Criteria.where("parent").in(directories));
 
@@ -360,27 +343,16 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     private MongoPathMeta newPathMeta(String normalizedPath, InputStream stream) {
+        PathMeta pathMeta;
+        try {
+            pathMeta = FileSystem.newPathMeta(normalizedPath, stream);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         MongoPathMeta meta = new MongoPathMeta();
-        Instant now = Instant.now();
-
-        meta.setParent(FileSystem.getPathParent(normalizedPath));
-        meta.setName(FileSystem.getPathName(normalizedPath));
-        meta.setDirectory(false);
-        meta.setCreationTime(now);
-        meta.setLastAccessTime(now);
-        meta.setLastModifiedTime(now);
-
-        if (null == stream) {
-            meta.setSize(-1);
-        }
-        else {
-            try {
-                meta.setSize(stream.available());
-            }
-            catch (IOException e) {
-                meta.setSize(-1);
-            }
-        }
+        BeanUtils.copyProperties(pathMeta, meta);
 
         return meta;
     }
@@ -405,24 +377,6 @@ public class MongoDbFileSystem implements FileSystem {
         return mongoOperations.findOne(newPathQuery(normalizedPath), MongoPathMeta.class, directoryCollection);
     }
 
-    private ObjectId replaceGridFsFile(InputStream stream, String normalizedPath) {
-        gridFsOperations.delete(newGridFsQuery(normalizedPath));
-        return gridFsOperations.store(stream, normalizedPath);
-    }
-
-    private List<String> generateDirectories(String normalizedPath) {
-        List<String> result = new ArrayList<>();
-
-        do {
-            result.add(normalizedPath);
-            normalizedPath = FileSystem.getPathParent(normalizedPath);
-        }
-        while (!"".equals(normalizedPath));
-
-        Collections.reverse(result);
-        return result;
-    }
-
     private CloseableIterator<FileMeta> getFileMetasInDirectory(String normalizedPath) {
         return mongoOperations.stream(
             Query.query(Criteria.where("parent").is(normalizedPath)),
@@ -443,10 +397,23 @@ public class MongoDbFileSystem implements FileSystem {
      * 务必保证fileId、fileData其中之一不为空，读取时会依赖这个假设。
      */
     private void put(InputStream stream, Query query, String normalizedPath) {
-        MongoPathMeta pathMeta = newPathMeta(normalizedPath, stream);
-        create(pathMeta.getParent());
-
-        FileMeta fileMeta = new FileMeta(pathMeta);
+        MongoPathMeta pathMeta = meta(normalizedPath);
+        FileMeta fileMeta = new FileMeta();
+        if (null == pathMeta) {
+            createAndGetDirectory(FileSystem.getPathParent(normalizedPath));
+            pathMeta = newPathMeta(normalizedPath, stream);
+            BeanUtils.copyProperties(pathMeta, fileMeta);
+        }
+        else {
+            BeanUtils.copyProperties(pathMeta, fileMeta);
+            fileMeta.setLastModifiedTime(Instant.now());
+            try {
+                fileMeta.setSize(stream.available());
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         if (fileMeta.getSize() >= 0 && fileMeta.getSize() <= fileSizeThreshold) {
             try {
@@ -457,23 +424,25 @@ public class MongoDbFileSystem implements FileSystem {
             }
         }
         else {
-            fileMeta.setFileId(gridFsOperations.store(stream, normalizedPath));
+            ObjectId objectId = gridFsOperations.store(stream, normalizedPath);
+            fileMeta.setFileId(objectId);
+            gridFsOperations.delete(newGridFsQuery(normalizedPath).addCriteria(GridFsCriteria.where("_id").ne(objectId)));
         }
 
         mongoOperations.upsert(query, Update.fromDocument(new Document(fileMeta.toMap())), FileMeta.class, fileCollection);
-        gridFsOperations.delete(newGridFsQuery(normalizedPath));
     }
 
     private void copyDirectoryToPath(String normalizedSrc, String normalizedDest, boolean replaceExisting) {
         if (!mongoOperations.exists(newPathQuery(normalizedDest), directoryCollection)) {
-            create(normalizedDest);
+            createDirectory(normalizedDest);
         }
 
         CloseableIterator<FileMeta> iterator = getFileMetasInDirectory(normalizedSrc);
 
         if (replaceExisting) {
             iterator.forEachRemaining(meta -> {
-                FileMeta destFileMeta = new FileMeta(meta);
+                FileMeta destFileMeta = new FileMeta();
+                BeanUtils.copyProperties(meta, destFileMeta);
                 destFileMeta.setParent(normalizedDest);
 
                 ObjectId fileId = gridFsOperations.store(
@@ -500,7 +469,8 @@ public class MongoDbFileSystem implements FileSystem {
         }
         else {
             iterator.forEachRemaining(meta -> {
-                FileMeta destFileMeta = new FileMeta(meta);
+                FileMeta destFileMeta = new FileMeta();
+                BeanUtils.copyProperties(meta, destFileMeta);
                 destFileMeta.setParent(normalizedDest);
 
                 if (mongoOperations.exists(newPathQuery(destFileMeta.getPath()), fileCollection)) return;
@@ -604,5 +574,23 @@ public class MongoDbFileSystem implements FileSystem {
             default:
                 throw new RuntimeException();
         }
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    private MongoPathMeta createAndGetDirectory(String path) {
+        String normalizedPath = FileSystem.normalizePath(path);
+
+        MongoPathMeta meta = meta(normalizedPath);
+        if (null != meta) {
+            if (!meta.isDirectory()) throw new RuntimeException(String.format("该路径%s指向一个已经存在的文件。", path));
+
+            return meta;
+        }
+
+        createAndGetDirectory(FileSystem.getPathParent(normalizedPath));
+        meta = newPathMeta(normalizedPath, null);
+        mongoOperations.insert(meta, directoryCollection);
+
+        return meta;
     }
 }

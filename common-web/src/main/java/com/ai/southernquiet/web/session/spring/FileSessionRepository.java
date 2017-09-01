@@ -29,7 +29,7 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
         this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 
-        fileSystem.create(this.workingRoot);
+        fileSystem.createDirectory(this.workingRoot);
     }
 
     @Override

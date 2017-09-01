@@ -2,10 +2,13 @@ package com.ai.southernquiet.filesystem;
 
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.Stream;
@@ -13,6 +16,7 @@ import java.util.stream.Stream;
 /**
  * 文件系统。
  */
+@SuppressWarnings({"unused", "SameParameterValue"})
 public interface FileSystem {
     char PATH_SEPARATOR = '/';
     String PATH_SEPARATOR_STRING = String.valueOf(PATH_SEPARATOR);
@@ -41,9 +45,9 @@ public interface FileSystem {
 
         String[] items = normalizedPath.split("/");
 
-        return PATH_SEPARATOR_STRING + Arrays.stream(items).skip(1).limit(items.length - 2).reduce((prev, current) -> {
-            return prev + PATH_SEPARATOR_STRING + current;
-        }).orElse("");
+        return PATH_SEPARATOR_STRING + Arrays.stream(items).skip(1).limit(items.length - 2).reduce((prev, current) ->
+            prev + PATH_SEPARATOR_STRING + current
+        ).orElse("");
     }
 
     /**
@@ -58,6 +62,35 @@ public interface FileSystem {
 
         String[] items = normalizedPath.split("/");
         return items[items.length - 1];
+    }
+
+    /**
+     * 生成路径元信息。
+     *
+     * @param normalizedPath 已规格化的路径
+     * @param stream         输入流
+     * @return 路径元信息
+     * @throws IOException 读取流失败时
+     */
+    static PathMeta newPathMeta(String normalizedPath, InputStream stream) throws IOException {
+        PathMeta meta = new PathMeta();
+        Instant now = Instant.now();
+
+        meta.setParent(FileSystem.getPathParent(normalizedPath));
+        meta.setName(FileSystem.getPathName(normalizedPath));
+        meta.setCreationTime(now);
+        meta.setLastAccessTime(now);
+        meta.setLastModifiedTime(now);
+
+        if (null == stream) {
+            meta.setDirectory(true);
+        }
+        else {
+            meta.setDirectory(false);
+            meta.setSize(stream.available());
+        }
+
+        return meta;
     }
 
     static <T extends PathMeta> Stream<T> sort(Stream<T> stream, PathMetaSort sort) {
@@ -101,7 +134,7 @@ public interface FileSystem {
      *
      * @param path 路径
      */
-    void create(String path);
+    void createDirectory(String path);
 
     /**
      * 如果文件未存在，则创建；否则替换。
@@ -119,7 +152,14 @@ public interface FileSystem {
      * @param txt  输入文本
      * @throws InvalidFileException 无效文件
      */
-    void put(String path, CharSequence txt) throws InvalidFileException;
+    default void put(String path, CharSequence txt) throws InvalidFileException {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(txt.toString().getBytes(StandardCharsets.UTF_8))) {
+            put(path, byteArrayInputStream);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * 检查路径是否存在。

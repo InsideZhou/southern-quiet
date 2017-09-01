@@ -10,11 +10,23 @@ import java.util.Map;
  * 路径的元信息。
  */
 public class PathMeta {
+    /**
+     * 父路径。
+     */
     private String parent;
     private String name;
     private boolean isDirectory;
+    /**
+     * 以当前时间为默认值。
+     */
     private Instant creationTime;
+    /**
+     * 以当前时间为默认值。
+     */
     private Instant lastModifiedTime;
+    /**
+     * 以当前时间为默认值。
+     */
     private Instant lastAccessTime;
     private long size;
 

@@ -28,7 +28,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
         this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 
-        fileSystem.create(this.workingRoot);
+        fileSystem.createDirectory(this.workingRoot);
     }
 
     @Override

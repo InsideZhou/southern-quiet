@@ -44,8 +44,13 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public void create(String path) {
-        if (!StringUtils.hasText(path)) return;
+    public void createDirectory(String path) {
+        PathMeta meta = meta(path);
+        if (null != meta) {
+            if (!meta.isDirectory()) throw new RuntimeException(String.format("该路径%s指向一个已经存在的文件。", path));
+
+            return;
+        }
 
         try {
             Files.createDirectories(getWorkingPath(path));
@@ -211,7 +216,7 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public Stream<? extends PathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
-        Stream<PathMeta> stream = pathStream(path, search, recursive, sort).filter(m -> m.isDirectory());
+        Stream<PathMeta> stream = pathStream(path, search, recursive, sort).filter(PathMeta::isDirectory);
         if (offset > 0) {
             stream = stream.skip(offset);
         }
