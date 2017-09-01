@@ -23,7 +23,6 @@ import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
@@ -76,7 +75,7 @@ public class MongoDbFileSystem implements FileSystem {
 
     @Override
     public void put(String path, InputStream stream) throws InvalidFileException {
-        Assert.notNull(stream, InputStream.class.toString());
+        Assert.notNull(stream, "stream");
 
         String normalizedPath = FileSystem.normalizePath(path);
         put(stream, newPathQuery(normalizedPath), normalizedPath);
@@ -88,16 +87,6 @@ public class MongoDbFileSystem implements FileSystem {
 
         return mongoOperations.exists(query, fileCollection)
             || mongoOperations.exists(query, directoryCollection);
-    }
-
-    @Override
-    public String read(String path, Charset charset) throws InvalidFileException {
-        try (InputStream inputStream = openReadStream(path)) {
-            return StreamUtils.copyToString(inputStream, charset);
-        }
-        catch (IOException e) {
-            throw new InvalidFileException(path);
-        }
     }
 
     @Override

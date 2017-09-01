@@ -91,18 +91,6 @@ public class LocalFileSystem implements FileSystem {
     }
 
     @Override
-    public String read(String path, Charset charset) throws InvalidFileException {
-        Path workingPath = getWorkingPath(path);
-
-        try {
-            return new String(Files.readAllBytes(workingPath), charset);
-        }
-        catch (IOException e) {
-            throw new InvalidFileException(path, e);
-        }
-    }
-
-    @Override
     public InputStream openReadStream(String path) throws InvalidFileException {
         Path workingPath = getWorkingPath(path);
 

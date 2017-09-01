@@ -1,5 +1,6 @@
 package com.ai.southernquiet.filesystem;
 
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -183,7 +184,14 @@ public interface FileSystem {
      * @param charset 文件编码
      * @throws InvalidFileException 无效文件
      */
-    String read(String path, Charset charset) throws InvalidFileException;
+    default String read(String path, Charset charset) throws InvalidFileException {
+        try (InputStream inputStream = openReadStream(path)) {
+            return StreamUtils.copyToString(inputStream, charset);
+        }
+        catch (IOException e) {
+            throw new InvalidFileException(path);
+        }
+    }
 
     /**
      * 用流的方式读取文件内容，调用方负责流的关闭。
