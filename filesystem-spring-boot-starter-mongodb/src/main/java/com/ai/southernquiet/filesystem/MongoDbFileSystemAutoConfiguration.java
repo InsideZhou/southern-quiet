@@ -37,13 +37,9 @@ public class MongoDbFileSystemAutoConfiguration {
     @ConfigurationProperties("framework.file-system.mongodb")
     public static class Properties {
         /**
-         * 文件集合
+         * 路径集合
          */
-        private String fileCollection = "FILE";
-        /**
-         * 目录集合
-         */
-        private String directoryCollection = "DIRECTORY";
+        private String pathCollection = "PATH";
         /**
          * 文件大小阈值，大于该阈值的使用GridFs而不是普通Document。阈值上限是mongodb上限16m。
          */
@@ -57,20 +53,12 @@ public class MongoDbFileSystemAutoConfiguration {
             this.fileSizeThreshold = fileSizeThreshold;
         }
 
-        public String getDirectoryCollection() {
-            return directoryCollection;
+        public String getPathCollection() {
+            return pathCollection;
         }
 
-        public void setDirectoryCollection(String directoryCollection) {
-            this.directoryCollection = directoryCollection;
-        }
-
-        public String getFileCollection() {
-            return fileCollection;
-        }
-
-        public void setFileCollection(String fileCollection) {
-            this.fileCollection = fileCollection;
+        public void setPathCollection(String pathCollection) {
+            this.pathCollection = pathCollection;
         }
     }
 }

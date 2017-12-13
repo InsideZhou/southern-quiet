@@ -1,21 +1,67 @@
 package com.ai.southernquiet.filesystem;
 
-import org.springframework.util.StringUtils;
+import org.springframework.util.Assert;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.ai.southernquiet.filesystem.FileSystem.PATH_SEPARATOR_STRING;
+
 /**
  * 路径的元信息。
  */
-public class PathMeta {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class PathMeta implements Serializable {
+    private final static long serialVersionUID = 3373353696843442643L;
+
     /**
-     * 父路径。
+     * @param stream 输入流，当为null时，假设路径指向目录，isDirectory=true，size=-1。
+     */
+    public PathMeta(NormalizedPath normalizedPath, InputStream stream) {
+        Assert.notNull(normalizedPath, "normalizedPath");
+        this.parent = normalizedPath.getParent();
+        this.name = normalizedPath.getName();
+
+        if (null == stream) {
+            this.setDirectory(true);
+            this.setSize(-1);
+        }
+        else {
+            this.setDirectory(false);
+            try {
+                this.setSize(stream.available());
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public PathMeta(String path, InputStream stream) {
+        this(new NormalizedPath(path), stream);
+    }
+
+    public PathMeta(NormalizedPath normalizedPath) {
+        this(normalizedPath, null);
+    }
+
+    public PathMeta(String path) {
+        this(new NormalizedPath(path), null);
+    }
+
+    /**
+     * 父路径名。
      */
     private String parent;
+    /**
+     * 当前路径元素名（文件或目录名）。
+     */
     private String name;
-    private boolean isDirectory;
+    private boolean isDirectory = true;
     /**
      * 以当前时间为默认值。
      */
@@ -28,18 +74,16 @@ public class PathMeta {
      * 以当前时间为默认值。
      */
     private Instant lastAccessTime;
+    /**
+     * 如果路径指向文件的话，表示文件大小，单位：byte。
+     */
     private long size;
 
-    public PathMeta() {}
-
-    public PathMeta(PathMeta meta) {
-        setParent(meta.getParent());
-        setName(meta.getName());
-        setDirectory(meta.isDirectory());
-        setCreationTime(meta.getCreationTime());
-        setLastModifiedTime(meta.getLastModifiedTime());
-        setLastAccessTime(meta.getLastAccessTime());
-        setSize(meta.getSize());
+    /**
+     * 路径名
+     */
+    public String getPath() {
+        return getParent() + PATH_SEPARATOR_STRING + name;
     }
 
     public Map<String, Object> toMap() {
@@ -59,20 +103,7 @@ public class PathMeta {
     }
 
     public void setParent(String parent) {
-        if (StringUtils.hasText(parent)) {
-            this.parent = FileSystem.normalizePath(parent);
-        }
-        else {
-            this.parent = "";
-        }
-    }
-
-    public String getPath() {
-        if (StringUtils.hasText(parent)) {
-            return parent + FileSystem.PATH_SEPARATOR + getName();
-        }
-
-        return getName();
+        this.parent = parent;
     }
 
     public String getName() {

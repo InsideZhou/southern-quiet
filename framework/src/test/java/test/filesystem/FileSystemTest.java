@@ -3,6 +3,7 @@ package test.filesystem;
 import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.InvalidFileException;
+import com.ai.southernquiet.filesystem.NormalizedPath;
 import com.ai.southernquiet.filesystem.PathNotFoundException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @SpringBootTest(classes = FrameworkAutoConfiguration.class)
 @RunWith(SpringRunner.class)
@@ -28,38 +30,53 @@ public class FileSystemTest {
     public void before() {}
 
     @Test
+    public void arrayCopyOf() {
+        Assert.assertArrayEquals(new String[0], Arrays.copyOf(new String[]{"name"}, 0));
+    }
+
+    @Test
+    public void splitString() {
+        Assert.assertArrayEquals(new String[]{"name"}, "name".split("/"));
+    }
+
+    @Test
+    public void joinString() {
+        Assert.assertArrayEquals(new String[]{"name"}, "name".split("/"));
+    }
+
+    @Test
     public void path() {
-        String normalizedPath = FileSystem.normalizePath("hello.text");
-        Assert.assertEquals("/hello.text", normalizedPath);
+        NormalizedPath normalizedPath = new NormalizedPath("hello.text");
+        Assert.assertEquals("/hello.text", normalizedPath.toString());
 
-        normalizedPath = FileSystem.normalizePath("");
-        Assert.assertEquals("/", normalizedPath);
+        normalizedPath = new NormalizedPath("");
+        Assert.assertEquals("/", normalizedPath.toString());
 
-        normalizedPath = FileSystem.normalizePath("/");
-        Assert.assertEquals("/", normalizedPath);
+        normalizedPath = new NormalizedPath("/");
+        Assert.assertEquals("/", normalizedPath.toString());
 
-        normalizedPath = FileSystem.normalizePath("//test////hello.text/");
-        Assert.assertEquals(normalizedPath, "/test/hello.text");
+        normalizedPath = new NormalizedPath("//test////hello.text/");
+        Assert.assertEquals(normalizedPath.toString(), "/test/hello.text");
 
         Assert.assertTrue("/".split("/").length == 0);
         Assert.assertTrue("/abc".split("/").length == 2);
         Assert.assertTrue("abc/".split("/").length == 1);
 
-        normalizedPath = FileSystem.normalizePath("hello.text");
-        Assert.assertEquals("/", FileSystem.getPathParent(normalizedPath));
-        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
+        normalizedPath = new NormalizedPath("hello.text");
+        Assert.assertEquals("/", normalizedPath.getParent());
+        Assert.assertEquals("hello.text", normalizedPath.getName());
 
-        normalizedPath = FileSystem.normalizePath("/");
-        Assert.assertEquals("", FileSystem.getPathParent(normalizedPath));
-        Assert.assertEquals("/", FileSystem.getPathName(normalizedPath));
+        normalizedPath = new NormalizedPath("/");
+        Assert.assertEquals("", normalizedPath.getParent());
+        Assert.assertEquals("/", normalizedPath.getName());
 
-        normalizedPath = FileSystem.normalizePath("/hello.text");
-        Assert.assertEquals("/", FileSystem.getPathParent(normalizedPath));
-        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
+        normalizedPath = new NormalizedPath("/hello.text");
+        Assert.assertEquals("/", normalizedPath.getParent());
+        Assert.assertEquals("hello.text", normalizedPath.getName());
 
-        normalizedPath = FileSystem.normalizePath("/test/hello.text");
-        Assert.assertEquals("/test", FileSystem.getPathParent(normalizedPath));
-        Assert.assertEquals("hello.text", FileSystem.getPathName(normalizedPath));
+        normalizedPath = new NormalizedPath("/test/hello.text");
+        Assert.assertEquals("/test", normalizedPath.getParent());
+        Assert.assertEquals("hello.text", normalizedPath.getName());
     }
 
     @Test

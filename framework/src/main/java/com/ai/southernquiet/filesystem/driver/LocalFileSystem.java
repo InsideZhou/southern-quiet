@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -45,13 +44,6 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public void createDirectory(String path) {
-        PathMeta meta = meta(path);
-        if (null != meta) {
-            if (!meta.isDirectory()) throw new RuntimeException(String.format("该路径%s指向一个已经存在的文件。", path));
-
-            return;
-        }
-
         try {
             Files.createDirectories(getWorkingPath(path));
         }
@@ -199,7 +191,8 @@ public class LocalFileSystem implements FileSystem {
 
     @Override
     public PathMeta meta(String path) {
-        return meta(getWorkingPath(path));
+        NormalizedPath normalizedPath = new NormalizedPath(path);
+        return meta(normalizedPath, getWorkingPath(normalizedPath));
     }
 
     @Override
@@ -230,8 +223,16 @@ public class LocalFileSystem implements FileSystem {
         return stream;
     }
 
+    private Path getWorkingPath(NormalizedPath path) {
+        return Paths.get(workingRoot + path.toString());
+    }
+
     private Path getWorkingPath(String path) {
-        return Paths.get(workingRoot + FileSystem.PATH_SEPARATOR + path);
+        return Paths.get(workingRoot + new NormalizedPath(path).toString());
+    }
+
+    private NormalizedPath getNormalizedPath(Path path) {
+        return new NormalizedPath(path.subpath(Paths.get(workingRoot).getNameCount(), path.getNameCount()).toString());
     }
 
     private void moveOrCopy(boolean move, String source, String destination, boolean replaceExisting) throws FileSystemException {
@@ -321,7 +322,7 @@ public class LocalFileSystem implements FileSystem {
                 stream = stream.filter(p -> p.getFileName().toString().contains(search));
             }
 
-            Stream<PathMeta> metaStream = stream.map(this::meta);
+            Stream<PathMeta> metaStream = stream.map(p -> meta(getNormalizedPath(p), p));
 
             if (null != sort) {
                 metaStream = FileSystem.sort(metaStream, sort);
@@ -340,10 +341,18 @@ public class LocalFileSystem implements FileSystem {
         }
     }
 
-    private PathMeta meta(Path workingPath) {
+    private PathMeta meta(NormalizedPath normalizedPath, Path workingPath) {
         if (Files.notExists(workingPath)) return null;
 
         File file = workingPath.toFile();
+        PathMeta meta = new PathMeta(normalizedPath);
+
+        meta.setDirectory(file.isDirectory());
+
+        if (file.isFile()) {
+            meta.setSize(file.length());
+        }
+
 
         BasicFileAttributes attributes;
         try {
@@ -353,22 +362,9 @@ public class LocalFileSystem implements FileSystem {
             throw new RuntimeException(e);
         }
 
-        PathMeta meta = new PathMeta();
-
-        Path parent = workingPath.getParent();
-        if (null != parent) {
-            meta.setParent(parent.toString().substring(workingRoot.length()));
-        }
-
-        meta.setName(workingPath.getFileName().toString());
-        meta.setDirectory(file.isDirectory());
         meta.setCreationTime(attributes.creationTime().toInstant());
         meta.setLastAccessTime(attributes.lastAccessTime().toInstant());
         meta.setLastModifiedTime(attributes.lastModifiedTime().toInstant());
-
-        if (file.isFile()) {
-            meta.setSize(file.length());
-        }
 
         return meta;
     }
