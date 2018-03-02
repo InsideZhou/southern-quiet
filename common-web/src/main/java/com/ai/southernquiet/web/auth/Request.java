@@ -7,13 +7,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.security.Principal;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Request extends HttpServletRequestWrapper {
     static String KEY_USER; //User在session中的key
     static String KEY_REMEMBER_ME_COOKIE; //记住我的cookie名称
-    static int REMEMBER_ME_TIMEOUT; //记住我的cookie有效时间，单位：秒
+    static Duration REMEMBER_ME_TIMEOUT; //记住我的cookie有效时间
 
     @SuppressWarnings("unchecked")
     public static <T extends Request> T build(HttpServletRequest request, HttpServletResponse response, AuthService authService, Class<T> cls) {
@@ -121,7 +122,7 @@ public class Request extends HttpServletRequestWrapper {
         cookie.setHttpOnly(true);
 
         if (StringUtils.hasLength(token)) {
-            cookie.setMaxAge(REMEMBER_ME_TIMEOUT);
+            cookie.setMaxAge((int) REMEMBER_ME_TIMEOUT.getSeconds());
         }
         else {
             cookie.setMaxAge(0);

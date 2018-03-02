@@ -3,7 +3,7 @@ dependencies {
 
     compile "org.springframework.boot:spring-boot-starter-web"
     compile "org.springframework.boot:spring-boot-starter-actuator"
-    compile 'org.springframework.session:spring-session'
+    compile "org.springframework.session:spring-session-core"
 
     optional "org.springframework.boot:spring-boot-starter-jetty"
 

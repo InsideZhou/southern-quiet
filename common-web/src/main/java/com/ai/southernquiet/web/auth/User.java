@@ -6,6 +6,8 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,20 +19,20 @@ import java.util.Set;
 public class User<T extends Account> implements Serializable {
     private final static long serialVersionUID = -2874340118038495940L;
 
-    static int AuthenticationTTL;
-
-    public User(T account) {
-        this(account, null);
+    public User(T account, Duration authenticationTTL) {
+        this(account, null, authenticationTTL);
     }
 
-    public User(T account, String rememberToken) {
+    public User(T account, String rememberToken, Duration authenticationTTL) {
         setAccount(account);
         setRememberToken(rememberToken);
+        setAuthenticationTTL(authenticationTTL);
     }
 
     private T account;
     private Set<String> roles = new HashSet<>();
-    private long authenticationTime;
+    private Duration authenticationTTL;
+    private Instant authenticationTime;
     private String rememberToken;
 
     public T getAccount() {
@@ -49,20 +51,20 @@ public class User<T extends Account> implements Serializable {
         this.roles = roles;
     }
 
-    public long getAuthenticationTime() {
+    public Duration getAuthenticationTTL() {
+        return authenticationTTL;
+    }
+
+    public void setAuthenticationTTL(Duration authenticationTTL) {
+        this.authenticationTTL = authenticationTTL;
+    }
+
+    public Instant getAuthenticationTime() {
         return authenticationTime;
     }
 
-    public void setAuthenticationTime(long authenticationTime) {
+    public void setAuthenticationTime(Instant authenticationTime) {
         this.authenticationTime = authenticationTime;
-    }
-
-    public static int getAuthenticationTTL() {
-        return AuthenticationTTL;
-    }
-
-    public static void setAuthenticationTTL(int authenticationTTL) {
-        AuthenticationTTL = authenticationTTL;
     }
 
     public String getRememberToken() {
@@ -74,9 +76,10 @@ public class User<T extends Account> implements Serializable {
     }
 
     public boolean isAuthenticated() {
-        return System.currentTimeMillis() < getAuthenticationTime() + AuthenticationTTL; //距离上次验证时间超过限制则视为验证已过期。
+        return Duration.between(getAuthenticationTime(), Instant.now()).compareTo(getAuthenticationTTL()) > 0; //距离上次验证时间超过限制则视为验证已过期。
     }
 
+    @SuppressWarnings("NullableProblems")
     public static class HandlerMethodArgumentResolver implements org.springframework.web.method.support.HandlerMethodArgumentResolver {
         @Override
         public boolean supportsParameter(MethodParameter parameter) {

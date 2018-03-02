@@ -9,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
+@SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public class AbstractWebApp implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

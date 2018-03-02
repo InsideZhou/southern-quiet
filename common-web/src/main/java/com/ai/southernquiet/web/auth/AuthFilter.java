@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@SuppressWarnings({"SpringJavaAutowiredMembersInspection", "NullableProblems"})
 public class AuthFilter extends OncePerRequestFilter {
     private AuthService authService;
     private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
@@ -43,8 +44,6 @@ public class AuthFilter extends OncePerRequestFilter {
         Request.REMEMBER_ME_TIMEOUT = rememberMeProperties.getTimeout();
         Request.KEY_REMEMBER_ME_COOKIE = rememberMeProperties.getCookie();
         Request.KEY_USER = webProperties.getUser();
-
-        User.AuthenticationTTL = webProperties.getAuthenticationTTL();
     }
 
     @Override

@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+@SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public class AuthInterceptor extends HandlerInterceptorAdapter {
     private AuthService authService;
 

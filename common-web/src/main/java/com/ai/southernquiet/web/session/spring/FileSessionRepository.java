@@ -2,9 +2,9 @@ package com.ai.southernquiet.web.session.spring;
 
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.InvalidFileException;
+import com.ai.southernquiet.filesystem.NormalizedPath;
 import com.ai.southernquiet.util.SerializationUtils;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
-import org.springframework.session.ExpiringSession;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
 import org.springframework.util.StreamUtils;
@@ -13,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +23,7 @@ import java.util.UUID;
 /**
  * 基于{@link com.ai.southernquiet.filesystem.FileSystem}的Spring Session持久化.
  */
-public class FileSessionRepository implements SessionRepository<ExpiringSession> {
+public class FileSessionRepository implements SessionRepository<Session> {
     private FileSystem fileSystem;
     private String workingRoot; //Session持久化在FileSystem中的路径
 
@@ -33,12 +35,12 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
     }
 
     @Override
-    public ExpiringSession createSession() {
+    public Session createSession() {
         return new FileSession();
     }
 
     @Override
-    public void save(ExpiringSession session) {
+    public void save(Session session) {
         try {
             fileSystem.put(getFilePath(session.getId()), serialize(session));
         }
@@ -48,7 +50,7 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
     }
 
     @Override
-    public ExpiringSession getSession(String id) {
+    public Session findById(String id) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) return null;
@@ -62,21 +64,22 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
     }
 
     @Override
-    public void delete(String id) {
+    public void deleteById(String id) {
         fileSystem.delete(getFilePath(id));
     }
 
     private String getFilePath(String sessionId) {
-        return workingRoot + FileSystem.PATH_SEPARATOR + sessionId;
+        NormalizedPath path = new NormalizedPath(new String[]{workingRoot, sessionId});
+        return path.toString();
     }
 
-    private InputStream serialize(ExpiringSession session) {
+    private InputStream serialize(Session session) {
         return new ByteArrayInputStream(SerializationUtils.serialize(session));
     }
 
-    private ExpiringSession deserialize(InputStream stream) {
+    private Session deserialize(InputStream stream) {
         try {
-            return (ExpiringSession) SerializationUtils.deserialize(StreamUtils.copyToByteArray(stream));
+            return (Session) SerializationUtils.deserialize(StreamUtils.copyToByteArray(stream));
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -86,12 +89,12 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
     /**
      * @see org.springframework.session.MapSession
      */
-    public static class FileSession implements ExpiringSession, Serializable {
-        private final static long serialVersionUID = -4029548868967931682L;
+    public static class FileSession implements Session, Serializable {
+        private final static long serialVersionUID = -3973763939484496044L;
 
-        private long creationTime;
-        private long lastAccessedTime;
-        private int maxInactiveIntervalInSeconds;
+        private Instant creationTime;
+        private Instant lastAccessedTime;
+        private Duration maxInactiveInterval;
         private boolean expired;
         private String id;
         private Map<String, Object> attributes = new HashMap<>();
@@ -104,16 +107,23 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
             this.id = id;
         }
 
-        public FileSession(ExpiringSession session) {
+        public FileSession(Session session) {
             this.creationTime = session.getCreationTime();
             this.lastAccessedTime = session.getLastAccessedTime();
-            this.maxInactiveIntervalInSeconds = session.getMaxInactiveIntervalInSeconds();
+            this.maxInactiveInterval = session.getMaxInactiveInterval();
             this.expired = session.isExpired();
             this.id = session.getId();
 
             for (String key : session.getAttributeNames()) {
                 this.attributes.put(key, session.getAttribute(key));
             }
+        }
+
+        @Override
+        public String changeSessionId() {
+            String newId = UUID.randomUUID().toString();
+            setId(newId);
+            return newId;
         }
 
         public boolean equals(Object obj) {
@@ -145,41 +155,33 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
             attributes.remove(attributeName);
         }
 
-        public Map<String, Object> getAttributes() {
-            return attributes;
-        }
-
-        public void setAttributes(Map<String, Object> attributes) {
-            this.attributes = attributes;
-        }
-
         @Override
-        public long getCreationTime() {
+        public Instant getCreationTime() {
             return creationTime;
         }
 
-        public void setCreationTime(long creationTime) {
+        public void setCreationTime(Instant creationTime) {
             this.creationTime = creationTime;
         }
 
         @Override
-        public long getLastAccessedTime() {
+        public Instant getLastAccessedTime() {
             return lastAccessedTime;
         }
 
         @Override
-        public void setLastAccessedTime(long lastAccessedTime) {
+        public void setLastAccessedTime(Instant lastAccessedTime) {
             this.lastAccessedTime = lastAccessedTime;
         }
 
         @Override
-        public int getMaxInactiveIntervalInSeconds() {
-            return maxInactiveIntervalInSeconds;
+        public Duration getMaxInactiveInterval() {
+            return maxInactiveInterval;
         }
 
         @Override
-        public void setMaxInactiveIntervalInSeconds(int maxInactiveIntervalInSeconds) {
-            this.maxInactiveIntervalInSeconds = maxInactiveIntervalInSeconds;
+        public void setMaxInactiveInterval(Duration maxInactiveInterval) {
+            this.maxInactiveInterval = maxInactiveInterval;
         }
 
         @Override
@@ -198,6 +200,14 @@ public class FileSessionRepository implements SessionRepository<ExpiringSession>
 
         public void setId(String id) {
             this.id = id;
+        }
+
+        public Map<String, Object> getAttributes() {
+            return attributes;
+        }
+
+        public void setAttributes(Map<String, Object> attributes) {
+            this.attributes = attributes;
         }
     }
 }
