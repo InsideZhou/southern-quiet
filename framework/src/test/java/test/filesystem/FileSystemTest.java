@@ -68,7 +68,7 @@ public class FileSystemTest {
 
         normalizedPath = new NormalizedPath("/");
         Assert.assertEquals("", normalizedPath.getParent());
-        Assert.assertEquals("/", normalizedPath.getName());
+        Assert.assertEquals("", normalizedPath.getName());
 
         normalizedPath = new NormalizedPath("/hello.text");
         Assert.assertEquals("/", normalizedPath.getParent());

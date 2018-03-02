@@ -4,8 +4,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
-import static com.ai.southernquiet.filesystem.FileSystem.PATH_SEPARATOR;
 import static com.ai.southernquiet.filesystem.FileSystem.PATH_SEPARATOR_STRING;
 
 
@@ -20,17 +20,17 @@ public class NormalizedPath implements Serializable {
 
     public NormalizedPath(String path) {
         if (!StringUtils.hasText(path)) return;
+        if ("".equalsIgnoreCase(path)) return;
 
         String p = path.replace("\\", PATH_SEPARATOR_STRING);
-        p = p.replaceAll("/+", PATH_SEPARATOR_STRING);
-        p = StringUtils.trimTrailingCharacter(StringUtils.trimLeadingCharacter(p, PATH_SEPARATOR), PATH_SEPARATOR);
 
-        if ("".equalsIgnoreCase(p)) return;
+        String[] pathElements = Stream.of(p.split(PATH_SEPARATOR_STRING))
+            .filter(item -> StringUtils.hasText(item))
+            .toArray(String[]::new);
 
-        String[] pathElements = p.split(PATH_SEPARATOR_STRING);
-
+        if (0 == pathElements.length) return;
         if (1 == pathElements.length) {
-            this.setName(p);
+            this.setName(pathElements[0]);
             return;
         }
 
@@ -75,7 +75,7 @@ public class NormalizedPath implements Serializable {
     public String getParent() {
         switch (parentNames.length) {
             case 0:
-                return "";
+                return StringUtils.isEmpty(name) ? "" : PATH_SEPARATOR_STRING;
             case 1:
                 return PATH_SEPARATOR_STRING + parentNames[0];
             default:
@@ -94,7 +94,8 @@ public class NormalizedPath implements Serializable {
      */
     @Override
     public String toString() {
-        return getParent() + PATH_SEPARATOR_STRING + name;
+        String parent = getParent();
+        return parent.equals(PATH_SEPARATOR_STRING) ? PATH_SEPARATOR_STRING + name : parent + PATH_SEPARATOR_STRING + name;
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
