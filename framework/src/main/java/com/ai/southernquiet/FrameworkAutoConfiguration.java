@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -27,7 +26,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(FileSystem.class)
-    public LocalFileSystem fileSystem(LocalFileSystemProperties properties) throws IOException {
+    public LocalFileSystem fileSystem(LocalFileSystemProperties properties) {
         return new LocalFileSystem(properties);
     }
 

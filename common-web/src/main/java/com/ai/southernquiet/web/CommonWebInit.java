@@ -10,14 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 
 /**
  * 初始化web应用。
  */
 @SuppressWarnings({"unused", "WeakerAccess", "CodeBlock2Expr"})
 public abstract class CommonWebInit {
-    public void onStartup(ServletContext servletContext) throws ServletException {
+    public void onStartup(ServletContext servletContext) {
         setupLogAppender(servletContext);
     }
 
