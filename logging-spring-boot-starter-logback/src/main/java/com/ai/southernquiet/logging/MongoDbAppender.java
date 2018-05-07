@@ -3,7 +3,6 @@ package com.ai.southernquiet.logging;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.util.StringUtils;
 
 public class MongoDbAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private String logCollection;

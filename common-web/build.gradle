@@ -1,11 +1,12 @@
 dependencies {
-    implementation project(':framework')
+    api project(':framework')
+    api "org.springframework.boot:spring-boot-starter-web"
 
-    implementation "org.springframework.boot:spring-boot-starter-web"
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation project(':logging-spring-boot-starter-logback')
     implementation "org.springframework.session:spring-session-core"
     implementation "org.springframework.boot:spring-boot-starter-jetty"
 
+    testImplementation "org.springframework.boot:spring-boot-starter-actuator"
+
     runtimeOnly project(':filesystem-spring-boot-starter-mongodb')
-    runtimeOnly project(':logging-spring-boot-starter-mongodb')
 }

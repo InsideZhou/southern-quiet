@@ -1,4 +1,4 @@
 dependencies {
-    implementation project(':framework')
+    api project(':framework')
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 }

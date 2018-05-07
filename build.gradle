@@ -43,7 +43,7 @@ subprojects {
     }
 
     dependencies {
-        compile('de.ruedigermoeller:fst:2.50') {
+        implementation('de.ruedigermoeller:fst:2.50') {
             //为什么可以exclude这些需要看fst的pom注释
             exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
             exclude group: 'org.javassist', module: 'javassist'
@@ -53,7 +53,7 @@ subprojects {
         optional "org.springframework.boot:spring-boot-configuration-processor"
         optional "org.springframework.boot:spring-boot-devtools"
 
-        testCompile "org.springframework.boot:spring-boot-starter-test"
+        testImplementation "org.springframework.boot:spring-boot-starter-test"
     }
 
     compileJava.dependsOn(processResources)

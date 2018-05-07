@@ -1,4 +1,7 @@
 dependencies {
-    compile "org.springframework.boot:spring-boot-starter"
-    compile "com.fasterxml.jackson.core:jackson-databind"
+    api("org.springframework.boot:spring-boot-starter") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+
+    implementation "com.fasterxml.jackson.core:jackson-databind"
 }

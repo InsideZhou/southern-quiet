@@ -5,8 +5,8 @@ import com.ai.southernquiet.job.Job;
 import com.ai.southernquiet.job.JobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayInputStream;
@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 public class FileSystemJobQueue implements JobQueue {
-    private static Logger logger = LoggerFactory.getLogger(FileSystemJobQueue.class);
+    private static Log log = LogFactory.getLog(FileSystemJobQueue.class);
 
     private FileSystem fileSystem;
     private String workingRoot; //队列持久化在FileSystem中的路径
@@ -83,7 +83,7 @@ public class FileSystemJobQueue implements JobQueue {
                     .ifPresent(meta -> fileSystem.delete(meta.getPath()));
             }
             catch (PathNotFoundException e) {
-                logger.info(String.format("没有找到要删除的Job %s", job.getId()), e);
+                log.info(String.format("没有找到要删除的Job %s", job.getId()), e);
             }
         }
     }
