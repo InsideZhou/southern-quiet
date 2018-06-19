@@ -36,55 +36,49 @@ public class FileSystemJobQueue implements JobQueue {
     }
 
     @Override
-    public void enqueue(Job job) {
-        synchronized (this) {
-            try {
-                fileSystem.put(getFilePath(job.getId()), serialize(job));
-            }
-            catch (InvalidFileException e) {
-                throw new RuntimeException(e);
-            }
+    public synchronized void enqueue(Job job) {
+        try {
+            fileSystem.put(getFilePath(job.getId()), serialize(job));
+        }
+        catch (InvalidFileException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Job dequeue() {
-        synchronized (this) {
-            try {
-                Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
+    public synchronized Job dequeue() {
+        try {
+            Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
 
-                if (opt.isPresent()) {
-                    try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
-                        byte[] bytes = StreamUtils.copyToByteArray(inputStream);
+            if (opt.isPresent()) {
+                try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
+                    byte[] bytes = StreamUtils.copyToByteArray(inputStream);
 
-                        Job job = deserialize(bytes);
-                        remove(job);
-                        return job;
-                    }
+                    Job job = deserialize(bytes);
+                    remove(job);
+                    return job;
                 }
             }
-            catch (PathNotFoundException e) {
-                return null;
-            }
-            catch (InvalidFileException | IOException e) {
-                throw new RuntimeException(e);
-            }
-
+        }
+        catch (PathNotFoundException e) {
             return null;
         }
+        catch (InvalidFileException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
     }
 
     @Override
-    public void remove(Job job) {
-        synchronized (this) {
-            try {
-                fileSystem.files(workingRoot, job.getId())
-                    .findFirst()
-                    .ifPresent(meta -> fileSystem.delete(meta.getPath()));
-            }
-            catch (PathNotFoundException e) {
-                log.info(String.format("没有找到要删除的Job %s", job.getId()), e);
-            }
+    public synchronized void remove(Job job) {
+        try {
+            fileSystem.files(workingRoot, job.getId())
+                .findFirst()
+                .ifPresent(meta -> fileSystem.delete(meta.getPath()));
+        }
+        catch (PathNotFoundException e) {
+            log.warn(String.format("没有找到要删除的Job %s", job.getId()), e);
         }
     }
 

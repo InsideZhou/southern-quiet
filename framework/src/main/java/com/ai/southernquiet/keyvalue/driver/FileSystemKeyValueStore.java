@@ -9,6 +9,7 @@ import org.springframework.util.StreamUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -28,7 +29,7 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     }
 
     @Override
-    public void put(String key, Object value, int ttl) {
+    public <T extends Serializable> void put(String key, T value, int ttl) {
         try {
             fileSystem.put(getFilePath(key, ttl), serialize(value));
         }
@@ -38,7 +39,7 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     }
 
     @Override
-    public void set(String key, Object value) {
+    public <T extends Serializable> void set(String key, T value) {
         try {
             fileSystem.put(getFilePath(key, -1), serialize(value));
         }
@@ -47,8 +48,9 @@ public class FileSystemKeyValueStore implements KeyValueStore {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object get(String key) {
+    public <T extends Serializable> T get(String key) {
         try {
             Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, getKeyPrefix(key)).findFirst();
 
@@ -64,7 +66,7 @@ public class FileSystemKeyValueStore implements KeyValueStore {
                 }
 
                 try (InputStream inputStream = fileSystem.openReadStream(meta.getPath())) {
-                    return deserialize(inputStream);
+                    return (T) deserialize(inputStream);
                 }
             }
         }

@@ -29,7 +29,7 @@ import java.util.Set;
 public class App extends AbstractWebApp {
     private static Logger logger = LoggerFactory.getLogger(App.class);
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         SpringApplication.run(App.class);
     }
 
