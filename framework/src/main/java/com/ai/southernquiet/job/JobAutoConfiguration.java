@@ -14,12 +14,6 @@ import org.springframework.stereotype.Component;
 @Configuration
 public class JobAutoConfiguration {
     @Bean
-    @ConditionalOnMissingBean
-    public JobScheduler jobScheduler(JobQueue queue, ApplicationContext context) {
-        return new JobScheduler(queue, context);
-    }
-
-    @Bean
     @ConditionalOnMissingBean(JobQueue.class)
     public FileSystemJobQueue jobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
         return new FileSystemJobQueue(fileSystem, properties);

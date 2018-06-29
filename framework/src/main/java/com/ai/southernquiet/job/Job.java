@@ -3,9 +3,7 @@ package com.ai.southernquiet.job;
 import java.io.Serializable;
 
 /**
- * 表示一项任务，可以加入{@link JobScheduler}中，由队列调度并执行。
- *
- * @see JobScheduler
+ * 表示一项任务，可以加入{@link JobQueue}中持久化。
  */
 public interface Job extends Serializable {
     /**
