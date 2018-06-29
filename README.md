@@ -25,8 +25,7 @@
 1. JobQueue 任务队列
     - 默认驱动基于FileSystem，会有KEY规范（Job.getId）的问题需要考虑。
     - 继承Job完成任务类。
-    - 获取JobScheduler Bean，将Job添加至调度器。
-    - 要启用这个特性，添加EnableScheduling注解。
+    - 将Job添加至JobQueue。
 
 
 ### 如何使用
