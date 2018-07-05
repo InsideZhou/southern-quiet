@@ -7,13 +7,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.session.Session;
+import org.springframework.session.SessionRepository;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @ConditionalOnClass(Session.class)
 public class SpringSessionAutoConfiguration {
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean({SessionRepository.class})
     public FileSessionRepository fileSessionRepository(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
         return new FileSessionRepository(fileSystem, properties);
     }

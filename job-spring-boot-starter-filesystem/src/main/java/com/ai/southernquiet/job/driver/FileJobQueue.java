@@ -1,12 +1,10 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
 import com.ai.southernquiet.job.Job;
-import com.ai.southernquiet.job.JobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayInputStream;
@@ -16,8 +14,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class FileJobQueue implements JobQueue {
-    private static Log log = LogFactory.getLog(FileJobQueue.class);
-
     public static InputStream serialize(Job data) {
         return new ByteArrayInputStream(SerializationUtils.serialize(data));
     }
@@ -30,6 +26,14 @@ public class FileJobQueue implements JobQueue {
     private String workingRoot; //队列持久化在FileSystem中的路径
     private ThreadLocal<String> lastDequeuedJobId = new ThreadLocal<>();
 
+    public ThreadLocal<String> getLastDequeuedJobId() {
+        return lastDequeuedJobId;
+    }
+
+    public void setLastDequeuedJobId(ThreadLocal<String> lastDequeuedJobId) {
+        this.lastDequeuedJobId = lastDequeuedJobId;
+    }
+
     public String getWorkingRoot() {
         return workingRoot;
     }
@@ -38,7 +42,7 @@ public class FileJobQueue implements JobQueue {
         this.workingRoot = workingRoot;
     }
 
-    public FileJobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
+    public FileJobQueue(FileSystem fileSystem, FileSystemJobAutoConfiguration.Properties properties) {
         this.workingRoot = properties.getFileSystem().getWorkingRoot();
 
         fileSystem.createDirectory(this.workingRoot);

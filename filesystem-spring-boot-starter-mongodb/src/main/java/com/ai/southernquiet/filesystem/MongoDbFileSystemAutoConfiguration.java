@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-@SuppressWarnings("SpringJavaAutowiringInspection")
+@SuppressWarnings({"SpringJavaAutowiringInspection", "SpringJavaInjectionPointsAutowiringInspection"})
 @Configuration
 @ConditionalOnBean({MongoOperations.class, MongoDbFactory.class, GridFsOperations.class, GridFS.class})
 @EnableConfigurationProperties(MongoDbFileSystemAutoConfiguration.Properties.class)

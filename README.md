@@ -24,9 +24,9 @@
     - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
     
 1. JobQueue 任务队列
-    - 默认驱动基于FileSystem，会有KEY规范（Job.getId）的问题需要考虑。
     - 继承Job完成任务类。
     - 将Job添加至JobQueue。
+    - 使用FileSystem驱动时，会有KEY规范（Job.getId）的问题需要考虑。
 
 
 ### 如何使用
