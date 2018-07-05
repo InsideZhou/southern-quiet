@@ -1,17 +1,23 @@
 dependencies {
     api project(':framework')
-    api "org.springframework.boot:spring-boot-starter-web"
 
     implementation project(':logging-spring-boot-starter-logback')
+
+    implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.session:spring-session-core"
     implementation "org.springframework.boot:spring-boot-starter-jetty"
 
     testImplementation "org.springframework.boot:spring-boot-starter-actuator"
     testImplementation "org.springframework.boot:spring-boot-starter-jdbc"
+
+    testImplementation project(':broadcasting-spring-boot-starter-redis')
+    testImplementation "org.springframework.boot:spring-boot-starter-data-redis"
+
+    testImplementation project(':job-spring-boot-starter-jdbc')
     testImplementation 'me.insidezhou.instep:instep-spring-boot-starter:1.0.0-SNAPSHOT'
     testImplementation 'org.postgresql:postgresql:42.2.2'
 
-    testImplementation project(':job-spring-boot-starter-jdbc')
+    testImplementation project(':filesystem-spring-boot-starter-mongodb')
 
-    runtimeOnly project(':filesystem-spring-boot-starter-mongodb')
+    testImplementation project(':broadcasting-spring-boot-starter-redis').sourceSets.test.output
 }

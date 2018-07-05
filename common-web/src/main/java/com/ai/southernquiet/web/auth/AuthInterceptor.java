@@ -25,9 +25,12 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
         this.authService = authService;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if (!(handler instanceof HandlerMethod)) return true;
         HandlerMethod handlerMethod = (HandlerMethod) handler;
+
         Auth beanAuth = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), Auth.class);
         Auth methodAuth = handlerMethod.getMethodAnnotation(Auth.class);
 

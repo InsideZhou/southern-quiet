@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties({
+    FrameworkAutoConfiguration.BroadcastingProperties.class,
     FrameworkAutoConfiguration.FileSystemProperties.class,
     FrameworkAutoConfiguration.LocalFileSystemProperties.class,
     FrameworkAutoConfiguration.KeyValueStoreProperties.class
@@ -41,7 +42,6 @@ public class FrameworkAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(Broadcaster.class)
     public Publisher publisher(Broadcaster broadcaster, BroadcastingProperties properties) {
         return new DefaultPublisher(broadcaster, properties);
     }

@@ -22,11 +22,13 @@ import javax.sql.DataSource;
 @EnableConfigurationProperties(JdbcJobAutoConfiguration.Properties.class)
 public class JdbcJobAutoConfiguration {
     @Bean
+    @ConditionalOnMissingBean
     public JdbcJobQueue jdbcJobQueue(JobTable jobTable, InstepSQL instepSQL) {
         return new JdbcJobQueue(jobTable, instepSQL);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect) {
         return new TransactionContext.ConnectionProvider(dataSource, dialect);
     }

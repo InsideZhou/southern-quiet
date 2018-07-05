@@ -1,5 +1,7 @@
 package test.app;
 
+import com.ai.southernquiet.broadcasting.BroadcastingDone;
+import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
@@ -10,6 +12,7 @@ import instep.dao.sql.Dialect;
 import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -167,5 +170,13 @@ public class App extends AbstractWebApp {
     @RequestMapping("/user")
     String user(HttpServletRequest request) {
         return request.getRemoteUser();
+    }
+
+    @Autowired
+    private Publisher publisher;
+
+    @RequestMapping("/broadcast")
+    void broadcast() {
+        publisher.publish(new BroadcastingDone());
     }
 }

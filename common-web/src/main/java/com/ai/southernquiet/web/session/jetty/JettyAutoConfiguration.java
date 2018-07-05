@@ -7,13 +7,13 @@ import org.eclipse.jetty.server.session.SessionDataStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.session.SessionRepository;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
-@ConditionalOnClass(Server.class)
 public class JettyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean({SessionDataStore.class, SessionRepository.class})
@@ -28,8 +28,8 @@ public class JettyAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public JettyServletWebServerFactory servletContainerFactory(JettyConfiguration jettyConfiguration) {
+    @ConditionalOnMissingBean(ServletWebServerFactory.class)
+    public JettyServletWebServerFactory jettyServletWebServerFactory(JettyConfiguration jettyConfiguration) {
         JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);
         return factory;

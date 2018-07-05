@@ -3,5 +3,5 @@ dependencies {
 
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 
-    testCompile project(':framework').sourceSets.test.output
+    testImplementation project(':framework').sourceSets.test.output
 }
