@@ -2,4 +2,5 @@ rootProject.name = 'southern-quiet'
 include 'framework', 'common-web',
         'filesystem-spring-boot-starter-mongodb',
         'logging-spring-boot-starter-logback',
-        'job-spring-boot-starter-jdbc'
+        'job-spring-boot-starter-jdbc',
+        'broadcasting-spring-boot-starter-redis'
