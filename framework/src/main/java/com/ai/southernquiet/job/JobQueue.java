@@ -1,21 +1,16 @@
 package com.ai.southernquiet.job;
 
 /**
- * 任务队列，供调度器使用。
+ * 任务队列。
  */
-public interface JobQueue {
+public interface JobQueue<T extends Job> {
     /**
      * 将Job加入队列。
      */
-    void enqueue(Job job);
+    void enqueue(T job);
 
     /**
-     * 从队列中获取并移除Job。获取规则由子类决定。
+     * 从队列中获取（并移除）Job。
      */
-    Job dequeue();
-
-    /**
-     * 从队列中移除指定Job。
-     */
-    void remove(Job job);
+    T dequeue();
 }

@@ -2,16 +2,21 @@ package com.ai.southernquiet.web;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 @Configuration
+@EnableConfigurationProperties({
+    CommonWebAutoConfiguration.FileSessionProperties.class,
+    CommonWebAutoConfiguration.WebProperties.class,
+    CommonWebAutoConfiguration.SessionRememberMeProperties.class
+})
 public class CommonWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -24,7 +29,6 @@ public class CommonWebAutoConfiguration {
         return commonWebInit::onStartup;
     }
 
-    @Component
     @ConfigurationProperties("web.session.file-system")
     public static class FileSessionProperties {
         /**
@@ -41,7 +45,6 @@ public class CommonWebAutoConfiguration {
         }
     }
 
-    @Component
     @ConfigurationProperties("web")
     public class WebProperties {
         /**
@@ -87,7 +90,6 @@ public class CommonWebAutoConfiguration {
 
     }
 
-    @Component
     @ConfigurationProperties("web.session.remember-me")
     public class SessionRememberMeProperties {
         /**

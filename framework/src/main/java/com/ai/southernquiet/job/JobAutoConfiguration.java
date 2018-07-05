@@ -1,22 +1,13 @@
 package com.ai.southernquiet.job;
 
-import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.job.driver.FileSystemJobQueue;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@EnableConfigurationProperties(JobAutoConfiguration.Properties.class)
 public class JobAutoConfiguration {
-    @Bean
-    @ConditionalOnMissingBean(JobQueue.class)
-    public FileSystemJobQueue jobQueue(FileSystem fileSystem, JobAutoConfiguration.Properties properties) {
-        return new FileSystemJobQueue(fileSystem, properties);
-    }
-
-    @Component
     @ConfigurationProperties("framework.job")
     public static class Properties {
         private FileSystem fileSystem = new FileSystem();

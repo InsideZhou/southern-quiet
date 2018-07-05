@@ -5,6 +5,7 @@ import com.mongodb.gridfs.GridFS;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.MongoDbFactory;
@@ -17,6 +18,7 @@ import java.io.IOException;
 @SuppressWarnings("SpringJavaAutowiringInspection")
 @Configuration
 @ConditionalOnBean({MongoOperations.class, MongoDbFactory.class, GridFsOperations.class, GridFS.class})
+@EnableConfigurationProperties(MongoDbFileSystemAutoConfiguration.Properties.class)
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

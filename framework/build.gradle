@@ -3,5 +3,5 @@ dependencies {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
-    implementation "com.fasterxml.jackson.core:jackson-databind"
+    testImplementation "org.springframework.boot:spring-boot-starter-json"
 }

@@ -1,31 +1,38 @@
 package test.app;
 
-import com.ai.southernquiet.logging.MongoDbLoggingAutoConfiguration;
 import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import com.ai.southernquiet.web.auth.*;
+import com.ai.southernquiet.web.session.jetty.JettyAutoConfiguration;
+import instep.InstepLogger;
+import instep.dao.sql.Dialect;
+import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.session.config.annotation.web.http.EnableSpringHttpSession;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.Set;
 
 @SuppressWarnings("unused")
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
+@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"}, exclude = JettyAutoConfiguration.class)
 @EnableScheduling
 @EnableSpringHttpSession
+@EnableTransactionManagement
 public class App extends AbstractWebApp {
     private static Logger logger = LoggerFactory.getLogger(App.class);
 
@@ -33,6 +40,7 @@ public class App extends AbstractWebApp {
         SpringApplication.run(App.class);
     }
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Configuration
     public static class Config {
         @SuppressWarnings("Duplicates")
@@ -71,6 +79,61 @@ public class App extends AbstractWebApp {
                 @Override
                 public boolean checkAuthorization(String username, Set<String> authNames) {
                     return true;
+                }
+            };
+        }
+
+        @Bean
+        public Dialect dialect(DataSource dataSource, @Value("${spring.datasource.url}") String url) {
+            return Dialect.Companion.of(url);
+        }
+
+        @Bean
+        public InstepLogger instepLogger() {
+            return new InstepLogger() {
+                @Override
+                public boolean getEnableDebug() {
+                    return true;
+                }
+
+                @Override
+                public boolean getEnableInfo() {
+                    return true;
+                }
+
+                @Override
+                public boolean getEnableWarning() {
+                    return true;
+                }
+
+                @Override
+                public void debug(String s, String s1) {
+                    LogFactory.getLog(s1).debug(s);
+                }
+
+                @Override
+                public void info(String s, String s1) {
+                    LogFactory.getLog(s1).info(s);
+                }
+
+                @Override
+                public void warning(String s, String s1) {
+                    LogFactory.getLog(s1).warn(s);
+                }
+
+                @Override
+                public void debug(String s, Class<?> aClass) {
+                    debug(s, aClass.getName());
+                }
+
+                @Override
+                public void info(String s, Class<?> aClass) {
+                    info(s, aClass.getName());
+                }
+
+                @Override
+                public void warning(String s, Class<?> aClass) {
+                    warning(s, aClass.getName());
                 }
             };
         }

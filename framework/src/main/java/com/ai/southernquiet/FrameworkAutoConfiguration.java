@@ -1,21 +1,31 @@
 package com.ai.southernquiet;
 
+import com.ai.southernquiet.broadcasting.Broadcaster;
+import com.ai.southernquiet.broadcasting.Publisher;
+import com.ai.southernquiet.broadcasting.driver.DefaultPublisher;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.FileSystemSupport;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@EnableConfigurationProperties({
+    FrameworkAutoConfiguration.FileSystemProperties.class,
+    FrameworkAutoConfiguration.LocalFileSystemProperties.class,
+    FrameworkAutoConfiguration.KeyValueStoreProperties.class
+})
 public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = "framework.key-value")
@@ -30,7 +40,25 @@ public class FrameworkAutoConfiguration {
         return new LocalFileSystem(properties);
     }
 
-    @Component
+    @Bean
+    @ConditionalOnBean(Broadcaster.class)
+    public Publisher publisher(Broadcaster broadcaster, BroadcastingProperties properties) {
+        return new DefaultPublisher(broadcaster, properties);
+    }
+
+    @ConfigurationProperties("framework.broadcasting")
+    public static class BroadcastingProperties {
+        private String[] defaultChannels = new String[]{"public"};
+
+        public String[] getDefaultChannels() {
+            return defaultChannels;
+        }
+
+        public void setDefaultChannels(String[] defaultChannels) {
+            this.defaultChannels = defaultChannels;
+        }
+    }
+
     @ConfigurationProperties("framework.file-system")
     public static class FileSystemProperties {
         /**
@@ -51,7 +79,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @Component
     @ConfigurationProperties("framework.file-system.local")
     public static class LocalFileSystemProperties {
         /**
@@ -68,7 +95,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @Component
     @ConfigurationProperties("framework.key-value")
     public static class KeyValueStoreProperties {
         /**
