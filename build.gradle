@@ -22,7 +22,7 @@ idea {
 
 subprojects {
     group = 'com.ai.southernquiet'
-    version = '0.0.1-SNAPSHOT'
+    version = '0.1.0-SNAPSHOT'
 
     apply plugin: 'idea'
     apply plugin: 'eclipse'
@@ -35,6 +35,8 @@ subprojects {
     apply plugin: 'propdeps-maven'
     apply plugin: 'propdeps-idea'
     apply plugin: 'propdeps-eclipse'
+
+    apply plugin: 'maven-publish'
 
     repositories {
         mavenLocal()
@@ -78,7 +80,36 @@ subprojects {
         from sourceSets.main.allSource
     }
 
-    artifacts {
-        archives jar, sourceJar
+    task publishToCnbss {
+        group "publishing"
+        description "发布到cnbss仓库"
+        dependsOn tasks.withType(PublishToMavenRepository).matching {
+            it.repository == publishing.repositories.cnbss
+        }
+    }
+
+    publishing {
+        publications {
+            all(MavenPublication) {
+                from components.java
+
+                artifact sourceJar
+            }
+        }
+
+        repositories {
+            maven {
+                def releasesRepoUrl = project.hasProperty('cnbssReleaseUrl') ? cnbssReleaseUrl : ''
+                def snapshotsRepoUrl = project.hasProperty('cnbssSnapshotUrl') ? cnbssSnapshotUrl : ''
+                url version.endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
+
+                name 'cnbss'
+
+                credentials {
+                    username = project.hasProperty('cnbssUsername') ? cnbssUsername : ''
+                    password = project.hasProperty('cnbssPassword') ? cnbssPassword : ''
+                }
+            }
+        }
     }
 }
