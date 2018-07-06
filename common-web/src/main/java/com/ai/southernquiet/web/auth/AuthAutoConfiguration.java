@@ -7,20 +7,51 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @ConditionalOnBean(AuthService.class)
 public class AuthAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public AuthFilter authFilter(AuthService authService) {
-        return new AuthFilter(authService);
+    public RequestFactory<Request> requestFactory() {
+        return new RequestFactory<Request>() {
+            @Override
+            public Class<Request> getRequestClass() {
+                return Request.class;
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public Request createInstance(HttpServletRequest httpServletRequest,
+                                          HttpServletResponse httpServletResponse,
+                                          CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties,
+                                          CommonWebAutoConfiguration.WebProperties webProperties,
+                                          AuthService authService) {
+
+                return new Request(httpServletRequest, httpServletResponse, rememberMeProperties, webProperties, authService);
+            }
+        };
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public AuthInterceptor authInterceptor(AuthService authService) {
-        return new AuthInterceptor(authService);
+    public AuthFilter authFilter(AuthService authService,
+                                 RequestFactory requestFactory,
+                                 CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties,
+                                 CommonWebAutoConfiguration.WebProperties webProperties) {
+        return new AuthFilter(requestFactory, rememberMeProperties, webProperties, authService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public <R extends Request> AuthInterceptor authInterceptor(AuthService authService,
+                                                               RequestFactory<R> requestFactory,
+                                                               CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+
+        return new AuthInterceptor<>(authService, requestFactory, rememberMeProperties);
     }
 
     @Bean

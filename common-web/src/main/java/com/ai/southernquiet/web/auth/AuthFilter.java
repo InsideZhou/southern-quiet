@@ -1,7 +1,6 @@
 package com.ai.southernquiet.web.auth;
 
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -10,48 +9,26 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@SuppressWarnings({"SpringJavaAutowiredMembersInspection", "NullableProblems"})
+@SuppressWarnings("NullableProblems")
 public class AuthFilter extends OncePerRequestFilter {
     private AuthService authService;
     private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
     private CommonWebAutoConfiguration.WebProperties webProperties;
+    private RequestFactory requestFactory;
 
-    @Autowired
-    public AuthFilter(AuthService authService) {
+    public AuthFilter(RequestFactory requestFactory,
+                      CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties,
+                      CommonWebAutoConfiguration.WebProperties webProperties,
+                      AuthService authService) {
+
         this.authService = authService;
-    }
-
-    public CommonWebAutoConfiguration.WebProperties getWebProperties() {
-        return webProperties;
-    }
-
-    @Autowired
-    public void setWebProperties(CommonWebAutoConfiguration.WebProperties webProperties) {
-        this.webProperties = webProperties;
-    }
-
-    public CommonWebAutoConfiguration.SessionRememberMeProperties getRememberMeProperties() {
-        return rememberMeProperties;
-    }
-
-    @Autowired
-    public void setRememberMeProperties(CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+        this.requestFactory = requestFactory;
         this.rememberMeProperties = rememberMeProperties;
-    }
-
-    @Override
-    protected void initFilterBean() throws ServletException {
-        Request.REMEMBER_ME_TIMEOUT = rememberMeProperties.getTimeout();
-        Request.KEY_REMEMBER_ME_COOKIE = rememberMeProperties.getCookie();
-        Request.KEY_USER = webProperties.getUser();
+        this.webProperties = webProperties;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        filterChain.doFilter(Request.build(request, response, authService, getRequestClass()), response);
-    }
-
-    protected Class<? extends Request> getRequestClass() {
-        return Request.class;
+        filterChain.doFilter(requestFactory.createInstance(request, response, rememberMeProperties, webProperties, authService), response);
     }
 }

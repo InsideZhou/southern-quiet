@@ -9,18 +9,21 @@ public interface AuthService {
      * @param username 用户名
      * @param password 密码
      * @param remember 记住该用户。如果true，返回的 {@link User#getRememberToken()} 不为空。
-     * @return 永远不该为null。如果验证失败，请抛出适当的异常。
      * @throws UserNotFoundException      找不到用户
      * @throws IncorrectPasswordException 密码不正确
-     * @throws AuthException              验证失败
      */
-    User<? extends Account> authenticate(String username, String password, boolean remember) throws AuthException;
+    User<?> authenticate(String username, String password, boolean remember) throws AuthException;
+
+    /**
+     * 验证用户身份。
+     */
+    <R extends Request> User<?> authenticate(R request) throws AuthException;
 
     /**
      * 通过remember token的方式获取用户。
      * <p>此时{@link User#isAuthenticated()}应为false。</p>
      */
-    User<? extends Account> getUserByRememberToken(String token);
+    User<?> getUserByRememberToken(String token);
 
     /**
      * 检查用户是否具备所有指定的权限。

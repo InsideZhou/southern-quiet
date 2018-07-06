@@ -1,9 +1,11 @@
 package com.ai.southernquiet.logging;
 
 import com.mongodb.MongoClientURI;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +20,7 @@ import org.springframework.util.StringUtils;
 @Configuration
 @ConditionalOnBean(MongoOperations.class)
 @ConditionalOnClass({SimpleMongoDbFactory.class, MongoClientURI.class, MongoTemplate.class})
+@AutoConfigureAfter(MongoDataAutoConfiguration.class)
 @EnableConfigurationProperties(MongoDbLoggingAutoConfiguration.Properties.class)
 public class MongoDbLoggingAutoConfiguration {
     @Bean

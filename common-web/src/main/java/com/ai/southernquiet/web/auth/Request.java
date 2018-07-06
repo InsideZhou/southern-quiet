@@ -1,42 +1,39 @@
 package com.ai.southernquiet.web.auth;
 
+import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.util.StringUtils;
-import org.springframework.web.util.WebUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
-import java.io.IOException;
 import java.security.Principal;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Request extends HttpServletRequestWrapper {
-    static String KEY_USER; //User在session中的key
-    static String KEY_REMEMBER_ME_COOKIE; //记住我的cookie名称
-    static Duration REMEMBER_ME_TIMEOUT; //记住我的cookie有效时间
-
-    @SuppressWarnings("unchecked")
-    public static <T extends Request> T build(HttpServletRequest request, HttpServletResponse response, AuthService authService, Class<T> cls) {
-        T req = WebUtils.getNativeRequest(request, cls);
-        if (null != req) return req;
-
-        return (T) new Request(request, response, authService);
-    }
-
     private HttpServletResponse response;
     private AuthService authService;
+    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
+    private CommonWebAutoConfiguration.WebProperties webProperties;
 
-    protected Request(HttpServletRequest request, HttpServletResponse response, AuthService authService) {
+    public Request(HttpServletRequest request,
+                   HttpServletResponse response,
+                   CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties,
+                   CommonWebAutoConfiguration.WebProperties webProperties,
+                   AuthService authService) {
+
         super(request);
 
         this.authService = authService;
         this.response = response;
+        this.rememberMeProperties = rememberMeProperties;
+        this.webProperties = webProperties;
     }
 
     @Override
     public String getAuthType() {
-        return HttpServletRequest.FORM_AUTH;
+        User<?> user = getUser();
+
+        return null == user ? null : HttpServletRequest.FORM_AUTH;
     }
 
     @Override
@@ -60,16 +57,30 @@ public class Request extends HttpServletRequestWrapper {
         return user.getAccount();
     }
 
-    @Override
-    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
-        login(getParameter("username"), getParameter("password"));
-        return true;
+    public void authenticate() throws ServletException {
+        User<?> user;
+        try {
+            user = authService.authenticate(this);
+        }
+        catch (AuthException e) {
+            throw new ServletException(e);
+        }
+
+        if (null == user) throw new ServletException(new AuthException("由于未知原因，身份验证失败"));
+
+        writeUser(user);
+        writeRememberMeCookie(user.getRememberToken());
     }
 
     @Override
     public void login(String username, String password) throws ServletException {
+        if (getAuthType() != null || getRemoteUser() != null || getUserPrincipal() != null) {
+            throw new ServletException("已经登录过了。");
+        }
+
         try {
-            login(username, password, true);
+            User<?> user = login(username, password, true);
+            if (null == user) throw new AuthException("由于未知原因，身份验证失败");
         }
         catch (AuthException e) {
             throw new ServletException(e);
@@ -77,23 +88,22 @@ public class Request extends HttpServletRequestWrapper {
     }
 
     @Override
-    public void logout() throws ServletException {
+    public void logout() {
         HttpSession session = getSession();
-        session.removeAttribute(KEY_USER);
+        session.removeAttribute(webProperties.getUser());
 
         writeRememberMeCookie("");
     }
 
-    @SuppressWarnings("unchecked")
-    public User<? extends Account> getUser() {
+    public User<?> getUser() {
         HttpSession session = getSession();
-        Object u = session.getAttribute(KEY_USER);
+        Object u = session.getAttribute(webProperties.getUser());
 
         if (null == u || !User.class.isAssignableFrom(u.getClass())) {
             return null;
         }
 
-        return (User<? extends Account>) u;
+        return (User<?>) u;
     }
 
     public Set<String> getUserRoles() {
@@ -103,26 +113,30 @@ public class Request extends HttpServletRequestWrapper {
         return user.getRoles();
     }
 
-    public void login(String username, String password, boolean remember) throws AuthException {
-        User user = authService.authenticate(username, password, remember);
+    public User<?> login(String username, String password, boolean remember) throws AuthException {
+        User<?> user = authService.authenticate(username, password, remember);
+        if (null == user) throw new AuthException("由于未知原因，身份验证失败");
+
         writeUser(user);
         writeRememberMeCookie(user.getRememberToken());
+
+        return user;
     }
 
     protected void writeUser(User<?> user) {
         HttpSession session = getSession();
-        session.setAttribute(KEY_USER, user);
+        session.setAttribute(webProperties.getUser(), user);
     }
 
     /**
      * 写入remember_me cookie。当 {@param token}为空时，删除该cookie。
      */
     protected void writeRememberMeCookie(String token) {
-        Cookie cookie = new Cookie(KEY_REMEMBER_ME_COOKIE, token);
+        Cookie cookie = new Cookie(rememberMeProperties.getCookie(), token);
         cookie.setHttpOnly(true);
 
         if (StringUtils.hasLength(token)) {
-            cookie.setMaxAge((int) REMEMBER_ME_TIMEOUT.getSeconds());
+            cookie.setMaxAge((int) rememberMeProperties.getTimeout().getSeconds());
         }
         else {
             cookie.setMaxAge(0);

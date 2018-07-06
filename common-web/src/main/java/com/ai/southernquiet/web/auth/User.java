@@ -86,7 +86,7 @@ public class User<T extends Account> implements Serializable {
             return User.class.isAssignableFrom(parameter.getParameterType());
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "ConstantConditions"})
         @Override
         public User<?> resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
             Request request = webRequest.getNativeRequest(Request.class);

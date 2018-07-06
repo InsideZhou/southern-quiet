@@ -51,6 +51,7 @@ public class CommonWebAutoConfiguration {
          * com.ai.southernquiet.web.auth.User在Request attribute中的KEY。
          */
         private String user = "com.ai.southernquiet.web.auth.User";
+
         /**
          * 框架自身所用Filter的注册次序。
          */

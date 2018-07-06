@@ -1,11 +1,12 @@
 package com.ai.southernquiet.web.auth;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.util.WebUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -17,17 +18,26 @@ import java.util.Optional;
 import java.util.Set;
 
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-public class AuthInterceptor extends HandlerInterceptorAdapter {
+public class AuthInterceptor<R extends Request> extends HandlerInterceptorAdapter {
     private AuthService authService;
+    private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
+    private RequestFactory<R> requestFactory;
 
-    @Autowired
-    public AuthInterceptor(AuthService authService) {
+    public AuthInterceptor(AuthService authService,
+                           RequestFactory<R> requestFactory,
+                           CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties) {
+
         this.authService = authService;
+        this.requestFactory = requestFactory;
+        this.rememberMeProperties = rememberMeProperties;
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings({"ConstantConditions"})
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        R req = WebUtils.getNativeRequest(request, requestFactory.getRequestClass());
+        if (null == req) return true;
+
         if (!(handler instanceof HandlerMethod)) return true;
         HandlerMethod handlerMethod = (HandlerMethod) handler;
 
@@ -35,8 +45,6 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
         Auth methodAuth = handlerMethod.getMethodAnnotation(Auth.class);
 
         if (null == beanAuth && null == methodAuth) return true;
-
-        Request req = Request.build(request, response, authService, getRequestClass());
 
         if (null == request.getRemoteUser()) {
             rebuildUserFromRememberCookie(req);
@@ -70,7 +78,7 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
      * @return 返回true时表示检查通过。
      */
     @SuppressWarnings("unused")
-    protected boolean checkAuthNames(Request request, HttpServletResponse response, Set<String> authNames) {
+    protected boolean checkAuthNames(R request, HttpServletResponse response, Set<String> authNames) {
         return authService.checkAuthorization(request.getRemoteUser(), authNames);
     }
 
@@ -80,7 +88,7 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
      * @return 返回true时表示检查通过。
      */
     @SuppressWarnings("unused")
-    protected boolean checkRoles(Request request, HttpServletResponse response, Set<String> white, Set<String> black) {
+    protected boolean checkRoles(R request, HttpServletResponse response, Set<String> white, Set<String> black) {
         Set<String> roles = request.getUserRoles();
 
         if (!white.isEmpty() && roles.stream().noneMatch(white::contains)) return false;
@@ -91,22 +99,18 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
     }
 
     @SuppressWarnings("unused")
-    protected boolean onAuthenticationFail(Request request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
+    protected boolean onAuthenticationFail(R request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "");
         return false;
     }
 
     @SuppressWarnings("unused")
-    protected boolean onAuthorizationFail(Request request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
+    protected boolean onAuthorizationFail(R request, HttpServletResponse response, HandlerMethod handlerMethod) throws IOException {
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "");
         return false;
     }
 
-    protected Class<? extends Request> getRequestClass() {
-        return Request.class;
-    }
-
-    private void collectAuthData(Set<String> authNames, Set<String> whiteRoles, Set<String> blackRoles, Auth auth) {
+    protected void collectAuthData(Set<String> authNames, Set<String> whiteRoles, Set<String> blackRoles, Auth auth) {
         if (null != auth) {
             if (StringUtils.hasText(auth.name())) {
                 authNames.add(auth.name());
@@ -117,11 +121,12 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
         }
     }
 
-    private void rebuildUserFromRememberCookie(Request request) {
+    @SuppressWarnings("unchecked")
+    protected void rebuildUserFromRememberCookie(R request) {
         Cookie[] cookies = request.getCookies();
         if (null == cookies) return;
 
-        Optional<Cookie> opt = Arrays.stream(cookies).filter(c -> Request.KEY_REMEMBER_ME_COOKIE.equals(c.getName())).findFirst();
+        Optional<Cookie> opt = Arrays.stream(cookies).filter(c -> rememberMeProperties.getCookie().equals(c.getName())).findFirst();
         if (opt.isPresent()) {
             User user = authService.getUserByRememberToken(opt.get().getValue());
             if (null != user) {

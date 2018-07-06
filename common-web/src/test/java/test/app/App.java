@@ -73,6 +73,11 @@ public class App extends AbstractWebApp {
                 }
 
                 @Override
+                public <R extends Request> User<?> authenticate(R request) {
+                    return null;
+                }
+
+                @Override
                 public User<Account> getUserByRememberToken(String token) {
                     if (!token.equals(user.getRememberToken())) return null;
 

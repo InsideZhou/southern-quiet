@@ -14,7 +14,7 @@ import javax.servlet.ServletContext;
 /**
  * 初始化web应用。
  */
-@SuppressWarnings({"unused", "WeakerAccess", "CodeBlock2Expr"})
+@SuppressWarnings({"unused", "WeakerAccess", "CodeBlock2Expr", "SpringJavaAutowiredMembersInspection"})
 public abstract class CommonWebInit {
     public void onStartup(ServletContext servletContext) {
         setupLogAppender(servletContext);
