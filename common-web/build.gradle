@@ -1,9 +1,10 @@
 dependencies {
     api project(':framework')
 
-    implementation project(':logging-spring-boot-starter-logback')
+    implementation("org.springframework.boot:spring-boot-starter-web") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
 
-    implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.session:spring-session-core"
     implementation "org.springframework.boot:spring-boot-starter-jetty"
 
@@ -18,6 +19,9 @@ dependencies {
     testImplementation 'org.postgresql:postgresql:42.2.2'
 
     testImplementation project(':filesystem-spring-boot-starter-mongodb')
+
+    testImplementation project(':logging-spring-boot-starter-logback')
+    testImplementation project(':logging-spring-boot-starter-logback-mongodb')
 
     testImplementation project(':broadcasting-spring-boot-starter-redis').sourceSets.test.output
 }

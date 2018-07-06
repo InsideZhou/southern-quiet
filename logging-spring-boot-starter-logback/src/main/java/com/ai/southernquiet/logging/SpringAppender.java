@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 /**
  * 用来代理到spring bean的的appender。
  */
-public class SpringProxyAppender<E> extends UnsynchronizedAppenderBase<E> {
+public class SpringAppender<E> extends UnsynchronizedAppenderBase<E> {
     private ApplicationContext applicationContext;
     private Appender<E> appender;
     private String beanName;

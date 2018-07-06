@@ -18,7 +18,7 @@
         </encoder>
     </appender>
 
-    <appender name="mongodb" class="com.ai.southernquiet.logging.SpringProxyAppender">
+    <appender name="mongodb" class="com.ai.southernquiet.logging.SpringAppender">
         <beanName>mongoDbAppender</beanName>
     </appender>
 
