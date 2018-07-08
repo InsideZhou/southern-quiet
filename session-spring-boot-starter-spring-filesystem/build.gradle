@@ -1,0 +1,5 @@
+dependencies {
+    api project(':common-web')
+
+    implementation "org.springframework.session:spring-session-core"
+}

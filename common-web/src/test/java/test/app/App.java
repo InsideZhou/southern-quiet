@@ -6,7 +6,6 @@ import com.ai.southernquiet.util.BCrypt;
 import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import com.ai.southernquiet.web.auth.*;
-import com.ai.southernquiet.web.session.jetty.JettyAutoConfiguration;
 import instep.InstepLogger;
 import instep.dao.sql.Dialect;
 import org.apache.commons.logging.LogFactory;
@@ -19,7 +18,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.session.config.annotation.web.http.EnableSpringHttpSession;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,9 +30,8 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"}, exclude = JettyAutoConfiguration.class)
+@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
 @EnableScheduling
-@EnableSpringHttpSession
 @EnableTransactionManagement
 public class App extends AbstractWebApp {
     private static Logger logger = LoggerFactory.getLogger(App.class);

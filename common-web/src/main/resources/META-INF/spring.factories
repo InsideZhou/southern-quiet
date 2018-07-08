@@ -1,5 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.ai.southernquiet.web.CommonWebAutoConfiguration,\
-  com.ai.southernquiet.web.auth.AuthAutoConfiguration,\
-  com.ai.southernquiet.web.session.jetty.JettyAutoConfiguration,\
-  com.ai.southernquiet.web.session.spring.SpringSessionAutoConfiguration
+  com.ai.southernquiet.web.auth.AuthAutoConfiguration
