@@ -10,13 +10,13 @@ import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.session.SessionRepository;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@ConditionalOnClass(Server.class)
 public class JettyAutoConfiguration {
     @Bean
-    @ConditionalOnMissingBean({SessionDataStore.class, SessionRepository.class})
+    @ConditionalOnMissingBean({SessionDataStore.class})
     public FileSessionDataStore sessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
         return new FileSessionDataStore(fileSystem, properties);
     }

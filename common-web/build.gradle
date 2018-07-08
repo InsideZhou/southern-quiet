@@ -5,8 +5,8 @@ dependencies {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
-    implementation "org.springframework.session:spring-session-core"
-    implementation "org.springframework.boot:spring-boot-starter-jetty"
+    provided "org.springframework.session:spring-session-core"
+    provided "org.springframework.boot:spring-boot-starter-jetty"
 
     testImplementation "org.springframework.boot:spring-boot-starter-actuator"
     testImplementation "org.springframework.boot:spring-boot-starter-jdbc"
