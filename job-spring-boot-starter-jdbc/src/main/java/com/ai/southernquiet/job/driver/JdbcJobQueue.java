@@ -2,6 +2,7 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.JobTable;
+import com.ai.southernquiet.job.SerializableJob;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
 import instep.dao.Plan;
@@ -17,12 +18,12 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.Objects;
 
-public class JdbcJobQueue implements JobQueue {
-    public static byte[] serialize(Object data) {
+public class JdbcJobQueue implements JobQueue<SerializableJob> {
+    public static byte[] serialize(SerializableJob data) {
         return SerializationUtils.serialize(data);
     }
 
-    public static Object deserialize(InputStream stream) {
+    public static SerializableJob deserialize(InputStream stream) {
         byte[] bytes;
         try {
             bytes = StreamUtils.copyToByteArray(stream);
@@ -31,7 +32,7 @@ public class JdbcJobQueue implements JobQueue {
             throw new RuntimeException(e);
         }
 
-        return SerializationUtils.deserialize(bytes);
+        return (SerializableJob) SerializationUtils.deserialize(bytes);
     }
 
     private JobTable jobTable;
@@ -46,7 +47,7 @@ public class JdbcJobQueue implements JobQueue {
     }
 
     @Override
-    public <T> void enqueue(T job) {
+    public void enqueue(SerializableJob job) {
         Plan plan;
         try {
             plan = jobTable.insert()
@@ -61,7 +62,7 @@ public class JdbcJobQueue implements JobQueue {
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public <T> T dequeue() {
+    public SerializableJob dequeue() {
         InputStream data = TransactionTemplate.INSTANCE.repeatable((context) -> {
             Plan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
             String scalar;
@@ -92,7 +93,7 @@ public class JdbcJobQueue implements JobQueue {
             return Objects.requireNonNull(row).get(jobTable.payload);
         });
 
-        return null == data ? null : (T) deserialize(data);
+        return null == data ? null : deserialize(data);
     }
 
     public TableRow getLastDequeuedTableRow() {

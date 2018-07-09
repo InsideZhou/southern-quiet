@@ -3,6 +3,7 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.job.SerializableJob;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
 
@@ -12,13 +13,13 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.UUID;
 
-public class FileJobQueue implements JobQueue {
-    public static InputStream serialize(Object data) {
+public class FileJobQueue implements JobQueue<SerializableJob> {
+    public static InputStream serialize(SerializableJob data) {
         return new ByteArrayInputStream(SerializationUtils.serialize(data));
     }
 
-    public static Object deserialize(byte[] bytes) {
-        return SerializationUtils.deserialize(bytes);
+    public static SerializableJob deserialize(byte[] bytes) {
+        return (SerializableJob) SerializationUtils.deserialize(bytes);
     }
 
     private FileSystem fileSystem;
@@ -49,7 +50,7 @@ public class FileJobQueue implements JobQueue {
     }
 
     @Override
-    public <T> void enqueue(T job) {
+    public void enqueue(SerializableJob job) {
         try {
             fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
         }
@@ -60,7 +61,7 @@ public class FileJobQueue implements JobQueue {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T dequeue() {
+    public SerializableJob dequeue() {
         try {
             Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
 
@@ -70,7 +71,7 @@ public class FileJobQueue implements JobQueue {
                 try (InputStream inputStream = fileSystem.openReadStream(path)) {
                     byte[] bytes = StreamUtils.copyToByteArray(inputStream);
 
-                    T job = (T) deserialize(bytes);
+                    SerializableJob job = deserialize(bytes);
                     fileSystem.delete(path);
                     return job;
                 }

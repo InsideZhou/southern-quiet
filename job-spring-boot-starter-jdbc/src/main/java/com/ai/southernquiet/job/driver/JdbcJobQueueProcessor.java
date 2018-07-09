@@ -3,6 +3,7 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.job.AbstractJobQueueProcessor;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobTable;
+import com.ai.southernquiet.job.SerializableJob;
 import instep.dao.DaoException;
 import instep.dao.Plan;
 import instep.dao.sql.InstepSQL;
@@ -10,7 +11,7 @@ import instep.dao.sql.TableRow;
 
 import java.time.Instant;
 
-public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor {
+public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<SerializableJob> {
     private JdbcJobQueue jobQueue;
     private JobTable jobTable;
     private FailedJobTable failedJobTable;
@@ -24,7 +25,7 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor {
     }
 
     @Override
-    public <T> void process() {
+    public void process() {
         instepSQL.transaction().repeatable(context -> {
             super.process();
             return null;
@@ -32,12 +33,12 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor {
     }
 
     @Override
-    protected <T> T getJobFromQueue() {
+    protected SerializableJob getJobFromQueue() {
         return jobQueue.dequeue();
     }
 
     @Override
-    public <T> void onJobSuccess(T job) {
+    public void onJobSuccess(SerializableJob job) {
         TableRow row = jobQueue.getLastDequeuedTableRow();
         try {
             Plan plan = jobTable.delete().where(row.getLong(jobTable.id));
@@ -49,7 +50,7 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor {
     }
 
     @Override
-    public <T> void onJobFail(T job, Exception e) {
+    public void onJobFail(SerializableJob job, Exception e) {
         TableRow jobRow = jobQueue.getLastDequeuedTableRow();
         Long jobId = jobRow.getLong(jobTable.id);
 
