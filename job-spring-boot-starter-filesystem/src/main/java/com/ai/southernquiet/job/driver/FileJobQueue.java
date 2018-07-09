@@ -2,7 +2,6 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.filesystem.*;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
-import com.ai.southernquiet.job.Job;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
@@ -14,12 +13,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class FileJobQueue implements JobQueue {
-    public static InputStream serialize(Job data) {
+    public static InputStream serialize(Object data) {
         return new ByteArrayInputStream(SerializationUtils.serialize(data));
     }
 
-    public static Job deserialize(byte[] bytes) {
-        return ((Job) SerializationUtils.deserialize(bytes));
+    public static Object deserialize(byte[] bytes) {
+        return SerializationUtils.deserialize(bytes);
     }
 
     private FileSystem fileSystem;
@@ -43,14 +42,14 @@ public class FileJobQueue implements JobQueue {
     }
 
     public FileJobQueue(FileSystem fileSystem, FileSystemJobAutoConfiguration.Properties properties) {
-        this.workingRoot = properties.getFileSystem().getWorkingRoot();
+        this.workingRoot = properties.getWorkingRoot();
 
         fileSystem.createDirectory(this.workingRoot);
         this.fileSystem = fileSystem;
     }
 
     @Override
-    public void enqueue(Job job) {
+    public <T> void enqueue(T job) {
         try {
             fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
         }
@@ -59,8 +58,9 @@ public class FileJobQueue implements JobQueue {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Job dequeue() {
+    public <T> T dequeue() {
         try {
             Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
 
@@ -70,7 +70,7 @@ public class FileJobQueue implements JobQueue {
                 try (InputStream inputStream = fileSystem.openReadStream(path)) {
                     byte[] bytes = StreamUtils.copyToByteArray(inputStream);
 
-                    Job job = deserialize(bytes);
+                    T job = (T) deserialize(bytes);
                     fileSystem.delete(path);
                     return job;
                 }

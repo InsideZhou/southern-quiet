@@ -4,21 +4,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-public abstract class AbstractJobQueueProcessor<T extends Job> implements JobQueueProcessor<T> {
-    private Map<Class<T>, Consumer<T>> consumerMap = new ConcurrentHashMap<>();
+public abstract class AbstractJobQueueProcessor implements JobQueueProcessor {
+    private Map<Class<?>, Consumer<?>> consumerMap = new ConcurrentHashMap<>();
 
     @Override
-    public void registerJobConsumer(Class<T> cls, Consumer<T> consumer) {
+    public <T> void registerJobConsumer(Class<T> cls, Consumer<T> consumer) {
         consumerMap.putIfAbsent(cls, consumer);
     }
 
-    public Consumer<T> getConsumer(Class<T> cls) {
-        return consumerMap.get(cls);
+    @SuppressWarnings("unchecked")
+    public <T> Consumer<T> getConsumer(Class<T> cls) {
+        return (Consumer<T>) consumerMap.get(cls);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void process() {
+    public <T> void process() {
         T job = getJobFromQueue();
 
         Consumer<T> consumer = getConsumer((Class<T>) job.getClass());
@@ -41,9 +42,9 @@ public abstract class AbstractJobQueueProcessor<T extends Job> implements JobQue
         onJobSuccess(job);
     }
 
-    protected abstract T getJobFromQueue();
+    protected abstract <T> T getJobFromQueue();
 
-    public abstract void onJobSuccess(T job);
+    public abstract <T> void onJobSuccess(T job);
 
-    public abstract void onJobFail(T job, Exception e) throws Exception;
+    public abstract <T> void onJobFail(T job, Exception e) throws Exception;
 }

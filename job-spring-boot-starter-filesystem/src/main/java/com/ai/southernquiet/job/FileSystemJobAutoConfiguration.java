@@ -1,9 +1,12 @@
 package com.ai.southernquiet.job;
 
 import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.job.driver.FileJobQueue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -11,31 +14,25 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnBean(FileSystem.class)
 @EnableConfigurationProperties(FileSystemJobAutoConfiguration.Properties.class)
 public class FileSystemJobAutoConfiguration {
-    @ConfigurationProperties("framework.job.filesystem")
+    @Bean
+    @ConditionalOnMissingBean
+    public FileJobQueue fileJobQueue(FileSystem fileSystem, Properties properties) {
+        return new FileJobQueue(fileSystem, properties);
+    }
+
+    @ConfigurationProperties("framework.job.file-system")
     public static class Properties {
-        private FileSystem fileSystem = new FileSystem();
+        /**
+         * 任务队列持久化在FileSystem中的路径
+         */
+        private String workingRoot = "JOB_QUEUE";
 
-        public FileSystem getFileSystem() {
-            return fileSystem;
+        public String getWorkingRoot() {
+            return workingRoot;
         }
 
-        public void setFileSystem(FileSystem fileSystem) {
-            this.fileSystem = fileSystem;
-        }
-
-        public class FileSystem {
-            /**
-             * 任务队列持久化在FileSystem中的路径
-             */
-            private String workingRoot = "JOB_QUEUE";
-
-            public String getWorkingRoot() {
-                return workingRoot;
-            }
-
-            public void setWorkingRoot(String workingRoot) {
-                this.workingRoot = workingRoot;
-            }
+        public void setWorkingRoot(String workingRoot) {
+            this.workingRoot = workingRoot;
         }
     }
 }

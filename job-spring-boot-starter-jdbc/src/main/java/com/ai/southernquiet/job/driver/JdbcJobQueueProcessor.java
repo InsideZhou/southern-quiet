@@ -2,7 +2,6 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.AbstractJobQueueProcessor;
 import com.ai.southernquiet.job.FailedJobTable;
-import com.ai.southernquiet.job.Job;
 import com.ai.southernquiet.job.JobTable;
 import instep.dao.DaoException;
 import instep.dao.Plan;
@@ -11,7 +10,7 @@ import instep.dao.sql.TableRow;
 
 import java.time.Instant;
 
-public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Job> {
+public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor {
     private JdbcJobQueue jobQueue;
     private JobTable jobTable;
     private FailedJobTable failedJobTable;
@@ -25,7 +24,7 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Job> {
     }
 
     @Override
-    public void process() {
+    public <T> void process() {
         instepSQL.transaction().repeatable(context -> {
             super.process();
             return null;
@@ -33,12 +32,12 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Job> {
     }
 
     @Override
-    protected Job getJobFromQueue() {
+    protected <T> T getJobFromQueue() {
         return jobQueue.dequeue();
     }
 
     @Override
-    public void onJobSuccess(Job job) {
+    public <T> void onJobSuccess(T job) {
         TableRow row = jobQueue.getLastDequeuedTableRow();
         try {
             Plan plan = jobTable.delete().where(row.getLong(jobTable.id));
@@ -50,41 +49,37 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Job> {
     }
 
     @Override
-    public void onJobFail(Job job, Exception e) {
-        instepSQL.transaction().repeatable(context -> {
-            TableRow jobRow = jobQueue.getLastDequeuedTableRow();
-            Long jobId = jobRow.getLong(jobTable.id);
+    public <T> void onJobFail(T job, Exception e) {
+        TableRow jobRow = jobQueue.getLastDequeuedTableRow();
+        Long jobId = jobRow.getLong(jobTable.id);
 
-            try {
-                TableRow failedJobRow = failedJobTable.get(jobId);
+        try {
+            TableRow failedJobRow = failedJobTable.get(jobId);
 
-                Plan plan;
+            Plan plan;
 
-                if (null == failedJobRow) {
-                    plan = failedJobTable.insert()
-                        .addValue(failedJobTable.id, jobId)
-                        .addValue(failedJobTable.payload, jobRow.get(jobTable.payload))
-                        .addValue(failedJobTable.failureCount, 1)
-                        .addValue(failedJobTable.exception, e.toString())
-                        .addValue(failedJobTable.createdAt, jobRow.get(jobTable.createdAt))
-                        .addValue(failedJobTable.lastExecutionStartedAt, jobRow.get(jobTable.executionStartedAt));
+            if (null == failedJobRow) {
+                plan = failedJobTable.insert()
+                    .addValue(failedJobTable.id, jobId)
+                    .addValue(failedJobTable.payload, jobRow.get(jobTable.payload))
+                    .addValue(failedJobTable.failureCount, 1)
+                    .addValue(failedJobTable.exception, e.toString())
+                    .addValue(failedJobTable.createdAt, jobRow.get(jobTable.createdAt))
+                    .addValue(failedJobTable.lastExecutionStartedAt, jobRow.get(jobTable.executionStartedAt));
 
-                    instepSQL.executor().execute(jobTable.delete().where(jobId));
-                }
-                else {
-                    plan = failedJobTable.update()
-                        .set(failedJobTable.failureCount, failedJobRow.get(failedJobTable.failureCount) + 1)
-                        .set(failedJobTable.exception, e.toString())
-                        .set(failedJobTable.lastExecutionStartedAt, Instant.now());
-                }
-
-                instepSQL.executor().execute(plan);
+                instepSQL.executor().execute(jobTable.delete().where(jobId));
             }
-            catch (DaoException e1) {
-                throw new RuntimeException(e1);
+            else {
+                plan = failedJobTable.update()
+                    .set(failedJobTable.failureCount, failedJobRow.get(failedJobTable.failureCount) + 1)
+                    .set(failedJobTable.exception, e.toString())
+                    .set(failedJobTable.lastExecutionStartedAt, Instant.now());
             }
 
-            return null;
-        });
+            instepSQL.executor().execute(plan);
+        }
+        catch (DaoException e1) {
+            throw new RuntimeException(e1);
+        }
     }
 }

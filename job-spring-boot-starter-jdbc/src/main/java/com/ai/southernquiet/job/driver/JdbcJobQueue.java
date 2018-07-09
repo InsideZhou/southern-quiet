@@ -1,6 +1,5 @@
 package com.ai.southernquiet.job.driver;
 
-import com.ai.southernquiet.job.Job;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.JobTable;
 import com.ai.southernquiet.util.SerializationUtils;
@@ -19,11 +18,11 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class JdbcJobQueue implements JobQueue {
-    public static byte[] serialize(Job data) {
+    public static byte[] serialize(Object data) {
         return SerializationUtils.serialize(data);
     }
 
-    public static Job deserialize(InputStream stream) {
+    public static Object deserialize(InputStream stream) {
         byte[] bytes;
         try {
             bytes = StreamUtils.copyToByteArray(stream);
@@ -32,7 +31,7 @@ public class JdbcJobQueue implements JobQueue {
             throw new RuntimeException(e);
         }
 
-        return ((Job) SerializationUtils.deserialize(bytes));
+        return SerializationUtils.deserialize(bytes);
     }
 
     private JobTable jobTable;
@@ -47,7 +46,7 @@ public class JdbcJobQueue implements JobQueue {
     }
 
     @Override
-    public void enqueue(Job job) {
+    public <T> void enqueue(T job) {
         Plan plan;
         try {
             plan = jobTable.insert()
@@ -62,7 +61,7 @@ public class JdbcJobQueue implements JobQueue {
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public Job dequeue() {
+    public <T> T dequeue() {
         InputStream data = TransactionTemplate.INSTANCE.repeatable((context) -> {
             Plan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
             String scalar;
@@ -93,7 +92,7 @@ public class JdbcJobQueue implements JobQueue {
             return Objects.requireNonNull(row).get(jobTable.payload);
         });
 
-        return null == data ? null : deserialize(data);
+        return null == data ? null : (T) deserialize(data);
     }
 
     public TableRow getLastDequeuedTableRow() {

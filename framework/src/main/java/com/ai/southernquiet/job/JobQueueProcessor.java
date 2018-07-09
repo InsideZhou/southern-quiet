@@ -5,11 +5,11 @@ import java.util.function.Consumer;
 /**
  * 任务队列处理器。
  */
-public interface JobQueueProcessor<T extends Job> {
+public interface JobQueueProcessor {
     /**
      * 处理队列中的任务。
      */
-    void process();
+    <T> void process();
 
     /**
      * 注册Job处理器。
@@ -17,5 +17,5 @@ public interface JobQueueProcessor<T extends Job> {
      * @param cls      Job类型
      * @param consumer Job处理器
      */
-    void registerJobConsumer(Class<T> cls, Consumer<T> consumer);
+    <T> void registerJobConsumer(Class<T> cls, Consumer<T> consumer);
 }
