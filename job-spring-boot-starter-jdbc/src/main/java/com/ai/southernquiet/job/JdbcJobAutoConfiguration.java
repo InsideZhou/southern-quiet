@@ -7,7 +7,6 @@ import instep.dao.sql.ConnectionProvider;
 import instep.dao.sql.Dialect;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.TransactionContext;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,7 +17,6 @@ import javax.sql.DataSource;
 
 @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "SpringFacetCodeInspection"})
 @Configuration
-@ConditionalOnClass(InstepSQL.class)
 @EnableConfigurationProperties(JdbcJobAutoConfiguration.Properties.class)
 public class JdbcJobAutoConfiguration {
     @Bean

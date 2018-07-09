@@ -30,7 +30,7 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 @RestController
-@SpringBootApplication(scanBasePackages = {"com.ai.southernquiet"})
+@SpringBootApplication
 @EnableScheduling
 @EnableTransactionManagement
 public class App extends AbstractWebApp {

@@ -6,23 +6,16 @@ import org.eclipse.jetty.server.session.SessionDataStore;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.webapp.AbstractConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings({"WeakerAccess", "unused"})
 public class JettyConfiguration extends AbstractConfiguration {
     private SessionDataStore sessionDataStore;
 
-    public SessionDataStore getSessionDataStore() {
-        return sessionDataStore;
-    }
-
-    @Autowired(required = false)
-    public void setSessionDataStore(SessionDataStore sessionDataStore) {
+    public JettyConfiguration(SessionDataStore sessionDataStore) {
         this.sessionDataStore = sessionDataStore;
     }
 
     @Override
-    public void configure(WebAppContext context) throws Exception {
+    public void configure(WebAppContext context) {
         configureSessionHandler(context);
     }
 

@@ -18,8 +18,8 @@ public class JettyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JettyConfiguration jettyConfiguration() {
-        return new JettyConfiguration();
+    public JettyConfiguration jettyConfiguration(FileSessionDataStore fileSessionDataStore) {
+        return new JettyConfiguration(fileSessionDataStore);
     }
 
     @Bean

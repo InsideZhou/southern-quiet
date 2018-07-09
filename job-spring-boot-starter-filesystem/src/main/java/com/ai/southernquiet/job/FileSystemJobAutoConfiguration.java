@@ -1,11 +1,14 @@
 package com.ai.southernquiet.job;
 
+import com.ai.southernquiet.filesystem.FileSystem;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@ConditionalOnBean(FileSystem.class)
 @EnableConfigurationProperties(FileSystemJobAutoConfiguration.Properties.class)
 public class FileSystemJobAutoConfiguration {
     @ConfigurationProperties("framework.job.filesystem")
