@@ -41,10 +41,11 @@ public class FrameworkAutoConfiguration {
         return new LocalFileSystem(properties);
     }
 
+    @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean(Publisher.class)
-    public DefaultPublisher publisher(Broadcaster<Event> broadcaster, BroadcastingProperties properties) {
-        return new DefaultPublisher(broadcaster, properties);
+    public DefaultPublisher publisher(Broadcaster<? extends Event> broadcaster, BroadcastingProperties properties) {
+        return new DefaultPublisher((Broadcaster<Event>) broadcaster, properties);
     }
 
     @ConfigurationProperties("framework.broadcasting")

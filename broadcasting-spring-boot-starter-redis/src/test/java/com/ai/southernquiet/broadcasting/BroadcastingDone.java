@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @ShouldBroadcast
-public class BroadcastingDone implements Serializable {
+public class BroadcastingDone implements SerializableEvent {
     private UUID id = UUID.randomUUID();
 
     public UUID getId() {

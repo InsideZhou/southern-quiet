@@ -8,7 +8,7 @@ public interface Publisher {
     /**
      * 仅在本地（当前ApplicationContext）发布事件，不对外广播。
      */
-    <E> void publishToLocalOnly(E event);
+    <T> void publishToLocalOnly(T event);
 
     /**
      * 发布事件。被{@link ShouldBroadcast}标注的事件将通过其指定的频道发送广播。
