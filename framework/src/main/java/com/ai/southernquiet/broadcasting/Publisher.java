@@ -13,5 +13,5 @@ public interface Publisher {
     /**
      * 发布事件。被{@link ShouldBroadcast}标注的事件将通过其指定的频道发送广播。
      */
-    <E> void publish(E event);
+    <E extends Event> void publish(E event);
 }

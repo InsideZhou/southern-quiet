@@ -1,4 +1,6 @@
 package com.ai.southernquiet.job;
 
-public interface SerializableJob extends Job {
+import java.io.Serializable;
+
+public interface SerializableJob extends Job, Serializable {
 }

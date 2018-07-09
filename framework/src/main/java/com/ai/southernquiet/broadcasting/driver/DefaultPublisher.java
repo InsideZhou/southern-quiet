@@ -2,6 +2,7 @@ package com.ai.southernquiet.broadcasting.driver;
 
 import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.broadcasting.Broadcaster;
+import com.ai.southernquiet.broadcasting.Event;
 import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.broadcasting.ShouldBroadcast;
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,10 +10,10 @@ import org.springframework.context.ApplicationEventPublisherAware;
 
 public class DefaultPublisher implements Publisher, ApplicationEventPublisherAware {
     private ApplicationEventPublisher applicationEventPublisher;
-    private Broadcaster broadcaster;
+    private Broadcaster<Event> broadcaster;
     private String[] defaultChannel;
 
-    public DefaultPublisher(Broadcaster broadcaster, FrameworkAutoConfiguration.BroadcastingProperties properties) {
+    public DefaultPublisher(Broadcaster<Event> broadcaster, FrameworkAutoConfiguration.BroadcastingProperties properties) {
         this.broadcaster = broadcaster;
         this.defaultChannel = properties.getDefaultChannels();
     }
@@ -30,7 +31,7 @@ public class DefaultPublisher implements Publisher, ApplicationEventPublisherAwa
 
     @SuppressWarnings("ConstantConditions")
     @Override
-    public <E> void publish(E event) {
+    public <E extends Event> void publish(E event) {
         publishToLocalOnly(event);
 
         ShouldBroadcast annotation = event.getClass().getAnnotation(ShouldBroadcast.class);
