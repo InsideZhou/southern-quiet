@@ -1,0 +1,9 @@
+types:
+  - build
+
+buid:
+  type: buid
+  script:
+    - gradlew publishToCnbss
+  tags:
+    - CNBSS

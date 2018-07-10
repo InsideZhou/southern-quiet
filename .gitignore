@@ -7,6 +7,8 @@
 /out/*
 */out/*
 
+!.gitlab-ci.yml
+
 *.iml
 application-default.properties
 gradle-app.setting
