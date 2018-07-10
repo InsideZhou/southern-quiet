@@ -99,15 +99,20 @@ subprojects {
 
         repositories {
             maven {
+                def isSnapshot = version.endsWith("SNAPSHOT")
                 def releasesRepoUrl = project.hasProperty('cnbssReleaseUrl') ? cnbssReleaseUrl : ''
                 def snapshotsRepoUrl = project.hasProperty('cnbssSnapshotUrl') ? cnbssSnapshotUrl : ''
-                url version.endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
+
+                url isSnapshot ? snapshotsRepoUrl : releasesRepoUrl
 
                 name 'cnbss'
 
+                def cnbssUsername = isSnapshot ? (project.hasProperty('cnbssSnapshotUsername') ? cnbssSnapshotUsername : '') : (project.hasProperty('cnbssReleaseUsername') ? cnbssReleaseUsername : '')
+                def cnbssPassword = isSnapshot ? (project.hasProperty('cnbssSnapshotPassword') ? cnbssSnapshotPassword : '') : (project.hasProperty('cnbssReleasePassword') ? cnbssReleasePassword : '')
+
                 credentials {
-                    username = project.hasProperty('cnbssUsername') ? cnbssUsername : ''
-                    password = project.hasProperty('cnbssPassword') ? cnbssPassword : ''
+                    username = cnbssUsername
+                    password = cnbssPassword
                 }
             }
         }
