@@ -2,7 +2,7 @@ types:
   - build
 
 buid:
-  type: buid
+  type: build
   script:
     - gradlew publishToCnbss
   tags:
