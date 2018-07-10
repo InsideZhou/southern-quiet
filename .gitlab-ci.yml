@@ -4,6 +4,6 @@ types:
 buid:
   type: build
   script:
-    - gradlew publishToCnbss
+    - bash gradlew publishToCnbss
   tags:
     - CNBSS
