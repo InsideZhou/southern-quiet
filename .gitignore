@@ -6,6 +6,8 @@
 */build/*
 /out/*
 */out/*
+/bin/*
+*/bin/*
 
 !.gitlab-ci.yml
 
