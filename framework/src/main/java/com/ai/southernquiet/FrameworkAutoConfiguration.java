@@ -1,7 +1,6 @@
 package com.ai.southernquiet;
 
 import com.ai.southernquiet.broadcasting.Broadcaster;
-import com.ai.southernquiet.broadcasting.Event;
 import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.broadcasting.driver.DefaultPublisher;
 import com.ai.southernquiet.filesystem.FileSystem;
@@ -44,8 +43,8 @@ public class FrameworkAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean(Publisher.class)
-    public DefaultPublisher publisher(Broadcaster<? extends Event> broadcaster, BroadcastingProperties properties) {
-        return new DefaultPublisher((Broadcaster<Event>) broadcaster, properties);
+    public DefaultPublisher publisher(Broadcaster<?> broadcaster, BroadcastingProperties properties) {
+        return new DefaultPublisher(broadcaster, properties);
     }
 
     @ConfigurationProperties("framework.broadcasting")

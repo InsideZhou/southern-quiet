@@ -3,21 +3,21 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.job.AbstractJobQueueProcessor;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobTable;
-import com.ai.southernquiet.job.SerializableJob;
 import instep.dao.DaoException;
 import instep.dao.Plan;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.TableRow;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<SerializableJob> {
-    private JdbcJobQueue jobQueue;
+public class JdbcJobQueueProcessor<T extends Serializable> extends AbstractJobQueueProcessor<T> {
+    private JdbcJobQueue<T> jobQueue;
     private JobTable jobTable;
     private FailedJobTable failedJobTable;
     private InstepSQL instepSQL;
 
-    public JdbcJobQueueProcessor(JdbcJobQueue jobQueue, JobTable jobTable, FailedJobTable failedJobTable, InstepSQL instepSQL) {
+    public JdbcJobQueueProcessor(JdbcJobQueue<T> jobQueue, JobTable jobTable, FailedJobTable failedJobTable, InstepSQL instepSQL) {
         this.jobQueue = jobQueue;
         this.jobTable = jobTable;
         this.failedJobTable = failedJobTable;
@@ -33,12 +33,12 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Serializabl
     }
 
     @Override
-    protected SerializableJob getJobFromQueue() {
+    protected T getJobFromQueue() {
         return jobQueue.dequeue();
     }
 
     @Override
-    public void onJobSuccess(SerializableJob job) {
+    public void onJobSuccess(T job) {
         TableRow row = jobQueue.getLastDequeuedTableRow();
         try {
             Plan plan = jobTable.delete().where(row.getLong(jobTable.id));
@@ -50,7 +50,7 @@ public class JdbcJobQueueProcessor extends AbstractJobQueueProcessor<Serializabl
     }
 
     @Override
-    public void onJobFail(SerializableJob job, Exception e) {
+    public void onJobFail(T job, Exception e) {
         TableRow jobRow = jobQueue.getLastDequeuedTableRow();
         Long jobId = jobRow.getLong(jobTable.id);
 

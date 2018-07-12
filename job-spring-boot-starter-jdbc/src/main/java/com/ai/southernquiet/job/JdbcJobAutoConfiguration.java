@@ -27,12 +27,6 @@ public class JdbcJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect) {
-        return new TransactionContext.ConnectionProvider(dataSource, dialect);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public JobTable jobTable(Properties properties, InstepSQL instepSQL) {
         JobTable table = new JobTable(properties.getTable());
 

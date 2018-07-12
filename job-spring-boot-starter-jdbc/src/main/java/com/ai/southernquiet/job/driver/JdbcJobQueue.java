@@ -2,7 +2,6 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.JobTable;
-import com.ai.southernquiet.job.SerializableJob;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
 import instep.dao.Plan;
@@ -15,15 +14,17 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
-public class JdbcJobQueue implements JobQueue<SerializableJob> {
-    public static byte[] serialize(SerializableJob data) {
+public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
+    public static <T extends Serializable> byte[] serialize(T data) {
         return SerializationUtils.serialize(data);
     }
 
-    public static SerializableJob deserialize(InputStream stream) {
+    @SuppressWarnings("unchecked")
+    public static <T extends Serializable> T deserialize(InputStream stream) {
         byte[] bytes;
         try {
             bytes = StreamUtils.copyToByteArray(stream);
@@ -32,7 +33,7 @@ public class JdbcJobQueue implements JobQueue<SerializableJob> {
             throw new RuntimeException(e);
         }
 
-        return (SerializableJob) SerializationUtils.deserialize(bytes);
+        return (T) SerializationUtils.deserialize(bytes);
     }
 
     private JobTable jobTable;
@@ -47,7 +48,7 @@ public class JdbcJobQueue implements JobQueue<SerializableJob> {
     }
 
     @Override
-    public void enqueue(SerializableJob job) {
+    public void enqueue(T job) {
         Plan plan;
         try {
             plan = jobTable.insert()
@@ -62,7 +63,7 @@ public class JdbcJobQueue implements JobQueue<SerializableJob> {
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public SerializableJob dequeue() {
+    public T dequeue() {
         InputStream data = TransactionTemplate.INSTANCE.repeatable((context) -> {
             Plan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
             String scalar;

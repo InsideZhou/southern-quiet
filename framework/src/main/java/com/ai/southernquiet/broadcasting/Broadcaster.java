@@ -3,7 +3,7 @@ package com.ai.southernquiet.broadcasting;
 /**
  * 事件广播器。
  */
-public interface Broadcaster<E extends Event> {
+public interface Broadcaster<E> {
     /**
      * 广播事件。
      *

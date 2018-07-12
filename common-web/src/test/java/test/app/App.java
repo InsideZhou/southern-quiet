@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.sql.DataSource;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Set;
 
@@ -89,7 +89,7 @@ public class App extends AbstractWebApp {
         }
 
         @Bean
-        public Dialect dialect(DataSource dataSource, @Value("${spring.datasource.url}") String url) {
+        public Dialect dialect(@Value("${spring.datasource.url}") String url) {
             return Dialect.Companion.of(url);
         }
 
@@ -175,7 +175,7 @@ public class App extends AbstractWebApp {
     }
 
     @Autowired
-    private Publisher publisher;
+    private Publisher<Serializable> publisher;
 
     @RequestMapping("/broadcast")
     void broadcast() {

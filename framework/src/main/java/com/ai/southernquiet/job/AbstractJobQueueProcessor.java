@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-public abstract class AbstractJobQueueProcessor<T extends Job> implements JobQueueProcessor<T> {
+public abstract class AbstractJobQueueProcessor<T> implements JobQueueProcessor<T> {
     private Map<Class<T>, Consumer<T>> consumerMap = new ConcurrentHashMap<>();
 
     @Override

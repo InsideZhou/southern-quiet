@@ -1,26 +1,27 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.AbstractJobQueueProcessor;
-import com.ai.southernquiet.job.SerializableJob;
 
-public class FileJobQueueProcessor extends AbstractJobQueueProcessor<SerializableJob> {
-    private FileJobQueue jobQueue;
+import java.io.Serializable;
 
-    public FileJobQueueProcessor(FileJobQueue jobQueue) {
+public class FileJobQueueProcessor<T extends Serializable> extends AbstractJobQueueProcessor<T> {
+    private FileJobQueue<T> jobQueue;
+
+    public FileJobQueueProcessor(FileJobQueue<T> jobQueue) {
         this.jobQueue = jobQueue;
     }
 
     @Override
-    protected SerializableJob getJobFromQueue() {
+    protected T getJobFromQueue() {
         return jobQueue.dequeue();
     }
 
     @Override
-    public void onJobSuccess(SerializableJob job) {
+    public void onJobSuccess(T job) {
     }
 
     @Override
-    public void onJobFail(SerializableJob job, Exception e) {
+    public void onJobFail(T job, Exception e) {
         jobQueue.enqueue(job);
     }
 }
