@@ -70,6 +70,7 @@ subprojects {
 
     jar {
         enabled = true
+        baseName = "$rootProject.name-$project.name"
     }
 
     bootJar {
@@ -92,6 +93,8 @@ subprojects {
     publishing {
         publications {
             all(MavenPublication) {
+                artifactId jar.baseName
+
                 from components.java
 
                 artifact sourceJar
