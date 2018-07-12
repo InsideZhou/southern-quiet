@@ -43,8 +43,6 @@ public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
     public JdbcJobQueue(JobTable jobTable, InstepSQL instepSQL) {
         this.jobTable = jobTable;
         this.instepSQL = instepSQL;
-
-        jobTable.create();
     }
 
     @Override

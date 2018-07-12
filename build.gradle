@@ -26,6 +26,7 @@ subprojects {
 
     apply plugin: 'idea'
     apply plugin: 'eclipse'
+
     apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'org.springframework.boot'
@@ -41,7 +42,6 @@ subprojects {
     repositories {
         mavenLocal()
         jcenter()
-        maven { url "http://repo.spring.io/milestone" }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 

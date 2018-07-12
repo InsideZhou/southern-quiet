@@ -46,7 +46,7 @@ public class JdbcJobAutoConfiguration {
     public FailedJobTable failedJobTable(Properties properties, InstepSQL instepSQL) {
         FailedJobTable table = new FailedJobTable(properties.getFailedTable());
 
-        Plan plan = table.create();
+        Plan plan = table.create().debug();
         try {
             instepSQL.executor().execute(plan);
         }
