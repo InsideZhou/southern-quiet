@@ -60,7 +60,7 @@ subprojects {
     }
 
     configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        resolutionStrategy.cacheChangingModulesFor 3, 'minutes'
     }
 
     compileJava.dependsOn(processResources)
