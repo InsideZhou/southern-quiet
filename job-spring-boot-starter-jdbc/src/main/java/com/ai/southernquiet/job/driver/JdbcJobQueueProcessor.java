@@ -4,8 +4,8 @@ import com.ai.southernquiet.job.AbstractJobQueueProcessor;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobTable;
 import instep.dao.DaoException;
-import instep.dao.Plan;
 import instep.dao.sql.InstepSQL;
+import instep.dao.sql.SQLPlan;
 import instep.dao.sql.TableRow;
 
 import java.io.Serializable;
@@ -41,7 +41,7 @@ public class JdbcJobQueueProcessor<T extends Serializable> extends AbstractJobQu
     public void onJobSuccess(T job) {
         TableRow row = jobQueue.getLastDequeuedTableRow();
         try {
-            Plan plan = jobTable.delete().where(row.getLong(jobTable.id));
+            SQLPlan plan = jobTable.delete().where(row.getLong(jobTable.id));
             instepSQL.executor().execute(plan);
         }
         catch (DaoException e) {
@@ -57,7 +57,7 @@ public class JdbcJobQueueProcessor<T extends Serializable> extends AbstractJobQu
         try {
             TableRow failedJobRow = failedJobTable.get(jobId);
 
-            Plan plan;
+            SQLPlan plan;
 
             if (null == failedJobRow) {
                 plan = failedJobTable.insert()

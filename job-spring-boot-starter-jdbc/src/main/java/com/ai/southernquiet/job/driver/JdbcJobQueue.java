@@ -4,11 +4,7 @@ import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.JobTable;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
-import instep.dao.Plan;
-import instep.dao.sql.ColumnExtensionKt;
-import instep.dao.sql.InstepSQL;
-import instep.dao.sql.TableRow;
-import instep.dao.sql.TransactionTemplate;
+import instep.dao.sql.*;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -47,7 +43,7 @@ public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
 
     @Override
     public void enqueue(T job) {
-        Plan plan;
+        SQLPlan plan;
         try {
             plan = jobTable.insert()
                 .addValue(jobTable.payload, serialize(job))
@@ -63,7 +59,7 @@ public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public T dequeue() {
         InputStream data = TransactionTemplate.INSTANCE.repeatable((context) -> {
-            Plan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
+            SQLPlan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
             String scalar;
             try {
                 scalar = instepSQL.executor().executeScalar(plan);
@@ -76,10 +72,10 @@ public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
 
             long min = Long.parseLong(scalar);
 
-            Plan updatePlan;
+            SQLPlan updatePlan;
             TableRow row;
             try {
-                updatePlan = jobTable.update().set(jobTable.executionStartedAt, Instant.now()).where(min);
+                updatePlan = jobTable.update().set(jobTable.executionStartedAt, Instant.now()).whereKey(min);
 
                 instepSQL.executor().execute(updatePlan);
                 row = jobTable.get(min);
