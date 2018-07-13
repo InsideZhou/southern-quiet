@@ -59,6 +59,10 @@ subprojects {
         testImplementation "org.springframework.boot:spring-boot-starter-test"
     }
 
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
     compileJava.dependsOn(processResources)
 
     tasks.withType(JavaCompile) {
