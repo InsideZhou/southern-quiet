@@ -82,14 +82,6 @@ subprojects {
         from sourceSets.main.allSource
     }
 
-    task publishToCnbss {
-        group "publishing"
-        description "发布到cnbss仓库"
-        dependsOn tasks.withType(PublishToMavenRepository).matching {
-            it.repository == publishing.repositories.cnbss
-        }
-    }
-
     publishing {
         publications {
             all(MavenPublication) {
