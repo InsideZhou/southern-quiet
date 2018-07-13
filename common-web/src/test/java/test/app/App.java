@@ -3,6 +3,7 @@ package test.app;
 import com.ai.southernquiet.broadcasting.BroadcastingDone;
 import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.util.BCrypt;
+import com.ai.southernquiet.util.IdGenerator;
 import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import com.ai.southernquiet.web.auth.*;
@@ -180,5 +181,14 @@ public class App extends AbstractWebApp {
     @RequestMapping("/broadcast")
     void broadcast() {
         publisher.publish(new BroadcastingDone());
+    }
+
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    private IdGenerator idGenerator;
+
+    @RequestMapping("/generateId")
+    long generateId() throws Exception {
+        return idGenerator.generate();
     }
 }

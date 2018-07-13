@@ -2,18 +2,13 @@ package com.ai.southernquiet.job;
 
 import com.ai.southernquiet.job.driver.JdbcJobQueue;
 import instep.dao.DaoException;
-import instep.dao.Plan;
-import instep.dao.sql.ConnectionProvider;
-import instep.dao.sql.Dialect;
 import instep.dao.sql.InstepSQL;
-import instep.dao.sql.TransactionContext;
+import instep.dao.sql.SQLPlan;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.sql.DataSource;
 
 @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "SpringFacetCodeInspection"})
 @Configuration
@@ -30,7 +25,7 @@ public class JdbcJobAutoConfiguration {
     public JobTable jobTable(Properties properties, InstepSQL instepSQL) {
         JobTable table = new JobTable(properties.getTable());
 
-        Plan plan = table.create().debug();
+        SQLPlan plan = table.create().debug();
         try {
             instepSQL.executor().execute(plan);
         }
@@ -46,7 +41,7 @@ public class JdbcJobAutoConfiguration {
     public FailedJobTable failedJobTable(Properties properties, InstepSQL instepSQL) {
         FailedJobTable table = new FailedJobTable(properties.getFailedTable());
 
-        Plan plan = table.create().debug();
+        SQLPlan plan = table.create().debug();
         try {
             instepSQL.executor().execute(plan);
         }

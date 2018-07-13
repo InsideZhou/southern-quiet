@@ -8,6 +8,7 @@ import com.ai.southernquiet.filesystem.FileSystemSupport;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import com.ai.southernquiet.util.Metadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,11 +17,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties({
+    FrameworkAutoConfiguration.Properties.class,
     FrameworkAutoConfiguration.BroadcastingProperties.class,
     FrameworkAutoConfiguration.FileSystemProperties.class,
     FrameworkAutoConfiguration.LocalFileSystemProperties.class,
@@ -45,6 +50,44 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean(Publisher.class)
     public DefaultPublisher publisher(Broadcaster<?> broadcaster, BroadcastingProperties properties) {
         return new DefaultPublisher(broadcaster, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Metadata metadata(Properties properties) {
+        return new Metadata() {
+            @Override
+            public String getRuntimeId() {
+                return StringUtils.hasText(properties.getRuntimeId()) ? properties.getRuntimeId() : getIPWithProcessId();
+            }
+
+            private String getIPWithProcessId() {
+                String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+
+                try {
+                    return jvmName + "/" + InetAddress.getLocalHost().getHostAddress();
+                }
+                catch (UnknownHostException e) {
+                    return jvmName;
+                }
+            }
+        };
+    }
+
+    @ConfigurationProperties("framework")
+    public static class Properties {
+        /**
+         * 框架运行时的id，必须唯一。
+         */
+        private String runtimeId;
+
+        public String getRuntimeId() {
+            return runtimeId;
+        }
+
+        public void setRuntimeId(String runtimeId) {
+            this.runtimeId = runtimeId;
+        }
     }
 
     @ConfigurationProperties("framework.broadcasting")

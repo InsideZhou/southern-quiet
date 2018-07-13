@@ -11,6 +11,7 @@ dependencies {
     testImplementation project(':broadcasting-spring-boot-starter-redis')
     testImplementation "org.springframework.boot:spring-boot-starter-data-redis"
 
+    testImplementation project(':id-generator-spring-boot-starter-jdbc')
     testImplementation project(':job-spring-boot-starter-jdbc')
     testImplementation 'me.insidezhou.instep:instep-spring-boot-starter:1.0.0-SNAPSHOT'
     testImplementation 'org.postgresql:postgresql:42.2.2'

@@ -15,6 +15,8 @@ public class Request extends HttpServletRequestWrapper {
     private CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties;
     private CommonWebAutoConfiguration.WebProperties webProperties;
 
+    private HttpSession session;
+
     public Request(HttpServletRequest request,
                    HttpServletResponse response,
                    CommonWebAutoConfiguration.SessionRememberMeProperties rememberMeProperties,
@@ -22,6 +24,8 @@ public class Request extends HttpServletRequestWrapper {
                    AuthService authService) {
 
         super(request);
+
+        session = request.getSession(); //提前初始化session，避免“java.lang.IllegalStateException: Cannot create a session after the response has been committed”。
 
         this.authService = authService;
         this.response = response;
@@ -89,14 +93,12 @@ public class Request extends HttpServletRequestWrapper {
 
     @Override
     public void logout() {
-        HttpSession session = getSession();
         session.removeAttribute(webProperties.getUser());
 
         writeRememberMeCookie("");
     }
 
     public User<?> getUser() {
-        HttpSession session = getSession();
         Object u = session.getAttribute(webProperties.getUser());
 
         if (null == u || !User.class.isAssignableFrom(u.getClass())) {
@@ -124,7 +126,6 @@ public class Request extends HttpServletRequestWrapper {
     }
 
     protected void writeUser(User<?> user) {
-        HttpSession session = getSession();
         session.setAttribute(webProperties.getUser(), user);
     }
 

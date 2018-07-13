@@ -1,5 +1,5 @@
 package com.ai.southernquiet.util;
 
 public interface IdGenerator {
-    long generate();
+    long generate() throws Exception;
 }
