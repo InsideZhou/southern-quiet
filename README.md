@@ -3,12 +3,15 @@
 
 1. 每个模块都有与之对应的*AutoConfiguration类，模块依赖的外部配置使用*AutoConfiguration.*Properties来管理。
 
+1. 每个*AutoConfiguration类都有与之对应的spring.factories，以便在AutoConfigure时自动载入。
+
 
 ### 提供的特性
 1. FileSystem 文件系统  
 
 > 屏蔽底层细节，提供文件读写的支持，并且由于驱动的不同，可以做到不同机器上的应用共享同一个文件系统。
 
+- filesystem-spring-boot-starter-*
 - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemSupport.assertFileNameValid。
 - 考虑文件并发读写的问题。由于某些驱动在读文件时并不会独占文件，所以需要充分考虑事务的级别。
 
@@ -16,12 +19,13 @@
 
 1. Session 会话  
 
-> 基于FileSystem持久化的Spring Session。
+- session-spring-boot-starter-*
 
 ----
 
 1. Logging 日志
 
+- logging-spring-boot-starter-*
 - 由于Logger初始化时间的原因，基于FileSystem的FileAppender在FileSystem未能初始化时，默认不输出日志。
 
 ----
@@ -41,19 +45,31 @@
     
 1. JobQueue 任务队列
 
-- 继承Job完成任务类。
-- 将Job添加至JobQueue。
+- job-spring-boot-starter-*
 - 使用FileSystem驱动时，会有KEY规范（Job.getId）的问题需要考虑。
+
+----
+    
+1. IdGenerator 发号器/Id生成器
+
+- id-generator-spring-boot-starter-*
+
+----
+    
+1. Broadcaster 事件广播
+
+> 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
+
+- broadcasting-spring-boot-starter-*
+- com.ai.southernquiet.broadcasting.ShouldBroadcast
 
 
 ### 如何使用
 1. 在应用入口类上使用SpringBootApplication或者EnableAutoConfiguration注解。
 
-1. 向Spring的注解扫描添加com.ai.southernquiet包
-
 
 ### 需要注意的局限
-1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Sprint Boot的
+1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Spring Boot的
 [约定](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/reference/htmlsingle/#boot-features-custom-log-configuration)。
 
 1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。

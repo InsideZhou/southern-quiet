@@ -10,7 +10,6 @@ import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -18,7 +17,6 @@ import java.time.temporal.ChronoUnit;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties(JdbcIdGeneratorAutoConfiguration.Properties.class)
-@EnableScheduling
 @EnableAsync
 public class JdbcIdGeneratorAutoConfiguration {
     @Bean
