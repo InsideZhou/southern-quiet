@@ -2,26 +2,29 @@ package com.ai.southernquiet.job;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.scheduling.annotation.Async;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AsyncJobQueue<T> implements JobQueue<T> {
+public abstract class AsyncJobQueue<T> implements JobQueue<T>, ApplicationContextAware {
     private final static Log log = LogFactory.getLog(AsyncJobQueue.class);
 
     protected Map<Class<T>, JobHandler<T>> jobHandlerMap = new ConcurrentHashMap<>();
-    protected List<JobHandler<T>> jobHandlerList;
-
-    public AsyncJobQueue(List<JobHandler<T>> jobHandlerList) {
-        this.jobHandlerList = jobHandlerList;
-    }
+    protected List<JobHandler<T>> jobHandlerList = Collections.emptyList();
 
     @Override
     public void enqueue(T job) {
         process(job);
+    }
+
+    @SuppressWarnings({"unchecked", "NullableProblems"})
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        jobHandlerList = new ArrayList(applicationContext.getBeansOfType(JobHandler.class).values());
     }
 
     @SuppressWarnings({"SuspiciousMethodCalls", "unchecked"})

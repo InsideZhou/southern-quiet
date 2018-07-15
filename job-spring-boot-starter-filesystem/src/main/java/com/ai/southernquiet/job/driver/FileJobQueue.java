@@ -3,14 +3,12 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.job.AsyncJobQueue;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
-import com.ai.southernquiet.job.JobHandler;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.List;
 import java.util.UUID;
 
 public class FileJobQueue<T extends Serializable> extends AsyncJobQueue<T> implements JobQueue<T> {
@@ -43,9 +41,7 @@ public class FileJobQueue<T extends Serializable> extends AsyncJobQueue<T> imple
         this.workingRoot = workingRoot;
     }
 
-    public FileJobQueue(FileSystem fileSystem, List<JobHandler<T>> jobHandlerList, FileSystemJobAutoConfiguration.Properties properties) {
-        super(jobHandlerList);
-
+    public FileJobQueue(FileSystem fileSystem, FileSystemJobAutoConfiguration.Properties properties) {
         this.workingRoot = properties.getWorkingRoot();
 
         fileSystem.createDirectory(this.workingRoot);

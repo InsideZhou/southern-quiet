@@ -5,6 +5,7 @@ import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
 import instep.springboot.SQLAutoConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -24,8 +25,8 @@ public class JdbcJobAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public JdbcJobQueue jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, List<JobHandler<?>> jobHandlerList) {
-        return new JdbcJobQueue(failedJobTable, instepSQL, jobHandlerList);
+    public JdbcJobQueue jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL) {
+        return new JdbcJobQueue(failedJobTable, instepSQL);
     }
 
     @Bean

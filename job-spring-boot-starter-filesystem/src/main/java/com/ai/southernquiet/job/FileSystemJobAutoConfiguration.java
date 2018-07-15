@@ -9,8 +9,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @ConditionalOnBean(FileSystem.class)
@@ -19,8 +17,8 @@ public class FileSystemJobAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public FileJobQueue fileJobQueue(FileSystem fileSystem, Properties properties, List<JobHandler<?>> jobHandlerList) {
-        return new FileJobQueue(fileSystem, jobHandlerList, properties);
+    public FileJobQueue fileJobQueue(FileSystem fileSystem, Properties properties) {
+        return new FileJobQueue(fileSystem, properties);
     }
 
     @ConfigurationProperties("framework.job.file-system")
