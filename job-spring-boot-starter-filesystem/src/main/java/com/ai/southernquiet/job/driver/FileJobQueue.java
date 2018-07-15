@@ -3,7 +3,6 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
-import com.ai.southernquiet.job.OnSiteJobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 
 import java.io.ByteArrayInputStream;

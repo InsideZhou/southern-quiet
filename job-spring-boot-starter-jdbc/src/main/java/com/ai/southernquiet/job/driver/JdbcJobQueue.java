@@ -2,7 +2,6 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobQueue;
-import com.ai.southernquiet.job.OnSiteJobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;

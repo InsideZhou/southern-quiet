@@ -1,5 +1,7 @@
-package com.ai.southernquiet.job;
+package com.ai.southernquiet.job.driver;
 
+import com.ai.southernquiet.job.JobProcessor;
+import com.ai.southernquiet.job.JobQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -12,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务加入队列时在当前ApplicationContext中立即被异步处理的队列。
- * 没有找到相应处理器时，会抛出运行时异常。
+ * 没有找到相应处理器时，会抛出ProcessorNotFoundException。
  */
 public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationContextAware {
     private final static Log log = LogFactory.getLog(OnSiteJobQueue.class);
@@ -53,7 +55,7 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
                 return optional.get();
             }
             else {
-                throw new RuntimeException("没有发现有效的JobProcessor：" + jobClass.getName());
+                throw new ProcessorNotFoundException(jobClass.getName());
             }
         }
 
