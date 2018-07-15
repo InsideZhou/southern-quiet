@@ -46,13 +46,6 @@ subprojects {
     }
 
     dependencies {
-        implementation('de.ruedigermoeller:fst:2.50') {
-            //为什么可以exclude这些需要看fst的pom注释
-            exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
-            exclude group: 'org.javassist', module: 'javassist'
-            exclude group: 'org.objenesis', module: 'objenesis'
-        }
-
         optional "org.springframework.boot:spring-boot-configuration-processor"
         optional "org.springframework.boot:spring-boot-devtools"
 

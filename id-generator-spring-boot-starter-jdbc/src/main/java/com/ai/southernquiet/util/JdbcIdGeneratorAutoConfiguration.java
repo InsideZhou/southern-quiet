@@ -3,6 +3,8 @@ package com.ai.southernquiet.util;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
+import instep.springboot.SQLAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -10,6 +12,7 @@ import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +21,8 @@ import java.time.temporal.ChronoUnit;
 @Configuration
 @EnableConfigurationProperties(JdbcIdGeneratorAutoConfiguration.Properties.class)
 @EnableAsync
+@EnableTransactionManagement
+@AutoConfigureAfter(SQLAutoConfiguration.class)
 public class JdbcIdGeneratorAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

@@ -3,5 +3,11 @@ dependencies {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
+    api('de.ruedigermoeller:fst:2.50') {
+        //为什么可以exclude这些需要看fst的pom注释
+        exclude group: 'org.javassist', module: 'javassist'
+        exclude group: 'org.objenesis', module: 'objenesis'
+    }
+
     testImplementation "org.springframework.boot:spring-boot-starter-json"
 }

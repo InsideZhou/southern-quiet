@@ -1,20 +1,21 @@
 package com.ai.southernquiet.job.driver;
 
+import com.ai.southernquiet.job.AsyncJobQueue;
+import com.ai.southernquiet.job.FailedJobTable;
+import com.ai.southernquiet.job.JobHandler;
 import com.ai.southernquiet.job.JobQueue;
-import com.ai.southernquiet.job.JobTable;
 import com.ai.southernquiet.util.SerializationUtils;
-import instep.dao.DaoException;
-import instep.dao.sql.*;
+import instep.dao.sql.InstepSQL;
+import instep.dao.sql.SQLPlan;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Objects;
+import java.util.List;
 
-public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
+public class JdbcJobQueue<T extends Serializable> extends AsyncJobQueue<T> implements JobQueue<T> {
     public static <T extends Serializable> byte[] serialize(T data) {
         return SerializationUtils.serialize(data);
     }
@@ -32,66 +33,31 @@ public class JdbcJobQueue<T extends Serializable> implements JobQueue<T> {
         return (T) SerializationUtils.deserialize(bytes);
     }
 
-    private JobTable jobTable;
+    private FailedJobTable failedJobTable;
     private InstepSQL instepSQL;
-    private ThreadLocal<TableRow> lastDequeuedTableRow = new ThreadLocal<>();
 
-    public JdbcJobQueue(JobTable jobTable, InstepSQL instepSQL) {
-        this.jobTable = jobTable;
+    public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, List<JobHandler<T>> jobHandlerList) {
+        super(jobHandlerList);
+
+        this.failedJobTable = failedJobTable;
         this.instepSQL = instepSQL;
     }
 
     @Override
     public void enqueue(T job) {
-        SQLPlan plan;
-        try {
-            plan = jobTable.insert()
-                .addValue(jobTable.payload, serialize(job))
-                .addValue(jobTable.createdAt, Instant.now());
-
-            instepSQL.executor().execute(plan);
-        }
-        catch (DaoException e) {
-            throw new RuntimeException(e);
-        }
+        process(job);
     }
 
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public T dequeue() {
-        InputStream data = TransactionTemplate.INSTANCE.repeatable((context) -> {
-            SQLPlan plan = jobTable.select(ColumnExtensionKt.min(jobTable.id)).where(ColumnExtensionKt.isNull(jobTable.executionStartedAt));
-            String scalar;
-            try {
-                scalar = instepSQL.executor().executeScalar(plan);
-            }
-            catch (DaoException e) {
-                throw new RuntimeException(e);
-            }
+    protected void onJobFail(T job, Exception e) throws Exception {
+        Instant now = Instant.now();
 
-            if (!StringUtils.hasText(scalar)) return null;
+        SQLPlan plan = failedJobTable.insert()
+            .addValue(failedJobTable.payload, serialize(job))
+            .addValue(failedJobTable.failureCount, 1)
+            .addValue(failedJobTable.exception, e.getMessage() + "\n" + e.toString())
+            .addValue(failedJobTable.createdAt, now)
+            .addValue(failedJobTable.lastExecutionStartedAt, now);
 
-            long min = Long.parseLong(scalar);
-
-            SQLPlan updatePlan;
-            TableRow row;
-            try {
-                updatePlan = jobTable.update().set(jobTable.executionStartedAt, Instant.now()).whereKey(min);
-
-                instepSQL.executor().execute(updatePlan);
-                row = jobTable.get(min);
-            }
-            catch (DaoException e) {
-                throw new RuntimeException(e);
-            }
-
-            lastDequeuedTableRow.set(row);
-            return Objects.requireNonNull(row).get(jobTable.payload);
-        });
-
-        return null == data ? null : deserialize(data);
-    }
-
-    public TableRow getLastDequeuedTableRow() {
-        return lastDequeuedTableRow.get();
+        instepSQL.executor().execute(plan);
     }
 }

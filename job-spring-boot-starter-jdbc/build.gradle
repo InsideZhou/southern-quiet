@@ -1,7 +1,10 @@
 dependencies {
     api project(':framework')
 
+    implementation "org.springframework.boot:spring-boot-starter-jdbc"
     implementation 'me.insidezhou.instep:instep-spring-boot-starter:1.0.0-SNAPSHOT'
 
     testCompile project(':framework').sourceSets.test.output
+
+    testImplementation 'org.postgresql:postgresql:42.2.2'
 }

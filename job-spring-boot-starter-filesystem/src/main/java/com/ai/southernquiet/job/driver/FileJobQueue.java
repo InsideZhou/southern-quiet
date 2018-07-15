@@ -1,19 +1,19 @@
 package com.ai.southernquiet.job.driver;
 
-import com.ai.southernquiet.filesystem.*;
+import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.job.AsyncJobQueue;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
+import com.ai.southernquiet.job.JobHandler;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
-import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
-public class FileJobQueue<T extends Serializable> implements JobQueue<T> {
+public class FileJobQueue<T extends Serializable> extends AsyncJobQueue<T> implements JobQueue<T> {
     public static <T extends Serializable> InputStream serialize(T data) {
         return new ByteArrayInputStream(SerializationUtils.serialize(data));
     }
@@ -43,7 +43,9 @@ public class FileJobQueue<T extends Serializable> implements JobQueue<T> {
         this.workingRoot = workingRoot;
     }
 
-    public FileJobQueue(FileSystem fileSystem, FileSystemJobAutoConfiguration.Properties properties) {
+    public FileJobQueue(FileSystem fileSystem, List<JobHandler<T>> jobHandlerList, FileSystemJobAutoConfiguration.Properties properties) {
+        super(jobHandlerList);
+
         this.workingRoot = properties.getWorkingRoot();
 
         fileSystem.createDirectory(this.workingRoot);
@@ -52,40 +54,12 @@ public class FileJobQueue<T extends Serializable> implements JobQueue<T> {
 
     @Override
     public void enqueue(T job) {
-        try {
-            fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
-        }
-        catch (InvalidFileException e) {
-            throw new RuntimeException(e);
-        }
+        process(job);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public T dequeue() {
-        try {
-            Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, "", false, 0, 1, PathMetaSort.CreationTime).findFirst();
-
-            if (opt.isPresent()) {
-                String path = opt.get().getPath();
-
-                try (InputStream inputStream = fileSystem.openReadStream(path)) {
-                    byte[] bytes = StreamUtils.copyToByteArray(inputStream);
-
-                    T job = deserialize(bytes);
-                    fileSystem.delete(path);
-                    return job;
-                }
-            }
-        }
-        catch (PathNotFoundException e) {
-            return null;
-        }
-        catch (InvalidFileException | IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return null;
+    protected void onJobFail(T job, Exception e) throws Exception {
+        fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
     }
 
     private String getFilePath(String jobId) {
