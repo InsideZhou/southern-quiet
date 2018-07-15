@@ -28,5 +28,5 @@ public class IdGeneratorWorkerTable extends Table {
     /**
      * worker所在应用的标识，方便应用重启后获取其上次用过的workerId。
      */
-    public StringColumn appId = varchar("app_id", 512).unique();
+    public StringColumn appId = varchar("app_id", 128).unique();
 }
