@@ -1,9 +1,9 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.job.AsyncJobQueue;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.job.OnSiteJobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 
 import java.io.ByteArrayInputStream;
@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.UUID;
 
-public class FileJobQueue<T extends Serializable> extends AsyncJobQueue<T> implements JobQueue<T> {
+public class FileJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
     public static <T extends Serializable> InputStream serialize(T data) {
         return new ByteArrayInputStream(SerializationUtils.serialize(data));
     }
@@ -46,11 +46,6 @@ public class FileJobQueue<T extends Serializable> extends AsyncJobQueue<T> imple
 
         fileSystem.createDirectory(this.workingRoot);
         this.fileSystem = fileSystem;
-    }
-
-    @Override
-    public void enqueue(T job) {
-        process(job);
     }
 
     @Override

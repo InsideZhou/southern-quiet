@@ -1,8 +1,8 @@
 package com.ai.southernquiet.job.driver;
 
-import com.ai.southernquiet.job.AsyncJobQueue;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.job.OnSiteJobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.time.Instant;
 
-public class JdbcJobQueue<T extends Serializable> extends AsyncJobQueue<T> implements JobQueue<T> {
+public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
     public static <T extends Serializable> byte[] serialize(T data) {
         return SerializationUtils.serialize(data);
     }
@@ -37,11 +37,6 @@ public class JdbcJobQueue<T extends Serializable> extends AsyncJobQueue<T> imple
     public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL) {
         this.failedJobTable = failedJobTable;
         this.instepSQL = instepSQL;
-    }
-
-    @Override
-    public void enqueue(T job) {
-        process(job);
     }
 
     protected void onJobFail(T job, Exception e) throws Exception {
