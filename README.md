@@ -37,7 +37,7 @@
 
 ----
     
-1. KeyValueStore 键值对存储
+1. KeyValueStore 键值对存储（默认framework.key-value.enable=false）
 
 - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
 

@@ -144,7 +144,7 @@ public class FrameworkAutoConfiguration {
         /**
          * 是否启用key-value特性
          */
-        private boolean enable = true;
+        private boolean enable = false;
 
         private FileSystem fileSystem = new FileSystem();
 
