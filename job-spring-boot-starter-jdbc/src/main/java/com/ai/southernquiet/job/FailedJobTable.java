@@ -11,7 +11,7 @@ public class FailedJobTable extends Table {
     public IntegerColumn id = autoIncrementLong("id").primary();
     public BinaryColumn payload = lob("payload");
     public StringColumn exception = text("exception");
-    public IntegerColumn failureCount = integer("failureCount").notnull();
-    public DateTimeColumn createdAt = datetime("createdAt").notnull();
-    public DateTimeColumn lastExecutionStartedAt = datetime("lastExecutionStartedAt").notnull();
+    public IntegerColumn failureCount = integer("failure_count").notnull();
+    public DateTimeColumn createdAt = datetime("created_at").notnull();
+    public DateTimeColumn lastExecutionStartedAt = datetime("last_execution_started_at").notnull();
 }
