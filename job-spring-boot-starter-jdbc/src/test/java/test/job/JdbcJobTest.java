@@ -3,13 +3,11 @@ package test.job;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
-import instep.dao.sql.Dialect;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,11 +64,6 @@ public class JdbcJobTest {
                     return NonSerializableJob.class;
                 }
             };
-        }
-
-        @Bean
-        public Dialect dialect(@Value("${spring.datasource.url}") String url) {
-            return Dialect.Companion.of(url);
         }
     }
 

@@ -8,12 +8,10 @@ import com.ai.southernquiet.web.AbstractWebApp;
 import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import com.ai.southernquiet.web.auth.*;
 import instep.InstepLogger;
-import instep.dao.sql.Dialect;
 import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -83,11 +81,6 @@ public class App extends AbstractWebApp {
                     return true;
                 }
             };
-        }
-
-        @Bean
-        public Dialect dialect(@Value("${spring.datasource.url}") String url) {
-            return Dialect.Companion.of(url);
         }
 
         @Bean
