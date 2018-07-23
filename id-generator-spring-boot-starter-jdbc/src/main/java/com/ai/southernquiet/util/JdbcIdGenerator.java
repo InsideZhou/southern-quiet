@@ -148,7 +148,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     @Override
-    public long generate() throws Exception {
+    public long generate() {
         report();
         return longIdGenerator.generate();
     }
