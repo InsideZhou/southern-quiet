@@ -1,6 +1,7 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.filesystem.FileSystem;
+import com.ai.southernquiet.filesystem.InvalidFileException;
 import com.ai.southernquiet.job.FileSystemJobAutoConfiguration;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
@@ -48,8 +49,13 @@ public class FileJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
     }
 
     @Override
-    protected void onJobFail(T job, Exception e) throws Exception {
-        fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
+    protected void onJobFail(T job, Exception e) {
+        try {
+            fileSystem.put(getFilePath(UUID.randomUUID().toString()), serialize(job));
+        }
+        catch (InvalidFileException e1) {
+            throw new RuntimeException(e1);
+        }
     }
 
     private String getFilePath(String jobId) {

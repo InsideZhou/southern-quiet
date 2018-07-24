@@ -66,7 +66,12 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
                 .findFirst();
         }
 
-        return optional.orElseThrow(() -> new ProcessorNotFoundException(jobClass.getName()));
+
+        return optional.orElseThrow(() -> {
+            ProcessorNotFoundException e = new ProcessorNotFoundException(jobClass.getName());
+            onJobFail(job, e);
+            return e;
+        });
     }
 
     @SuppressWarnings({"SuspiciousMethodCalls", "unchecked"})
@@ -78,15 +83,8 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
         }
         catch (Exception e) {
             log.error("Job处理失败：", e);
-            try {
-                onJobFail(job, e);
-            }
-            catch (ClassCastException e1) {
-                throw e1;
-            }
-            catch (Exception e1) {
-                throw new RuntimeException(e1);
-            }
+
+            onJobFail(job, e);
         }
     }
 
@@ -94,5 +92,5 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
         log.debug("Job处理完成：" + job.toString());
     }
 
-    abstract protected void onJobFail(T job, Exception e) throws Exception;
+    abstract protected void onJobFail(T job, Exception e);
 }

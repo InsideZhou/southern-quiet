@@ -7,4 +7,5 @@ dependencies {
     testCompile project(':framework').sourceSets.test.output
 
     testImplementation 'org.postgresql:postgresql:42.2.2'
+    testImplementation 'mysql:mysql-connector-java:8.0.11'
 }

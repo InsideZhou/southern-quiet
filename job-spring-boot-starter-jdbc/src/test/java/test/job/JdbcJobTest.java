@@ -75,7 +75,6 @@ public class JdbcJobTest {
     public void enqueue() {
         jobQueue.enqueue(new JdbcJob());
         jobQueue.enqueue(new JobException());
-
     }
 
     @SuppressWarnings("unchecked")

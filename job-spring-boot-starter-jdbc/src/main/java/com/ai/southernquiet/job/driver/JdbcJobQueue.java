@@ -3,6 +3,7 @@ package com.ai.southernquiet.job.driver;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
+import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
 import org.springframework.util.StreamUtils;
@@ -32,22 +33,58 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
 
     private FailedJobTable failedJobTable;
     private InstepSQL instepSQL;
+    private ThreadLocal<Long> currentJobId = new ThreadLocal<>();
 
     public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL) {
         this.failedJobTable = failedJobTable;
         this.instepSQL = instepSQL;
     }
 
-    protected void onJobFail(T job, Exception e) throws Exception {
+    @Override
+    public void enqueue(T job) {
         Instant now = Instant.now();
 
-        SQLPlan plan = failedJobTable.insert()
-            .addValue(failedJobTable.payload, serialize(job))
-            .addValue(failedJobTable.failureCount, 1)
-            .addValue(failedJobTable.exception, e.getMessage() + "\n" + e.toString())
-            .addValue(failedJobTable.createdAt, now)
-            .addValue(failedJobTable.lastExecutionStartedAt, now);
+        try {
+            SQLPlan plan = failedJobTable.insert()
+                .addValue(failedJobTable.payload, serialize(job))
+                .addValue(failedJobTable.failureCount, 0)
+                .addValue(failedJobTable.createdAt, now)
+                .addValue(failedJobTable.lastExecutionStartedAt, now);
 
-        instepSQL.executor().execute(plan);
+            Long id = Long.parseLong(instepSQL.executor().executeScalar(plan));
+            currentJobId.set(id);
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
+
+        super.enqueue(job);
+    }
+
+    @Override
+    protected void onJobSuccess(T job) {
+        super.onJobSuccess(job);
+
+        try {
+            SQLPlan plan = failedJobTable.delete().whereKey(currentJobId.get());
+            instepSQL.executor().execute(plan);
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void onJobFail(T job, Exception e) {
+        try {
+            SQLPlan plan = failedJobTable.update()
+                .set(failedJobTable.failureCount, 1)
+                .set(failedJobTable.exception, e.getMessage() + "\n" + e.toString())
+                .whereKey(currentJobId.get());
+
+            instepSQL.executor().execute(plan);
+        }
+        catch (DaoException e1) {
+            throw new RuntimeException(e1);
+        }
     }
 }
