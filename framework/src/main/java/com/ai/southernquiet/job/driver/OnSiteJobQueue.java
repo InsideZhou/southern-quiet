@@ -36,12 +36,26 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
     @SuppressWarnings("unchecked")
     protected JobProcessor<T> getProcessor(T job) {
         Class<T> jobClass = (Class<T>) job.getClass();
-        JobProcessor<T> processor = jobHandlerMap.get(jobClass);
 
-        if (null == processor) {
-            Optional<JobProcessor<T>> optional = jobProcessorList.stream()
+        JobProcessor<T> processor = jobHandlerMap.get(jobClass);
+        if (null != processor) return processor;
+
+        Optional<JobProcessor<T>> optional = jobProcessorList.stream()
+            .filter(p -> {
+                boolean matched = p.getJobClass() == jobClass;
+                if (matched) {
+                    jobHandlerMap.put(jobClass, p);
+                }
+
+                return matched;
+            })
+            .limit(1)
+            .findFirst();
+
+        if (!optional.isPresent()) {
+            optional = jobProcessorList.stream()
                 .filter(p -> {
-                    boolean matched = p.getJobClass() == jobClass;
+                    boolean matched = p.getJobClass().isAssignableFrom(jobClass);
                     if (matched) {
                         jobHandlerMap.put(jobClass, p);
                     }
@@ -50,16 +64,9 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
                 })
                 .limit(1)
                 .findFirst();
-
-            if (optional.isPresent()) {
-                return optional.get();
-            }
-            else {
-                throw new ProcessorNotFoundException(jobClass.getName());
-            }
         }
 
-        return processor;
+        return optional.orElseThrow(() -> new ProcessorNotFoundException(jobClass.getName()));
     }
 
     @SuppressWarnings({"SuspiciousMethodCalls", "unchecked"})
