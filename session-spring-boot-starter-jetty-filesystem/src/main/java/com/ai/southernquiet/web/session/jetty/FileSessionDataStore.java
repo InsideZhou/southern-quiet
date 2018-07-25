@@ -5,7 +5,6 @@ import com.ai.southernquiet.filesystem.InvalidFileException;
 import com.ai.southernquiet.filesystem.PathMeta;
 import com.ai.southernquiet.filesystem.PathNotFoundException;
 import com.ai.southernquiet.util.SerializationUtils;
-import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.eclipse.jetty.server.session.AbstractSessionDataStore;
 import org.eclipse.jetty.server.session.SessionData;
 import org.springframework.util.StreamUtils;
@@ -24,7 +23,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     private FileSystem fileSystem;
     private String workingRoot; //Session持久化在FileSystem中的路径
 
-    public FileSessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
+    public FileSessionDataStore(FileSystem fileSystem, JettyAutoConfiguration.FileSessionProperties properties) {
         this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 

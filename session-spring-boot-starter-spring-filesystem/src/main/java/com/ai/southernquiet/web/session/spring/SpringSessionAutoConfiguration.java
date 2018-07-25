@@ -1,17 +1,36 @@
 package com.ai.southernquiet.web.session.spring;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@EnableConfigurationProperties(SpringSessionAutoConfiguration.FileSessionProperties.class)
 public class SpringSessionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public FileSessionRepository fileSessionRepository(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
+    public FileSessionRepository fileSessionRepository(FileSystem fileSystem, FileSessionProperties properties) {
         return new FileSessionRepository(fileSystem, properties);
     }
+
+    @ConfigurationProperties("web.session.file-system")
+    public static class FileSessionProperties {
+        /**
+         * Session持久化在FileSystem中的路径
+         */
+        private String workingRoot = "SESSION";
+
+        public String getWorkingRoot() {
+            return workingRoot;
+        }
+
+        public void setWorkingRoot(String workingRoot) {
+            this.workingRoot = workingRoot;
+        }
+    }
+
 }

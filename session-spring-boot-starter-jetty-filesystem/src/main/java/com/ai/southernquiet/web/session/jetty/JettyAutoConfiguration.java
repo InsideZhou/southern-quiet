@@ -1,18 +1,20 @@
 package com.ai.southernquiet.web.session.jetty;
 
 import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@EnableConfigurationProperties(JettyAutoConfiguration.FileSessionProperties.class)
 public class JettyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public FileSessionDataStore sessionDataStore(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
+    public FileSessionDataStore sessionDataStore(FileSystem fileSystem, FileSessionProperties properties) {
         return new FileSessionDataStore(fileSystem, properties);
     }
 
@@ -28,5 +30,21 @@ public class JettyAutoConfiguration {
         JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);
         return factory;
+    }
+
+    @ConfigurationProperties("web.session.file-system")
+    public static class FileSessionProperties {
+        /**
+         * Session持久化在FileSystem中的路径
+         */
+        private String workingRoot = "SESSION";
+
+        public String getWorkingRoot() {
+            return workingRoot;
+        }
+
+        public void setWorkingRoot(String workingRoot) {
+            this.workingRoot = workingRoot;
+        }
     }
 }

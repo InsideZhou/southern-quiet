@@ -4,7 +4,6 @@ import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.InvalidFileException;
 import com.ai.southernquiet.filesystem.NormalizedPath;
 import com.ai.southernquiet.util.SerializationUtils;
-import com.ai.southernquiet.web.CommonWebAutoConfiguration;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
 import org.springframework.util.StreamUtils;
@@ -27,7 +26,7 @@ public class FileSessionRepository implements SessionRepository<Session> {
     private FileSystem fileSystem;
     private String workingRoot; //Session持久化在FileSystem中的路径
 
-    public FileSessionRepository(FileSystem fileSystem, CommonWebAutoConfiguration.FileSessionProperties properties) {
+    public FileSessionRepository(FileSystem fileSystem, SpringSessionAutoConfiguration.FileSessionProperties properties) {
         this.workingRoot = properties.getWorkingRoot();
         this.fileSystem = fileSystem;
 
