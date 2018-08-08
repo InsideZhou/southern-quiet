@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.Duration;
@@ -20,6 +21,7 @@ import java.time.temporal.ChronoUnit;
 @Configuration
 @EnableConfigurationProperties(JdbcIdGeneratorAutoConfiguration.Properties.class)
 @EnableTransactionManagement
+@EnableScheduling
 @AutoConfigureAfter(SQLAutoConfiguration.class)
 public class JdbcIdGeneratorAutoConfiguration {
     @Bean
@@ -62,7 +64,7 @@ public class JdbcIdGeneratorAutoConfiguration {
          * workerTime上报间隔。
          */
         @DurationUnit(ChronoUnit.SECONDS)
-        private Duration reportInterval = Duration.ofSeconds(37);
+        private Duration reportInterval = Duration.ofSeconds(JdbcIdGenerator.AutoReportInterval);
 
         public Duration getReportInterval() {
             return reportInterval;

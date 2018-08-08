@@ -5,14 +5,17 @@ import instep.dao.sql.*;
 import instep.util.LongIdGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 public class JdbcIdGenerator implements IdGenerator {
+    public final static int AutoReportInterval = 5; //秒
     private final static Log log = LogFactory.getLog(JdbcIdGenerator.class);
 
     private LongIdGenerator longIdGenerator;
@@ -119,9 +122,10 @@ public class JdbcIdGenerator implements IdGenerator {
         });
     }
 
+    @Scheduled(fixedRate = AutoReportInterval * 1000)
+    @PreDestroy
     public void report() {
         Instant now = Instant.now();
-        if (now.isBefore(lastWorkerTime.plus(reportInterval))) return;
 
         instepSQL.transaction().committed(context -> {
             String runtimeId = metadata.getRuntimeId();
@@ -129,7 +133,11 @@ public class JdbcIdGenerator implements IdGenerator {
             try {
                 SQLPlan plan = workerTable.update()
                     .set(workerTable.workerTime, now)
-                    .where(ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse).and(ColumnExtensionKt.eq(workerTable.appId, runtimeId)));
+                    .where(
+                        ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
+                            .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
+                            .and(ColumnExtensionKt.lt(workerTable.workerTime, now))
+                    );
 
                 int rowAffected = instepSQL.executor().executeUpdate(plan);
                 if (1 != rowAffected) {
@@ -149,8 +157,13 @@ public class JdbcIdGenerator implements IdGenerator {
 
     @Override
     public long generate() {
-        asyncRunner.run(this::report);
+        long id = longIdGenerator.generate();
 
-        return longIdGenerator.generate();
+        Instant now = Instant.now();
+        if (now.isAfter(lastWorkerTime.plus(reportInterval))) {
+            asyncRunner.run(this::report);
+        }
+
+        return id;
     }
 }
