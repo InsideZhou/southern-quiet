@@ -11,7 +11,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.Duration;
@@ -20,7 +19,6 @@ import java.time.temporal.ChronoUnit;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties(JdbcIdGeneratorAutoConfiguration.Properties.class)
-@EnableAsync
 @EnableTransactionManagement
 @AutoConfigureAfter(SQLAutoConfiguration.class)
 public class JdbcIdGeneratorAutoConfiguration {
@@ -42,8 +40,8 @@ public class JdbcIdGeneratorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IdGenerator.class)
-    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, Properties properties) {
-        return new JdbcIdGenerator(metadata, workerTable, instepSQL, properties);
+    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, AsyncRunner asyncRunner, Properties properties) {
+        return new JdbcIdGenerator(metadata, workerTable, instepSQL, asyncRunner, properties);
     }
 
     @ConfigurationProperties("framework.util.id-generator")

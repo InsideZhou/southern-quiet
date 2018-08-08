@@ -2,12 +2,12 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.util.AsyncRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.scheduling.annotation.Async;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,16 +21,20 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
 
     protected Map<Class<T>, JobProcessor<T>> jobHandlerMap = new ConcurrentHashMap<>();
     protected List<JobProcessor<T>> jobProcessorList = Collections.emptyList();
+    protected AsyncRunner asyncRunner;
 
     @Override
     public void enqueue(T job) {
-        process(job, getProcessor(job));
+        asyncRunner.run(() -> {
+            process(job, getProcessor(job));
+        });
     }
 
     @SuppressWarnings({"unchecked", "NullableProblems"})
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         jobProcessorList = new ArrayList(applicationContext.getBeansOfType(JobProcessor.class).values());
+        asyncRunner = applicationContext.getBean(AsyncRunner.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -74,8 +78,6 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
         });
     }
 
-    @SuppressWarnings({"SuspiciousMethodCalls", "unchecked"})
-    @Async
     protected void process(T job, JobProcessor<T> processor) {
         try {
             processor.process(job);

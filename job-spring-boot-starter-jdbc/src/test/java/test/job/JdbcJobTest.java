@@ -1,5 +1,6 @@
 package test.job;
 
+import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
@@ -16,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@ImportAutoConfiguration({DataSourceAutoConfiguration.class, CoreAutoConfiguration.class, SQLAutoConfiguration.class})
+@ImportAutoConfiguration({FrameworkAutoConfiguration.class, DataSourceAutoConfiguration.class, CoreAutoConfiguration.class, SQLAutoConfiguration.class})
 @SpringBootTest(classes = {JdbcJobAutoConfiguration.class, JdbcJobTest.Config.class})
 public class JdbcJobTest {
     @Configuration
@@ -26,7 +27,7 @@ public class JdbcJobTest {
             return new JobProcessor<JdbcJob>() {
                 @Override
                 public void process(JdbcJob job) {
-                    System.out.println(job.getId() + "@" + getJobClass().getName());
+                    System.out.println(String.format("Job(%s) processing on Thread(%s)", job.getId(), Thread.currentThread().getId()));
                 }
 
                 @Override
@@ -73,7 +74,9 @@ public class JdbcJobTest {
     @SuppressWarnings("unchecked")
     @Test
     public void enqueue() {
-        jobQueue.enqueue(new JdbcJob());
+        JdbcJob job = new JdbcJob();
+        System.out.println(String.format("Job(%s) enqueue on Thread(%s)", job.getId(), Thread.currentThread().getId()));
+        jobQueue.enqueue(job);
         jobQueue.enqueue(new JobException());
     }
 
@@ -84,7 +87,7 @@ public class JdbcJobTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = RuntimeException.class)
+    @Test
     public void enqueueWithException() {
         jobQueue.enqueue(new NoProcessorJob());
     }

@@ -5,7 +5,6 @@ import instep.dao.sql.*;
 import instep.util.LongIdGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -20,15 +19,17 @@ public class JdbcIdGenerator implements IdGenerator {
     private Metadata metadata;
     private IdGeneratorWorkerTable workerTable;
     private InstepSQL instepSQL;
+    private AsyncRunner asyncRunner;
     private int workerIdInUse;
 
     private Duration reportInterval;
     private Instant lastWorkerTime;
 
-    public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
+    public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, AsyncRunner asyncRunner, JdbcIdGeneratorAutoConfiguration.Properties properties) {
         this.metadata = metadata;
         this.workerTable = workerTable;
         this.instepSQL = instepSQL;
+        this.asyncRunner = asyncRunner;
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
@@ -118,7 +119,6 @@ public class JdbcIdGenerator implements IdGenerator {
         });
     }
 
-    @Async
     public void report() {
         Instant now = Instant.now();
         if (now.isBefore(lastWorkerTime.plus(reportInterval))) return;
@@ -149,7 +149,8 @@ public class JdbcIdGenerator implements IdGenerator {
 
     @Override
     public long generate() {
-        report();
+        asyncRunner.run(this::report);
+
         return longIdGenerator.generate();
     }
 }

@@ -8,6 +8,7 @@ import com.ai.southernquiet.filesystem.FileSystemSupport;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import com.ai.southernquiet.util.AsyncRunner;
 import com.ai.southernquiet.util.Metadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -16,6 +17,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
@@ -25,6 +27,7 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
+@EnableAsync
 @EnableConfigurationProperties({
     FrameworkAutoConfiguration.Properties.class,
     FrameworkAutoConfiguration.BroadcastingProperties.class,
@@ -74,6 +77,11 @@ public class FrameworkAutoConfiguration {
                 }
             }
         };
+    }
+
+    @Bean
+    public AsyncRunner asyncRunner() {
+        return new AsyncRunner();
     }
 
     @ConfigurationProperties("framework")

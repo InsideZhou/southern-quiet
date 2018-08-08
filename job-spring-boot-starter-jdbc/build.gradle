@@ -8,4 +8,6 @@ dependencies {
 
     testImplementation 'org.postgresql:postgresql:42.2.2'
     testImplementation 'mysql:mysql-connector-java:8.0.11'
+
+    testImplementation "org.springframework.boot:spring-boot-starter-web"
 }

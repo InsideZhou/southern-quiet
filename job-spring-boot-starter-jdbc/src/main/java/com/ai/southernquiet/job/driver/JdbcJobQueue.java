@@ -1,6 +1,7 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.FailedJobTable;
+import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
@@ -44,6 +45,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
     public void enqueue(T job) {
         Instant now = Instant.now();
 
+        Long id;
         try {
             SQLPlan plan = failedJobTable.insert()
                 .addValue(failedJobTable.payload, serialize(job))
@@ -51,14 +53,19 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 .addValue(failedJobTable.createdAt, now)
                 .addValue(failedJobTable.lastExecutionStartedAt, now);
 
-            Long id = Long.parseLong(instepSQL.executor().executeScalar(plan));
+            id = Long.parseLong(instepSQL.executor().executeScalar(plan));
             currentJobId.set(id);
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
         }
 
-        super.enqueue(job);
+        asyncRunner.run(() -> {
+            currentJobId.set(id);
+            JobProcessor<T> processor = getProcessor(job);
+
+            process(job, processor);
+        });
     }
 
     @Override
