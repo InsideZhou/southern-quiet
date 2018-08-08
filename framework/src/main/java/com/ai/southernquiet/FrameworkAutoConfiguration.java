@@ -9,6 +9,7 @@ import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
 import com.ai.southernquiet.keyvalue.KeyValueStore;
 import com.ai.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import com.ai.southernquiet.util.Metadata;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -47,6 +48,7 @@ public class FrameworkAutoConfiguration {
 
     @SuppressWarnings("unchecked")
     @Bean
+    @ConditionalOnBean(Broadcaster.class)
     @ConditionalOnMissingBean(Publisher.class)
     public DefaultPublisher publisher(Broadcaster<?> broadcaster, BroadcastingProperties properties) {
         return new DefaultPublisher(broadcaster, properties);

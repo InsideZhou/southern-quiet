@@ -82,15 +82,15 @@ public class FileSystemTest {
     @Test
     public void simpleIO() {
         try {
-            fileSystem.put("hello.txt", "你好，Spring Boot。");
-            Assert.assertEquals("你好，Spring Boot。", fileSystem.read("hello.txt"));
+            fileSystem.put("hello/world.txt", "你好，Spring Boot。");
+            Assert.assertEquals("你好，Spring Boot。", fileSystem.read("hello/world.txt"));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
         }
 
-        fileSystem.delete("hello.txt");
-        Assert.assertFalse(fileSystem.exists("hello.txt"));
+        fileSystem.delete("hello/world.txt");
+        Assert.assertFalse(fileSystem.exists("hello/world.txt"));
     }
 
     @Test

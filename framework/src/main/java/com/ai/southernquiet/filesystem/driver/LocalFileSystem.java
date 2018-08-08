@@ -57,6 +57,7 @@ public class LocalFileSystem implements FileSystem {
         Path workingPath = getWorkingPath(path);
 
         try {
+            createDirectories(workingPath.getParent());
             Files.write(workingPath, StreamUtils.copyToByteArray(stream));
         }
         catch (IOException e) {
@@ -69,6 +70,7 @@ public class LocalFileSystem implements FileSystem {
         Path workingPath = getWorkingPath(path);
 
         try {
+            createDirectories(workingPath.getParent());
             Files.write(workingPath, txt.toString().getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException e) {
