@@ -6,10 +6,5 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.11'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
 
-    compileOnly "org.springframework.boot:spring-boot-configuration-processor"
-
-    runtimeOnly "org.springframework.boot:spring-boot-starter-actuator"
-    runtimeOnly "org.springframework.boot:spring-boot-devtools"
-
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
