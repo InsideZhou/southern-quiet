@@ -8,4 +8,5 @@ include 'filesystem-spring-boot-starter-mongodb',
         'broadcasting-spring-boot-starter-redis',
         'session-spring-boot-starter-jetty-filesystem',
         'session-spring-boot-starter-spring-filesystem',
+        'file-http-service',
         'framework'
