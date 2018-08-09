@@ -4,6 +4,7 @@ import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
 import org.junit.Test;
@@ -87,7 +88,7 @@ public class JdbcJobTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = ProcessorNotFoundException.class)
     public void enqueueWithException() {
         jobQueue.enqueue(new NoProcessorJob());
     }

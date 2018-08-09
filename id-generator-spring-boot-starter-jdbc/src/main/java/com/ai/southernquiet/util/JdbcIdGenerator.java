@@ -24,6 +24,7 @@ public class JdbcIdGenerator implements IdGenerator {
     private InstepSQL instepSQL;
     private AsyncRunner asyncRunner;
     private int workerIdInUse;
+    private int maxWorkerId;
 
     private Duration reportInterval;
     private Instant lastWorkerTime;
@@ -37,6 +38,7 @@ public class JdbcIdGenerator implements IdGenerator {
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
         workerIdInUse = getWorkerId();
+        maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
 
         longIdGenerator = new LongIdGenerator(
             workerIdInUse,
@@ -80,79 +82,72 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     private int newWorkerId() {
-        return instepSQL.transaction().repeatable(context -> {
-            SQLPlan plan = workerTable.select(ColumnExtensionKt.min(workerTable.workerId))
-                .where(ColumnExtensionKt.isNull(workerTable.appId).and(ColumnExtensionKt.isNull(workerTable.workerTime)));
+        SQLPlan plan = workerTable.select(ColumnExtensionKt.min(workerTable.workerId))
+            .where(ColumnExtensionKt.isNull(workerTable.appId).and(ColumnExtensionKt.isNull(workerTable.workerTime)));
 
-            Integer workerId;
-            try {
-                workerId = instepSQL.executor().executeScalar(plan, Integer.class);
-            }
-            catch (SQLPlanExecutionException e) {
-                throw new RuntimeException(e);
-            }
+        Integer workerId;
+        try {
+            workerId = instepSQL.executor().executeScalar(plan, Integer.class);
+        }
+        catch (SQLPlanExecutionException e) {
+            throw new RuntimeException(e);
+        }
 
-            if (null != workerId) return workerId;
+        if (null != workerId) return workerId;
 
-            workerId = 0;
-            while (workerId <= LongIdGenerator.Companion.maxIntegerAtBits(12)) {
-                plan = workerTable.select(workerTable.workerId).where(ColumnExtensionKt.eq(workerTable.workerId, workerId));
-
-                try {
-                    if (!StringUtils.hasText(instepSQL.executor().executeScalar(plan))) {
-                        plan = workerTable.insert()
-                            .addValue(workerTable.appId, metadata.getRuntimeId())
-                            .addValue(workerTable.workerTime, Instant.now())
-                            .addValue(workerTable.workerId, workerId);
-
-                        int rowAffected = instepSQL.executor().executeUpdate(plan);
-                        Assert.isTrue(1 == rowAffected, "workerId插入异常。rowAffected=" + rowAffected);
-
-                        return workerId;
-                    }
-                }
-                catch (DaoException e) {
-                    throw new RuntimeException(e);
-                }
-
-                ++workerId;
-            }
-
-            throw new RuntimeException("无法从数据库中获取workerId");
-        });
-    }
-
-    @Scheduled(fixedRate = AutoReportInterval * 1000)
-    @PreDestroy
-    public void report() {
-        Instant now = Instant.now();
-
-        instepSQL.transaction().committed(context -> {
-            String runtimeId = metadata.getRuntimeId();
+        workerId = 0;
+        while (workerId <= maxWorkerId) {
+            plan = workerTable.select(workerTable.workerId).where(ColumnExtensionKt.eq(workerTable.workerId, workerId));
 
             try {
-                SQLPlan plan = workerTable.update()
-                    .set(workerTable.workerTime, now)
-                    .where(
-                        ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
-                            .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
-                            .and(ColumnExtensionKt.lt(workerTable.workerTime, now))
-                    );
+                if (StringUtils.isEmpty(instepSQL.executor().executeScalar(plan))) {
+                    plan = workerTable.insert()
+                        .addValue(workerTable.appId, metadata.getRuntimeId())
+                        .addValue(workerTable.workerTime, Instant.now())
+                        .addValue(workerTable.workerId, workerId);
 
-                int rowAffected = instepSQL.executor().executeUpdate(plan);
-                if (1 != rowAffected) {
-                    log.warn(String.format("workerTime上报异常。workerId=%s,appId=%s,rowAffected=%s", workerIdInUse, runtimeId, rowAffected));
-                }
-                else {
-                    lastWorkerTime = now;
+                    int rowAffected = instepSQL.executor().executeUpdate(plan);
+                    Assert.isTrue(1 == rowAffected, "workerId插入异常。rowAffected=" + rowAffected);
+
+                    return workerId;
                 }
             }
             catch (DaoException e) {
                 throw new RuntimeException(e);
             }
 
-            return null;
-        });
+            ++workerId;
+        }
+
+        throw new RuntimeException("无法从数据库中获取workerId");
+    }
+
+    @Scheduled(fixedRate = AutoReportInterval * 1000)
+    @PreDestroy
+    public void report() {
+        Instant now = Instant.now();
+        String runtimeId = metadata.getRuntimeId();
+
+        try {
+            SQLPlan plan = workerTable.update()
+                .set(workerTable.workerTime, now)
+                .where(
+                    ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
+                        .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
+                        .and(ColumnExtensionKt.lt(workerTable.workerTime, now))
+                );
+
+            int rowAffected = instepSQL.executor().executeUpdate(plan);
+            if (1 != rowAffected) {
+                log.warn(String.format("workerTime上报异常。workerId=%s,appId=%s,rowAffected=%s", workerIdInUse, runtimeId, rowAffected));
+            }
+            else {
+                lastWorkerTime = now;
+            }
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

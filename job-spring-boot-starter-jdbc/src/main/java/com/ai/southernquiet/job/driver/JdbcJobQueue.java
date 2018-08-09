@@ -5,14 +5,18 @@ import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
+import instep.dao.sql.ColumnExtensionKt;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
+import instep.dao.sql.TableRow;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 
 public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
     public static <T extends Serializable> byte[] serialize(T data) {
@@ -50,6 +54,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
             SQLPlan plan = failedJobTable.insert()
                 .addValue(failedJobTable.payload, serialize(job))
                 .addValue(failedJobTable.failureCount, 0)
+                .addValue(failedJobTable.workingStatus, "init")
                 .addValue(failedJobTable.createdAt, now)
                 .addValue(failedJobTable.lastExecutionStartedAt, now);
 
@@ -60,12 +65,48 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
             throw new RuntimeException(e);
         }
 
+        JobProcessor<T> processor = getProcessor(job); //放在同步的位置，以便调用端可以方便的感知到异常。
+
         asyncRunner.run(() -> {
             currentJobId.set(id);
-            JobProcessor<T> processor = getProcessor(job);
-
             process(job, processor);
         });
+    }
+
+    public void retryFailedJob() {
+        try {
+            SQLPlan plan = failedJobTable.select()
+                .where(
+                    ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
+                    ColumnExtensionKt.isNull(failedJobTable.workingStatus)
+                )
+                .limit(1)
+                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).info();
+
+            List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
+            if (rowList.size() > 0) {
+                TableRow row = rowList.get(0);
+
+                Instant now = Instant.now();
+                Long jobId = row.getLong(failedJobTable.id);
+
+                plan = failedJobTable.update()
+                    .set(failedJobTable.workingStatus, "on")
+                    .set(failedJobTable.lastExecutionStartedAt, now)
+                    .where(ColumnExtensionKt.isNull(failedJobTable.workingStatus))
+                    .whereKey(jobId);
+
+                if (instepSQL.executor().executeUpdate(plan) > 0) {
+                    T job = deserialize(row.get(failedJobTable.payload));
+                    currentJobId.set(jobId);
+
+                    process(job, getProcessor(job));
+                }
+            }
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -84,7 +125,8 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
     protected void onJobFail(T job, Exception e) {
         try {
             SQLPlan plan = failedJobTable.update()
-                .set(failedJobTable.failureCount, 1)
+                .step(failedJobTable.failureCount, 1)
+                .set(failedJobTable.workingStatus, null)
                 .set(failedJobTable.exception, e.getMessage() + "\n" + e.toString())
                 .whereKey(currentJobId.get());
 
