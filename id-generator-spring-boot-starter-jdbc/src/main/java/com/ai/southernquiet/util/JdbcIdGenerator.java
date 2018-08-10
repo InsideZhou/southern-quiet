@@ -37,8 +37,8 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        workerIdInUse = getWorkerId();
         maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
+        workerIdInUse = getWorkerId();
 
         longIdGenerator = new LongIdGenerator(
             workerIdInUse,
