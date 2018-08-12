@@ -31,7 +31,7 @@ public class MongoDbLoggingAutoConfiguration {
         return new MongoDbAppender(properties, mongoOperations);
     }
 
-    @ConfigurationProperties("framework.logging.mongodb")
+    @ConfigurationProperties("southern-quiet.framework.logging.mongodb")
     public static class Properties {
         /**
          * 日志集合

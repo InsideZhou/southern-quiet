@@ -21,7 +21,7 @@ public class FileSystemJobAutoConfiguration {
         return new FileJobQueue(fileSystem, properties);
     }
 
-    @ConfigurationProperties("framework.job.file-system")
+    @ConfigurationProperties("southern-quiet.framework.job.file-system")
     public static class Properties {
         /**
          * 任务队列持久化在FileSystem中的路径

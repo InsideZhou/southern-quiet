@@ -30,7 +30,7 @@ public class MongoDbFileSystemAutoConfiguration {
     /**
      * @see org.springframework.boot.autoconfigure.mongo.MongoProperties
      */
-    @ConfigurationProperties("framework.file-system.mongodb")
+    @ConfigurationProperties("southern-quiet.framework.file-system.mongodb")
     public static class Properties {
         /**
          * 路径集合

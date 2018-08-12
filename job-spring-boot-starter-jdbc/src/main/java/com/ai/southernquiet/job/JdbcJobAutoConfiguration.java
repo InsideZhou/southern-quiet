@@ -42,7 +42,7 @@ public class JdbcJobAutoConfiguration {
         return table;
     }
 
-    @ConfigurationProperties("framework.job.jdbc")
+    @ConfigurationProperties("southern-quiet.framework.job.jdbc")
     public static class Properties {
         /**
          * 失败Job的表名称。

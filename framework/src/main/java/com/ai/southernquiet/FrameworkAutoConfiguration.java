@@ -84,7 +84,7 @@ public class FrameworkAutoConfiguration {
         return new AsyncRunner();
     }
 
-    @ConfigurationProperties("framework")
+    @ConfigurationProperties("southern-quiet.framework")
     public static class Properties {
         /**
          * 框架运行时的id，必须唯一。
@@ -100,7 +100,7 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("framework.broadcasting")
+    @ConfigurationProperties("southern-quiet.framework.broadcasting")
     public static class BroadcastingProperties {
         private String[] defaultChannels = new String[]{"public"};
 
@@ -113,7 +113,7 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("framework.file-system")
+    @ConfigurationProperties("southern-quiet.framework.file-system")
     public static class FileSystemProperties {
         /**
          * FileSystem中合法文件名的正则表达式
@@ -133,7 +133,7 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("framework.file-system.local")
+    @ConfigurationProperties("southern-quiet.framework.file-system.local")
     public static class LocalFileSystemProperties {
         /**
          * FileSystem默认驱动在本地文件系统中的实际路径
@@ -149,7 +149,7 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("framework.key-value")
+    @ConfigurationProperties("southern-quiet.framework.key-value")
     public static class KeyValueStoreProperties {
         /**
          * 是否启用key-value特性

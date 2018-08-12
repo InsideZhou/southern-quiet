@@ -46,7 +46,7 @@ public class JdbcIdGeneratorAutoConfiguration {
         return new JdbcIdGenerator(metadata, workerTable, instepSQL, asyncRunner, properties);
     }
 
-    @ConfigurationProperties("framework.util.id-generator")
+    @ConfigurationProperties("southern-quiet.framework.util.id-generator")
     public static class Properties {
         private String workerTable = "id_generator_worker";
 
