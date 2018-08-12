@@ -41,7 +41,7 @@ subprojects {
 
     repositories {
         mavenLocal()
-        jcenter()
+        maven { url "http://nexus.cnbss.net/repository/maven-public/" }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 
@@ -53,7 +53,7 @@ subprojects {
     }
 
     configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 3, 'minutes'
+        resolutionStrategy.cacheChangingModulesFor 0, 'minutes'
     }
 
     compileJava.dependsOn(processResources)
