@@ -5,13 +5,13 @@ import com.ai.southernquiet.file.http.model.FileInfo;
 import com.ai.southernquiet.file.http.model.ImageScale;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.InvalidFileException;
+import com.ai.southernquiet.util.AsyncRunner;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
@@ -56,9 +56,11 @@ public class MainController {
 
     private Tika tika = new Tika();
     private FileSystem fileSystem;
+    private AsyncRunner asyncRunner;
 
-    public MainController(FileSystem fileSystem) {
+    public MainController(FileSystem fileSystem, AsyncRunner asyncRunner) {
         this.fileSystem = fileSystem;
+        this.asyncRunner = asyncRunner;
     }
 
     @Autowired
@@ -79,7 +81,7 @@ public class MainController {
             InputStream inputStream;
 
             try {
-                inputStream = f.getInputStream();
+                inputStream = new ByteArrayInputStream(f.getBytes());
                 mediaType = tika.detect(inputStream);
                 hash = DigestUtils.sha256Hex(inputStream);
             }
@@ -236,15 +238,16 @@ public class MainController {
         return fileSystem.openReadStream(scaledImagePath);
     }
 
-    @Async
     protected void saveFile(String filename, InputStream data) {
-        try {
-            data.reset();
-            fileSystem.put(getFilePath(filename), data);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        asyncRunner.run(() -> {
+            try {
+                data.reset();
+                fileSystem.put(getFilePath(filename), data);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @ModelAttribute
