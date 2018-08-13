@@ -14,5 +14,5 @@ public class FailedJobTable extends Table {
     public StringColumn workingStatus = varchar("working_status", 16);
     public IntegerColumn failureCount = integer("failure_count").notnull();
     public DateTimeColumn createdAt = datetime("created_at").notnull();
-    public DateTimeColumn lastExecutionStartedAt = datetime("last_execution_started_at").notnull();
+    public DateTimeColumn lastExecutionStartedAt = datetime("last_execution_started_at");
 }
