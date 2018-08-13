@@ -1,5 +1,0 @@
-dependencies {
-    api project(':framework')
-
-    testCompile project(':framework').sourceSets.test.output
-}

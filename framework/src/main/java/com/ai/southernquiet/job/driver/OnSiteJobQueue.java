@@ -25,9 +25,9 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
 
     @Override
     public void enqueue(T job) {
-        asyncRunner.run(() -> {
-            process(job, getProcessor(job));
-        });
+        JobProcessor<T> processor = getProcessor(job);
+
+        asyncRunner.run(() -> process(job, processor));
     }
 
     @SuppressWarnings({"unchecked", "NullableProblems"})
@@ -70,29 +70,8 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
                 .findFirst();
         }
 
-
-        return optional.orElseThrow(() -> {
-            ProcessorNotFoundException e = new ProcessorNotFoundException(jobClass.getName());
-            onJobFail(job, e);
-            return e;
-        });
+        return optional.orElseThrow(() -> new ProcessorNotFoundException(jobClass.getName()));
     }
 
-    protected void process(T job, JobProcessor<T> processor) {
-        try {
-            processor.process(job);
-            onJobSuccess(job);
-        }
-        catch (Exception e) {
-            log.error("Job处理失败：", e);
-
-            onJobFail(job, e);
-        }
-    }
-
-    protected void onJobSuccess(T job) {
-        log.debug("Job处理完成：" + job.toString());
-    }
-
-    abstract protected void onJobFail(T job, Exception e);
+    abstract void process(T job, JobProcessor<T> processor);
 }

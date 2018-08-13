@@ -9,7 +9,6 @@ import instep.dao.sql.ColumnExtensionKt;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
 import instep.dao.sql.TableRow;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -19,6 +18,10 @@ import java.time.Instant;
 import java.util.List;
 
 public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
+    public enum WorkingStatus {
+        Prepared, Retry, Done
+    }
+
     public static <T extends Serializable> byte[] serialize(T data) {
         return SerializationUtils.serialize(data);
     }
@@ -49,28 +52,100 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
     public void enqueue(T job) {
         Instant now = Instant.now();
 
-        Long id;
-        try {
-            SQLPlan plan = failedJobTable.insert()
-                .addValue(failedJobTable.payload, serialize(job))
-                .addValue(failedJobTable.failureCount, 0)
-                .addValue(failedJobTable.workingStatus, "init")
-                .addValue(failedJobTable.createdAt, now)
-                .addValue(failedJobTable.lastExecutionStartedAt, now);
+        JobCreated<T> jobCreated = instepSQL.transaction(context -> {
+            JobCreated<T> result = new JobCreated<>();
 
-            id = Long.parseLong(instepSQL.executor().executeScalar(plan));
-            currentJobId.set(id);
+            try {
+                SQLPlan plan = failedJobTable.insert()
+                    .addValue(failedJobTable.payload, serialize(job))
+                    .addValue(failedJobTable.failureCount, 0)
+                    .addValue(failedJobTable.workingStatus, WorkingStatus.Prepared)
+                    .addValue(failedJobTable.createdAt, now);
+
+                Long id = Long.parseLong(instepSQL.executor().executeScalar(plan));
+                result.setId(id);
+            }
+            catch (DaoException e) {
+                throw new RuntimeException(e);
+            }
+
+            result.setProcessor(getProcessor(job)); //放在同步的位置，以便调用端可以方便的感知到任务创建失败异常。
+
+            return result;
+        });
+
+        asyncRunner.run(() -> {
+            currentJobId.set(jobCreated.getId());
+            process(job, jobCreated.getProcessor());
+        });
+    }
+
+    static class JobCreated<T> {
+        private Long id;
+        private JobProcessor<T> processor;
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public JobProcessor<T> getProcessor() {
+            return processor;
+        }
+
+        public void setProcessor(JobProcessor<T> processor) {
+            this.processor = processor;
+        }
+    }
+
+    @Override
+    protected void process(T job, JobProcessor<T> processor) {
+        Instant now = Instant.now();
+        Long jobId = currentJobId.get();
+        currentJobId.set(null);
+
+        Exception exception = instepSQL.transaction(context -> {
+            try {
+                SQLPlan plan = failedJobTable.update()
+                    .set(failedJobTable.workingStatus, WorkingStatus.Done)
+                    .set(failedJobTable.lastExecutionStartedAt, now)
+                    .whereKey(jobId);
+
+                int rowAffected = instepSQL.executor().executeUpdate(plan);
+                if (1 != rowAffected) {
+                    return new RuntimeException(String.format("任务在处理前，任务状态更新结果不正确，jobId=%s，rowAffected=%s", jobId, rowAffected));
+                }
+
+                processor.process(job);
+            }
+            catch (Exception e) {
+                return e;
+            }
+
+            return null;
+        });
+
+        try {
+            if (null == exception) {
+                SQLPlan plan = failedJobTable.delete().whereKey(jobId);
+                instepSQL.executor().execute(plan);
+            }
+            else {
+                SQLPlan plan = failedJobTable.update()
+                    .step(failedJobTable.failureCount, 1)
+                    .set(failedJobTable.workingStatus, null)
+                    .set(failedJobTable.exception, exception.getMessage() + "\n" + exception.toString())
+                    .whereKey(jobId);
+
+                instepSQL.executor().execute(plan);
+            }
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
         }
-
-        JobProcessor<T> processor = getProcessor(job); //放在同步的位置，以便调用端可以方便的感知到异常。
-
-        asyncRunner.run(() -> {
-            currentJobId.set(id);
-            process(job, processor);
-        });
     }
 
     public void retryFailedJob() {
@@ -81,18 +156,16 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                     ColumnExtensionKt.isNull(failedJobTable.workingStatus)
                 )
                 .limit(1)
-                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).info();
+                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt));
 
             List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
             if (rowList.size() > 0) {
                 TableRow row = rowList.get(0);
 
-                Instant now = Instant.now();
                 Long jobId = row.getLong(failedJobTable.id);
 
                 plan = failedJobTable.update()
-                    .set(failedJobTable.workingStatus, "on")
-                    .set(failedJobTable.lastExecutionStartedAt, now)
+                    .set(failedJobTable.workingStatus, WorkingStatus.Retry)
                     .where(ColumnExtensionKt.isNull(failedJobTable.workingStatus))
                     .whereKey(jobId);
 
@@ -106,34 +179,6 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void onJobSuccess(T job) {
-        super.onJobSuccess(job);
-
-        try {
-            SQLPlan plan = failedJobTable.delete().whereKey(currentJobId.get());
-            instepSQL.executor().execute(plan);
-        }
-        catch (DaoException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void onJobFail(T job, Exception e) {
-        try {
-            SQLPlan plan = failedJobTable.update()
-                .step(failedJobTable.failureCount, 1)
-                .set(failedJobTable.workingStatus, null)
-                .set(failedJobTable.exception, e.getMessage() + "\n" + e.toString())
-                .whereKey(currentJobId.get());
-
-            instepSQL.executor().execute(plan);
-        }
-        catch (DaoException e1) {
-            throw new RuntimeException(e1);
         }
     }
 }
