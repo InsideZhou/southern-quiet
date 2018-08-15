@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
@@ -16,9 +16,8 @@ public class RedisBroadcastingAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public RedisBroadcaster redisBroadcaster(RedisTemplate redisTemplate, FstSerializationRedisSerializer fstSerializationRedisSerializer) {
-        redisTemplate.setDefaultSerializer(fstSerializationRedisSerializer);
-        return new RedisBroadcaster(redisTemplate, fstSerializationRedisSerializer);
+    public RedisBroadcaster redisBroadcaster(RedisConnectionFactory redisConnectionFactory, FstSerializationRedisSerializer fstSerializationRedisSerializer) {
+        return new RedisBroadcaster(redisConnectionFactory, fstSerializationRedisSerializer);
     }
 
     @Bean

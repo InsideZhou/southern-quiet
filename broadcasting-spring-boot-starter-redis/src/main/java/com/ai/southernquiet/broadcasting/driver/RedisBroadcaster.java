@@ -2,6 +2,7 @@ package com.ai.southernquiet.broadcasting.driver;
 
 import com.ai.southernquiet.broadcasting.Broadcaster;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
@@ -12,8 +13,10 @@ public class RedisBroadcaster<T extends Serializable> implements Broadcaster<T> 
     private RedisSerializer<T> redisSerializer;
     private RedisSerializer stringRedisSerializer;
 
-    public RedisBroadcaster(RedisTemplate redisTemplate, RedisSerializer<T> redisSerializer) {
-        this.redisTemplate = redisTemplate;
+    public RedisBroadcaster(RedisConnectionFactory redisConnectionFactory, RedisSerializer<T> redisSerializer) {
+        this.redisTemplate = new RedisTemplate();
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
+
         this.redisSerializer = redisSerializer;
         this.stringRedisSerializer = redisTemplate.getStringSerializer();
     }
