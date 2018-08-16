@@ -8,14 +8,10 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
@@ -42,8 +38,8 @@ public class JdbcIdGeneratorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IdGenerator.class)
-    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, AsyncRunner asyncRunner, Properties properties) {
-        return new JdbcIdGenerator(metadata, workerTable, instepSQL, asyncRunner, properties);
+    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, Properties properties) {
+        return new JdbcIdGenerator(metadata, workerTable, instepSQL, properties);
     }
 
     @ConfigurationProperties("southern-quiet.framework.util.id-generator")
@@ -59,20 +55,6 @@ public class JdbcIdGeneratorAutoConfiguration {
         private int highPaddingBits = 0;
         private int workerIdBits = 12;
         private int lowPaddingBits = 4;
-
-        /**
-         * workerTime上报间隔。
-         */
-        @DurationUnit(ChronoUnit.SECONDS)
-        private Duration reportInterval = Duration.ofSeconds(JdbcIdGenerator.AutoReportInterval);
-
-        public Duration getReportInterval() {
-            return reportInterval;
-        }
-
-        public void setReportInterval(Duration reportInterval) {
-            this.reportInterval = reportInterval;
-        }
 
         public int getTimestampBits() {
             return timestampBits;

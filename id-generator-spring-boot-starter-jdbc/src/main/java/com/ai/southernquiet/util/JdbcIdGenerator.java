@@ -10,30 +10,23 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PreDestroy;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 public class JdbcIdGenerator implements IdGenerator {
-    public final static int AutoReportInterval = 5; //秒
     private final static Log log = LogFactory.getLog(JdbcIdGenerator.class);
 
     private LongIdGenerator longIdGenerator;
     private Metadata metadata;
     private IdGeneratorWorkerTable workerTable;
     private InstepSQL instepSQL;
-    private AsyncRunner asyncRunner;
     private int workerIdInUse;
     private int maxWorkerId;
 
-    private Duration reportInterval;
-    private Instant lastWorkerTime;
-
-    public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, AsyncRunner asyncRunner, JdbcIdGeneratorAutoConfiguration.Properties properties) {
+    public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
         this.metadata = metadata;
         this.workerTable = workerTable;
         this.instepSQL = instepSQL;
-        this.asyncRunner = asyncRunner;
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
@@ -47,9 +40,6 @@ public class JdbcIdGenerator implements IdGenerator {
             properties.getWorkerIdBits(),
             properties.getLowPaddingBits()
         );
-
-        reportInterval = properties.getReportInterval();
-        lastWorkerTime = Instant.now();
     }
 
     private int getWorkerId() {
@@ -122,7 +112,7 @@ public class JdbcIdGenerator implements IdGenerator {
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
-    @Scheduled(fixedRate = AutoReportInterval * 1000)
+    @Scheduled(fixedRate = 5000)
     @PreDestroy
     public void report() {
         Instant now = Instant.now();
@@ -135,14 +125,11 @@ public class JdbcIdGenerator implements IdGenerator {
                     ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
                         .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
                         .and(ColumnExtensionKt.lt(workerTable.workerTime, now))
-                );
+                ).debug();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
             if (1 != rowAffected) {
-                log.warn(String.format("workerTime上报异常。workerId=%s,appId=%s,rowAffected=%s", workerIdInUse, runtimeId, rowAffected));
-            }
-            else {
-                lastWorkerTime = now;
+                log.warn(String.format("workerTime上报异常。workerId=%s,appId=%s,rowAffected=%s,time=%s", workerIdInUse, runtimeId, rowAffected, now));
             }
         }
         catch (DaoException e) {
@@ -152,13 +139,6 @@ public class JdbcIdGenerator implements IdGenerator {
 
     @Override
     public long generate() {
-        long id = longIdGenerator.generate();
-
-        Instant now = Instant.now();
-        if (now.isAfter(lastWorkerTime.plus(reportInterval))) {
-            asyncRunner.run(this::report);
-        }
-
-        return id;
+        return longIdGenerator.generate();
     }
 }
