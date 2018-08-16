@@ -10,25 +10,38 @@ import java.io.Serializable;
 
 public class RedisBroadcaster<T extends Serializable> implements Broadcaster<T> {
     private RedisTemplate redisTemplate;
-    private RedisSerializer<T> redisSerializer;
-    private RedisSerializer stringRedisSerializer;
+    private RedisSerializer<T> eventSerializer;
+    private RedisSerializer channelSerializer;
 
-    public RedisBroadcaster(RedisConnectionFactory redisConnectionFactory, RedisSerializer<T> redisSerializer) {
+    public RedisBroadcaster(RedisConnectionFactory redisConnectionFactory, RedisSerializer<T> eventSerializer) {
+        this(redisConnectionFactory, eventSerializer, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public RedisBroadcaster(RedisConnectionFactory redisConnectionFactory, RedisSerializer<T> eventSerializer, RedisSerializer channelSerializer) {
         this.redisTemplate = new RedisTemplate();
+        redisTemplate.setDefaultSerializer(eventSerializer);
         redisTemplate.setConnectionFactory(redisConnectionFactory);
+        redisTemplate.afterPropertiesSet();
 
-        this.redisSerializer = redisSerializer;
-        this.stringRedisSerializer = redisTemplate.getStringSerializer();
+        this.eventSerializer = eventSerializer;
+
+        if (null == channelSerializer) {
+            this.channelSerializer = redisTemplate.getStringSerializer();
+        }
+        else {
+            this.channelSerializer = channelSerializer;
+        }
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Override
     public void broadcast(T event, String[] channels) {
-        byte[] message = redisSerializer.serialize(event);
+        byte[] message = eventSerializer.serialize(event);
 
         redisTemplate.execute((RedisConnection connection) -> {
             for (String channel : channels) {
-                connection.publish(stringRedisSerializer.serialize(channel), message);
+                connection.publish(channelSerializer.serialize(channel), message);
             }
 
             return null;
