@@ -49,12 +49,34 @@ public class JdbcIdGeneratorAutoConfiguration {
         /**
          * timestamp - highPadding - worker - lowPadding - sequence
          *
-         * @see instep.util.LongIdGenerator
+         * @see SnowflakeIdGenerator
          */
         private int timestampBits = 32;
         private int highPaddingBits = 0;
         private int workerIdBits = 12;
-        private int lowPaddingBits = 4;
+        private int lowPaddingBits = 2;
+        private int sequenceStartRange = 1000;
+
+        /**
+         * Thu Feb 01 2018 00:00:00 GMT, seconds
+         */
+        private long epoch = 1517414400L;
+
+        public int getSequenceStartRange() {
+            return sequenceStartRange;
+        }
+
+        public void setSequenceStartRange(int sequenceStartRange) {
+            this.sequenceStartRange = sequenceStartRange;
+        }
+
+        public long getEpoch() {
+            return epoch;
+        }
+
+        public void setEpoch(long epoch) {
+            this.epoch = epoch;
+        }
 
         public int getTimestampBits() {
             return timestampBits;

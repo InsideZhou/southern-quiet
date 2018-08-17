@@ -2,7 +2,6 @@ package com.ai.southernquiet.util;
 
 import instep.dao.DaoException;
 import instep.dao.sql.*;
-import instep.util.LongIdGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,11 +11,12 @@ import org.springframework.util.StringUtils;
 import javax.annotation.PreDestroy;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 
 public class JdbcIdGenerator implements IdGenerator {
     private final static Log log = LogFactory.getLog(JdbcIdGenerator.class);
 
-    private LongIdGenerator longIdGenerator;
+    private IdGenerator idGenerator;
     private Metadata metadata;
     private IdGeneratorWorkerTable workerTable;
     private InstepSQL instepSQL;
@@ -30,15 +30,18 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
+        maxWorkerId = SnowflakeIdGenerator.maxIntegerAtBits(properties.getWorkerIdBits());
         workerIdInUse = getWorkerId();
 
-        longIdGenerator = new LongIdGenerator(
+        idGenerator = new SnowflakeIdGenerator(
             workerIdInUse,
             properties.getTimestampBits(),
             properties.getHighPaddingBits(),
             properties.getWorkerIdBits(),
-            properties.getLowPaddingBits()
+            properties.getLowPaddingBits(),
+            properties.getEpoch(),
+            new Random(),
+            properties.getSequenceStartRange()
         );
     }
 
@@ -112,6 +115,7 @@ public class JdbcIdGenerator implements IdGenerator {
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
+    @Scheduled(fixedRate = 5000)
     @PreDestroy
     public void report() {
         Instant now = Instant.now();
@@ -138,6 +142,6 @@ public class JdbcIdGenerator implements IdGenerator {
 
     @Override
     public long generate() {
-        return longIdGenerator.generate();
+        return idGenerator.generate();
     }
 }
