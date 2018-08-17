@@ -112,7 +112,6 @@ public class JdbcIdGenerator implements IdGenerator {
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
-    @Scheduled(fixedRate = 5000)
     @PreDestroy
     public void report() {
         Instant now = Instant.now();
