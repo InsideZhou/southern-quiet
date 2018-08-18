@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 /**
  * 声明该类型的事件在发布时也应该被广播到当前ApplicationContext之外。
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented

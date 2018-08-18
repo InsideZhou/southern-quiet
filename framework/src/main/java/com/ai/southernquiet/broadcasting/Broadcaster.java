@@ -4,6 +4,8 @@ package com.ai.southernquiet.broadcasting;
  * 事件广播器。
  */
 public interface Broadcaster<E> {
+    String CustomApplicationEventChannel = "CustomApplicationEvent";
+
     /**
      * 广播事件。
      *

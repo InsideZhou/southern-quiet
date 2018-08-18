@@ -51,7 +51,6 @@ public class FrameworkAutoConfiguration {
 
     @SuppressWarnings("unchecked")
     @Bean
-    @ConditionalOnBean(Broadcaster.class)
     @ConditionalOnMissingBean(Publisher.class)
     public DefaultPublisher publisher(Broadcaster<?> broadcaster, BroadcastingProperties properties) {
         return new DefaultPublisher(broadcaster, properties);

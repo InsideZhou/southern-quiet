@@ -1,9 +1,11 @@
-package com.ai.southernquiet.broadcasting;
+package test.broadcasting;
+
+import com.ai.southernquiet.broadcasting.ShouldBroadcastCustomApplicationEvent;
 
 import java.io.Serializable;
 import java.util.UUID;
 
-@ShouldBroadcast
+@ShouldBroadcastCustomApplicationEvent
 public class BroadcastingDone implements Serializable {
     private UUID id = UUID.randomUUID();
 

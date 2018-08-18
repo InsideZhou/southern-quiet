@@ -6,13 +6,15 @@ import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.broadcasting.ShouldBroadcast;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.ReflectionUtils;
 
-public class DefaultPublisher<E> implements Publisher<E>, ApplicationEventPublisherAware {
+public class DefaultPublisher implements Publisher, ApplicationEventPublisherAware {
     private ApplicationEventPublisher applicationEventPublisher;
-    private Broadcaster<E> broadcaster;
+    private Broadcaster broadcaster;
     private String[] defaultChannel;
 
-    public DefaultPublisher(Broadcaster<E> broadcaster, FrameworkAutoConfiguration.BroadcastingProperties properties) {
+    public DefaultPublisher(Broadcaster broadcaster, FrameworkAutoConfiguration.BroadcastingProperties properties) {
         this.broadcaster = broadcaster;
         this.defaultChannel = properties.getDefaultChannels();
     }
@@ -24,16 +26,16 @@ public class DefaultPublisher<E> implements Publisher<E>, ApplicationEventPublis
     }
 
     @Override
-    public <T> void publishToLocalOnly(T event) {
+    public void publishToLocalOnly(Object event) {
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings({"ConstantConditions", "unchecked"})
     @Override
-    public void publish(E event) {
+    public void publish(Object event) {
         publishToLocalOnly(event);
 
-        ShouldBroadcast annotation = event.getClass().getAnnotation(ShouldBroadcast.class);
+        ShouldBroadcast annotation = AnnotationUtils.getAnnotation(event.getClass(), ShouldBroadcast.class);
         if (null != annotation) {
             String[] channels = annotation.channels();
             if (null == channels || 0 == channels.length) {
