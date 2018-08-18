@@ -1,10 +1,10 @@
 package test.broadcasting;
 
-import com.ai.southernquiet.broadcasting.ShouldBroadcastCustomApplicationEvent;
+import com.ai.southernquiet.broadcasting.CustomApplicationEvent;
 
 import java.util.UUID;
 
-@ShouldBroadcastCustomApplicationEvent
+@CustomApplicationEvent
 public class NonSerializableEvent {
     private UUID id = UUID.randomUUID();
 

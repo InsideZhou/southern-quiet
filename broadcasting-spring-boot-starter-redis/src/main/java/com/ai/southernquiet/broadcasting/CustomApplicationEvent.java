@@ -6,12 +6,12 @@ import static com.ai.southernquiet.broadcasting.Broadcaster.CustomApplicationEve
 
 
 /**
- * 让被广播到不同ApplicationContext中的自定义事件可直接被spring的 {@link org.springframework.context.event.EventListener} 机制处理。
+ * 被标记的自定义事件会被广播到当前ApplicationContext之外，且支持spring的 {@link org.springframework.context.event.EventListener} 机制。
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 @ShouldBroadcast(CustomApplicationEventChannel)
-public @interface ShouldBroadcastCustomApplicationEvent {
+public @interface CustomApplicationEvent {
 }
