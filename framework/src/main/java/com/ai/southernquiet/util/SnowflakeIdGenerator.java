@@ -27,18 +27,14 @@ public class SnowflakeIdGenerator implements IdGenerator {
 
     private int currentTimestampBits;
     private int currentHighPaddingBits;
-    private int currentWorkerBits;
-    private int currentLowPaddingBits;
     private int sequenceBits;
 
     private int workerId;
 
     public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, Random random, int sequenceStartRange) {
         sequenceBits = 63 - timestampBits - highPaddingBits - workerIdBits - lowPaddingBits;
-        currentWorkerBits = workerIdBits;
         currentTimestampBits = timestampBits;
         currentHighPaddingBits = highPaddingBits;
-        currentLowPaddingBits = lowPaddingBits;
 
         maxWorkerId = maxIntegerAtBits(workerIdBits);
         maxSequenceValue = maxIntegerAtBits(sequenceBits);
