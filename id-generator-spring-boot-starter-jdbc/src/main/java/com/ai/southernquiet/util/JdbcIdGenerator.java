@@ -144,4 +144,19 @@ public class JdbcIdGenerator implements IdGenerator {
     public long generate() {
         return idGenerator.generate();
     }
+
+    @Override
+    public long getTimestampFromId(long id) {
+        return idGenerator.getTimestampFromId(id);
+    }
+
+    @Override
+    public long getWorkerFromId(long id) {
+        return idGenerator.getWorkerFromId(id);
+    }
+
+    @Override
+    public long getSequenceFromId(long id) {
+        return idGenerator.getSequenceFromId(id);
+    }
 }
