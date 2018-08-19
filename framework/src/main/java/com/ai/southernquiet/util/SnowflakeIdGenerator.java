@@ -25,10 +25,20 @@ public class SnowflakeIdGenerator implements IdGenerator {
     private long epoch;
     private int sequenceStartRange;
 
+    private int currentTimestampBits;
+    private int currentHighPaddingBits;
+    private int currentWorkerBits;
+    private int currentLowPaddingBits;
+    private int sequenceBits;
+
     private int workerId;
 
     public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, Random random, int sequenceStartRange) {
-        int sequenceBits = 63 - timestampBits - highPaddingBits - workerIdBits - lowPaddingBits;
+        sequenceBits = 63 - timestampBits - highPaddingBits - workerIdBits - lowPaddingBits;
+        currentWorkerBits = workerIdBits;
+        currentTimestampBits = timestampBits;
+        currentHighPaddingBits = highPaddingBits;
+        currentLowPaddingBits = lowPaddingBits;
 
         maxWorkerId = maxIntegerAtBits(workerIdBits);
         maxSequenceValue = maxIntegerAtBits(sequenceBits);
@@ -129,6 +139,21 @@ public class SnowflakeIdGenerator implements IdGenerator {
         return ((timestamp - epoch) << timestampShift) | (workerId << workerIdShift) | sequence;
     }
 
+    @Override
+    public long getTimestampFromId(long id) {
+        return (id >>> timestampShift) + EPOCH;
+    }
+
+    @Override
+    public long getWorkerFromId(long id) {
+        return (id << 1 + currentTimestampBits + currentHighPaddingBits) >>> (1 + currentTimestampBits + currentHighPaddingBits + workerIdShift);
+    }
+
+    @Override
+    public long getSequenceFromId(long id) {
+        return (id << 64 - sequenceBits) >>> (64 - sequenceBits);
+    }
+
     private long nextTick(long lastTimestamp) {
         long timestamp = timeGen();
         while (timestamp <= lastTimestamp) {
@@ -139,53 +164,5 @@ public class SnowflakeIdGenerator implements IdGenerator {
 
     private long timeGen() {
         return System.currentTimeMillis() / 1000;
-    }
-
-    public int getMaxWorkerId() {
-        return maxWorkerId;
-    }
-
-    private void setMaxWorkerId(int maxWorkerId) {
-        this.maxWorkerId = maxWorkerId;
-    }
-
-    public int getMaxSequenceValue() {
-        return maxSequenceValue;
-    }
-
-    private void setMaxSequenceValue(int maxSequenceValue) {
-        this.maxSequenceValue = maxSequenceValue;
-    }
-
-    public int getWorkerIdShift() {
-        return workerIdShift;
-    }
-
-    private void setWorkerIdShift(int workerIdShift) {
-        this.workerIdShift = workerIdShift;
-    }
-
-    public int getTimestampShift() {
-        return timestampShift;
-    }
-
-    private void setTimestampShift(int timestampShift) {
-        this.timestampShift = timestampShift;
-    }
-
-    public int getSequence() {
-        return sequence;
-    }
-
-    private void setSequence(int sequence) {
-        this.sequence = sequence;
-    }
-
-    public long getLastTimestamp() {
-        return lastTimestamp;
-    }
-
-    private void setLastTimestamp(long lastTimestamp) {
-        this.lastTimestamp = lastTimestamp;
     }
 }
