@@ -47,8 +47,7 @@ subprojects {
     }
 
     dependencies {
-        optional "org.springframework.boot:spring-boot-configuration-processor"
-        optional "org.springframework.boot:spring-boot-devtools"
+        compileClasspath "org.springframework.boot:spring-boot-configuration-processor"
 
         testImplementation "org.springframework.boot:spring-boot-starter-test"
     }
