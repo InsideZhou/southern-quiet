@@ -1,10 +1,12 @@
 package test.job;
 
 import com.ai.southernquiet.FrameworkAutoConfiguration;
+import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
+import instep.dao.sql.*;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
 import org.junit.Test;
@@ -16,6 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @ImportAutoConfiguration({FrameworkAutoConfiguration.class, DataSourceAutoConfiguration.class, CoreAutoConfiguration.class, SQLAutoConfiguration.class})
@@ -72,6 +76,12 @@ public class JdbcJobTest {
     @Autowired
     private JobQueue jobQueue;
 
+    @Autowired
+    private FailedJobTable failedJobTable;
+
+    @Autowired
+    private InstepSQL instepSQL;
+
     @SuppressWarnings("unchecked")
     @Test
     public void enqueue() {
@@ -91,5 +101,21 @@ public class JdbcJobTest {
     @Test(expected = ProcessorNotFoundException.class)
     public void enqueueWithException() {
         jobQueue.enqueue(new NoProcessorJob());
+    }
+
+    @Test
+    public void queryFailedJob() throws Exception {
+        SQLPlan plan = failedJobTable.select()
+            .where(
+                ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
+                ColumnExtensionKt.isNull(failedJobTable.workingStatus),
+                Condition.Companion.plain(
+                    "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
+                        ", INTERVAL " + failedJobTable.failureCount.getName() + " SECOND) < CURRENT_TIMESTAMP")
+            )
+            .limit(1)
+            .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
+
+        List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
     }
 }

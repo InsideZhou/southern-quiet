@@ -5,10 +5,7 @@ import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
-import instep.dao.sql.ColumnExtensionKt;
-import instep.dao.sql.InstepSQL;
-import instep.dao.sql.SQLPlan;
-import instep.dao.sql.TableRow;
+import instep.dao.sql.*;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -153,10 +150,13 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
             SQLPlan plan = failedJobTable.select()
                 .where(
                     ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
-                    ColumnExtensionKt.isNull(failedJobTable.workingStatus)
+                    ColumnExtensionKt.isNull(failedJobTable.workingStatus),
+                    Condition.Companion.plain(
+                        "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
+                            ", INTERVAL " + failedJobTable.failureCount.getName() + " SECOND) < CURRENT_TIMESTAMP")
                 )
                 .limit(1)
-                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt));
+                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
 
             List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
             if (rowList.size() > 0) {
