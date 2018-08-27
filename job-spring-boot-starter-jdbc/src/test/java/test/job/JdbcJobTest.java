@@ -5,6 +5,7 @@ import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
+import com.ai.southernquiet.job.driver.JdbcJobQueue;
 import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
 import instep.dao.sql.*;
 import instep.springboot.CoreAutoConfiguration;
@@ -117,5 +118,11 @@ public class JdbcJobTest {
             .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
 
         List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
+    }
+
+    @Test
+    public void queryDirtyStatus() {
+        JdbcJobQueue jdbcJobQueue = (JdbcJobQueue) jobQueue;
+        jdbcJobQueue.cleanWorkingStatus();
     }
 }

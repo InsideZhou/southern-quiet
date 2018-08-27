@@ -6,6 +6,8 @@ import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
 import instep.dao.sql.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -15,6 +17,8 @@ import java.time.Instant;
 import java.util.List;
 
 public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
+    private final static Log log = LogFactory.getLog(JdbcJobQueue.class);
+
     public enum WorkingStatus {
         Prepared, Retry, Done
     }
@@ -176,6 +180,26 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                     process(job, getProcessor(job));
                 }
             }
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void cleanWorkingStatus() {
+        try {
+            SQLPlan plan = failedJobTable.update()
+                .set(failedJobTable.workingStatus, null)
+                .where(
+                    ColumnExtensionKt.inArray(failedJobTable.workingStatus, new WorkingStatus[]{WorkingStatus.Retry, WorkingStatus.Done}),
+                    Condition.Companion.plain(
+                        "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
+                            ", INTERVAL 3 MINUTE) < CURRENT_TIMESTAMP")
+                )
+                .debug();
+
+            int rowAffected = instepSQL.executor().executeUpdate(plan);
+            log.info(String.format("已经更正%s行状态异常的Job记录", rowAffected));
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
