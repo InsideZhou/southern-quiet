@@ -199,7 +199,9 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 .debug();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
-            log.info(String.format("已经更正%s行状态异常的Job记录", rowAffected));
+            if (rowAffected > 0) {
+                log.info(String.format("已经更正%s行状态异常的Job记录", rowAffected));
+            }
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
