@@ -167,7 +167,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 plan = failedJobTable.update()
                     .set(failedJobTable.workingStatus, WorkingStatus.Retry)
                     .where(ColumnExtensionKt.isNull(failedJobTable.workingStatus))
-                    .whereKey(jobId);
+                    .whereKey(jobId).debug();
 
                 if (instepSQL.executor().executeUpdate(plan) > 0) {
                     T job = deserialize(row.get(failedJobTable.payload));
