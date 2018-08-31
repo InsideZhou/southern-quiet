@@ -94,7 +94,7 @@ public class MainController {
             FileInfo info = new FileInfo();
             info.setId(hash);
             info.setContentType(mediaType);
-            info.setUrl(builder.replacePath("file/{hash}").build(hash).toString());
+            info.setUrl(builder.replacePath(request.getContextPath() + "/file/{hash}").build(hash).toString());
 
             return info;
         }).collect(Collectors.toList());
@@ -124,7 +124,7 @@ public class MainController {
             FileInfo info = new FileInfo();
             info.setId(hash);
             info.setContentType(mediaType);
-            info.setUrl(builder.replacePath("base64file/{hash}").build(hash).toString());
+            info.setUrl(builder.replacePath(request.getContextPath() + "/base64file/{hash}").build(hash).toString());
 
             return info;
         }).collect(Collectors.toList());
