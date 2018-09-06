@@ -1,5 +1,8 @@
-package com.ai.southernquiet.util;
+package com.ai.southernquiet.idgenerator;
 
+import com.ai.southernquiet.util.IdGenerator;
+import com.ai.southernquiet.util.Metadata;
+import com.ai.southernquiet.util.SnowflakeIdGenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
@@ -8,10 +11,14 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
@@ -45,6 +52,9 @@ public class JdbcIdGeneratorAutoConfiguration {
     @ConfigurationProperties("southern-quiet.framework.util.id-generator")
     public static class Properties {
         private String workerTable = "id_generator_worker";
+
+        @DurationUnit(ChronoUnit.MINUTES)
+        private Duration considerWorkerDowned = Duration.ofDays(1);
 
         /**
          * timestamp - highPadding - worker - lowPadding - sequence
@@ -116,6 +126,14 @@ public class JdbcIdGeneratorAutoConfiguration {
 
         public void setWorkerTable(String workerTable) {
             this.workerTable = workerTable;
+        }
+
+        public Duration getConsiderWorkerDowned() {
+            return considerWorkerDowned;
+        }
+
+        public void setConsiderWorkerDowned(Duration considerWorkerDowned) {
+            this.considerWorkerDowned = considerWorkerDowned;
         }
     }
 }

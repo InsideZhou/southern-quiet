@@ -1,11 +1,14 @@
 package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.FailedJobTable;
+import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
 import instep.dao.sql.*;
+import instep.dao.sql.dialect.MySQLDialect;
+import instep.dao.sql.dialect.PostgreSQLDialect;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.util.StreamUtils;
@@ -42,11 +45,14 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
 
     private FailedJobTable failedJobTable;
     private InstepSQL instepSQL;
+    private JdbcJobAutoConfiguration.Properties properties;
+
     private ThreadLocal<Long> currentJobId = new ThreadLocal<>();
 
-    public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL) {
+    public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, JdbcJobAutoConfiguration.Properties properties) {
         this.failedJobTable = failedJobTable;
         this.instepSQL = instepSQL;
+        this.properties = properties;
     }
 
     @Override
@@ -192,9 +198,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 .set(failedJobTable.workingStatus, null)
                 .where(
                     ColumnExtensionKt.inArray(failedJobTable.workingStatus, new WorkingStatus[]{WorkingStatus.Retry, WorkingStatus.Done}),
-                    Condition.Companion.plain(
-                        "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
-                            ", INTERVAL 3 MINUTE) < CURRENT_TIMESTAMP")
+                    lastExecutionStartedAtPlusIntervalLesserThanNow()
                 )
                 .debug();
 
@@ -205,6 +209,24 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
         }
         catch (DaoException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private Condition lastExecutionStartedAtPlusIntervalLesserThanNow() {
+        Dialect dialect = failedJobTable.getDialect();
+
+        long interval = properties.getWorkerStatusCleanInterval().getSeconds();
+
+        if (PostgreSQLDialect.class.isInstance(dialect)) {
+            return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() + "+ INTERVAL '" + interval + " SECONDS') < CURRENT_TIMESTAMP");
+        }
+        else if (MySQLDialect.class.isInstance(dialect)) {
+            return Condition.Companion.plain(
+                "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
+                    ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
+        }
+        else {
+            throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
         }
     }
 }

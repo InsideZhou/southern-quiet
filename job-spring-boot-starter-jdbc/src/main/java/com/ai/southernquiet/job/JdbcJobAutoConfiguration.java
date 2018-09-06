@@ -9,9 +9,13 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "SpringFacetCodeInspection"})
 @Configuration
@@ -22,8 +26,8 @@ public class JdbcJobAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public JdbcJobQueue jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL) {
-        return new JdbcJobQueue(failedJobTable, instepSQL);
+    public JdbcJobQueue jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, Properties properties) {
+        return new JdbcJobQueue(failedJobTable, instepSQL, properties);
     }
 
     @Bean
@@ -49,12 +53,26 @@ public class JdbcJobAutoConfiguration {
          */
         private String failedTable = "failed_job";
 
+        /**
+         * 不正常状态Job的清理时间间隔，上次执行时间+间隔小于当前时间且状态不正常的任务会被清理。
+         */
+        @DurationUnit(ChronoUnit.SECONDS)
+        private Duration workerStatusCleanInterval = Duration.ofMinutes(3);
+
         public String getFailedTable() {
             return failedTable;
         }
 
         public void setFailedTable(String failedTable) {
             this.failedTable = failedTable;
+        }
+
+        public Duration getWorkerStatusCleanInterval() {
+            return workerStatusCleanInterval;
+        }
+
+        public void setWorkerStatusCleanInterval(Duration workerStatusCleanInterval) {
+            this.workerStatusCleanInterval = workerStatusCleanInterval;
         }
     }
 }

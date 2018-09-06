@@ -1,7 +1,7 @@
 package test.idgenerator;
 
 import com.ai.southernquiet.util.IdGenerator;
-import com.ai.southernquiet.util.JdbcIdGeneratorAutoConfiguration;
+import com.ai.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +10,6 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.Instant;
 
 @SpringBootApplication
 @ImportAutoConfiguration(JdbcIdGeneratorAutoConfiguration.class)

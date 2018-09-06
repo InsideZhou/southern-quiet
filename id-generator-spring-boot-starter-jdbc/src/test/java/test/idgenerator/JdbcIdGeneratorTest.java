@@ -2,7 +2,7 @@ package test.idgenerator;
 
 import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.util.IdGenerator;
-import com.ai.southernquiet.util.JdbcIdGeneratorAutoConfiguration;
+import com.ai.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration;
 import com.ai.southernquiet.util.SnowflakeIdGenerator;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
