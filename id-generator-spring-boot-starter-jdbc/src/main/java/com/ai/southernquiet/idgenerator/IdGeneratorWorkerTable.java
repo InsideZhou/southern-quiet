@@ -1,8 +1,8 @@
 package com.ai.southernquiet.idgenerator;
 
-import ch.qos.logback.core.db.dialect.MySQLDialect;
-import ch.qos.logback.core.db.dialect.PostgreSQLDialect;
 import instep.dao.sql.*;
+import instep.dao.sql.dialect.MySQLDialect;
+import instep.dao.sql.dialect.PostgreSQLDialect;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
