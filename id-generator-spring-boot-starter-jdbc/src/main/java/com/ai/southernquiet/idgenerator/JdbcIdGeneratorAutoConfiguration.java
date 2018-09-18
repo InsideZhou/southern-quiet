@@ -44,6 +44,12 @@ public class JdbcIdGeneratorAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public IdGeneratorWorkerTable.Cleaner idGeneratorWorkerTableCleaner(IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
+        return new IdGeneratorWorkerTable.Cleaner(workerTable, instepSQL, properties);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(IdGenerator.class)
     public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, Properties properties) {
         return new JdbcIdGenerator(metadata, workerTable, instepSQL, properties);
