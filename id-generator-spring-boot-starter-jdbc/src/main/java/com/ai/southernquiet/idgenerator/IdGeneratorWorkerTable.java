@@ -39,6 +39,12 @@ public class IdGeneratorWorkerTable extends Table {
         private InstepSQL instepSQL;
         private JdbcIdGeneratorAutoConfiguration.Properties properties;
 
+        public Cleaner(IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
+            this.workerTable = workerTable;
+            this.instepSQL = instepSQL;
+            this.properties = properties;
+        }
+
         public void clearConsiderDowned() {
             SQLPlan plan = workerTable.delete().where(lastWorkerTimePlusIntervalLesserThanNow()).debug();
             int rowAffected;

@@ -22,7 +22,7 @@ idea {
 
 subprojects {
     group = 'com.ai.southernquiet'
-    version = '0.1.3'
+    version = '0.1.4'
 
     ext {
         instepVersion = '1.0.0'
