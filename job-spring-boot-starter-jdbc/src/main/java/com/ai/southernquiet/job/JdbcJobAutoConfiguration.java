@@ -54,10 +54,16 @@ public class JdbcJobAutoConfiguration {
         private String failedTable = "failed_job";
 
         /**
-         * 不正常状态Job的清理时间间隔，上次执行时间+间隔小于当前时间且状态不正常的任务会被清理。
+         * 不正常状态Job的清理时间间隔，上次执行时间+间隔小于当前时间且状态不正常的任务会被清理，默认单位：秒。
          */
         @DurationUnit(ChronoUnit.SECONDS)
         private Duration workerStatusCleanInterval = Duration.ofMinutes(3);
+
+        /**
+         * 失败任务重试的事件间隔，默认单位：秒。
+         */
+        @DurationUnit(ChronoUnit.SECONDS)
+        private Duration failedJobRetryInterval = null;
 
         public String getFailedTable() {
             return failedTable;
@@ -73,6 +79,14 @@ public class JdbcJobAutoConfiguration {
 
         public void setWorkerStatusCleanInterval(Duration workerStatusCleanInterval) {
             this.workerStatusCleanInterval = workerStatusCleanInterval;
+        }
+
+        public Duration getFailedJobRetryInterval() {
+            return failedJobRetryInterval;
+        }
+
+        public void setFailedJobRetryInterval(Duration failedJobRetryInterval) {
+            this.failedJobRetryInterval = failedJobRetryInterval;
         }
     }
 }

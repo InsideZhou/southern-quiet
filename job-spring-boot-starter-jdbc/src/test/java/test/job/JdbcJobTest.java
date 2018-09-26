@@ -7,7 +7,7 @@ import com.ai.southernquiet.job.JobProcessor;
 import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.job.driver.JdbcJobQueue;
 import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
-import instep.dao.sql.*;
+import instep.dao.sql.InstepSQL;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
 import org.junit.Test;
@@ -19,8 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.List;
 
 @RunWith(SpringRunner.class)
 @ImportAutoConfiguration({FrameworkAutoConfiguration.class, DataSourceAutoConfiguration.class, CoreAutoConfiguration.class, SQLAutoConfiguration.class})
@@ -105,19 +103,10 @@ public class JdbcJobTest {
     }
 
     @Test
-    public void queryFailedJob() throws Exception {
-        SQLPlan plan = failedJobTable.select()
-            .where(
-                ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
-                ColumnExtensionKt.isNull(failedJobTable.workingStatus),
-                Condition.Companion.plain(
-                    "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
-                        ", INTERVAL " + failedJobTable.failureCount.getName() + " SECOND) < CURRENT_TIMESTAMP")
-            )
-            .limit(1)
-            .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
+    public void queryFailedJob() {
+        JdbcJobQueue jdbcJobQueue = (JdbcJobQueue) jobQueue;
 
-        List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
+        jdbcJobQueue.retryFailedJob();
     }
 
     @Test

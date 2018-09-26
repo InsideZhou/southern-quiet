@@ -161,9 +161,8 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 .where(
                     ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
                     ColumnExtensionKt.isNull(failedJobTable.workingStatus),
-                    Condition.Companion.plain(
-                        "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
-                            ", INTERVAL " + failedJobTable.failureCount.getName() + " SECOND) < CURRENT_TIMESTAMP")
+                    null == properties.getFailedJobRetryInterval() ? lastExecutionStartedAtPlusFailedCountIntervalLesserThanNow() :
+                        lastExecutionStartedAtPlusIntervalLesserThanNow(properties.getFailedJobRetryInterval().getSeconds())
                 )
                 .limit(1)
                 .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
@@ -198,7 +197,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                 .set(failedJobTable.workingStatus, null)
                 .where(
                     ColumnExtensionKt.inArray(failedJobTable.workingStatus, new WorkingStatus[]{WorkingStatus.Retry, WorkingStatus.Done}),
-                    lastExecutionStartedAtPlusIntervalLesserThanNow()
+                    lastExecutionStartedAtPlusIntervalLesserThanNow(properties.getWorkerStatusCleanInterval().getSeconds())
                 )
                 .debug();
 
@@ -212,18 +211,34 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
         }
     }
 
-    private Condition lastExecutionStartedAtPlusIntervalLesserThanNow() {
+    private Condition lastExecutionStartedAtPlusIntervalLesserThanNow(long interval) {
         Dialect dialect = failedJobTable.getDialect();
 
-        long interval = properties.getWorkerStatusCleanInterval().getSeconds();
-
         if (PostgreSQLDialect.class.isInstance(dialect)) {
-            return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() + "+ INTERVAL '" + interval + " SECONDS') < CURRENT_TIMESTAMP");
+            return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() +
+                "'" + interval + " SECONDS'::INTERVAL < CURRENT_TIMESTAMP");
         }
         else if (MySQLDialect.class.isInstance(dialect)) {
             return Condition.Companion.plain(
                 "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
                     ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
+        }
+        else {
+            throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
+        }
+    }
+
+    private Condition lastExecutionStartedAtPlusFailedCountIntervalLesserThanNow() {
+        Dialect dialect = failedJobTable.getDialect();
+
+        if (PostgreSQLDialect.class.isInstance(dialect)) {
+            return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() +
+                " + ((" + failedJobTable.failureCount.getName() + " * 2) || ' SECONDS')::INTERVAL < CURRENT_TIMESTAMP");
+        }
+        else if (MySQLDialect.class.isInstance(dialect)) {
+            return Condition.Companion.plain(
+                "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
+                    ", INTERVAL " + failedJobTable.failureCount.getName() + " * 2 SECOND) < CURRENT_TIMESTAMP");
         }
         else {
             throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
