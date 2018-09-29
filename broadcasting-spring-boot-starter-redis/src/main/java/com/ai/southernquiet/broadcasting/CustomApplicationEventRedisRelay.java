@@ -4,6 +4,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -14,7 +15,7 @@ import javax.annotation.PostConstruct;
 import static com.ai.southernquiet.broadcasting.Broadcaster.CustomApplicationEventChannel;
 
 public class CustomApplicationEventRedisRelay implements ApplicationEventPublisherAware {
-    private static Log log = LogFactory.getLog(CustomApplicationEventRedisRelay.class);
+    private final static Log log = LogFactory.getLog(CustomApplicationEventRedisRelay.class);
 
     private RedisTemplate redisTemplate;
     private RedisSerializer eventSerializer;
@@ -33,19 +34,20 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
 
     @PostConstruct
     public void postConstruct() {
-        container.addMessageListener((message, pattern) -> {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format(
-                    "CustomApplicationEventRelay在 %s 频道收到事件，pattern=%s",
-                    channelSerializer.deserialize(message.getChannel()),
-                    redisTemplate.getStringSerializer().deserialize(pattern)
-                ));
-            }
+        container.addMessageListener(this::onMessage, new ChannelTopic(CustomApplicationEventChannel));
+    }
 
-            Object event = eventSerializer.deserialize(message.getBody());
-            applicationEventPublisher.publishEvent(event);
+    protected void onMessage(Message message, byte[] pattern) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(
+                "CustomApplicationEventRelay在 %s 频道收到事件，pattern=%s",
+                channelSerializer.deserialize(message.getChannel()),
+                redisTemplate.getStringSerializer().deserialize(pattern)
+            ));
+        }
 
-        }, new ChannelTopic(CustomApplicationEventChannel));
+        Object event = eventSerializer.deserialize(message.getBody());
+        applicationEventPublisher.publishEvent(event);
     }
 
     @SuppressWarnings("NullableProblems")
