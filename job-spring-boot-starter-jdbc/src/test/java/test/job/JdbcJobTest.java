@@ -4,8 +4,8 @@ import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
-import com.ai.southernquiet.job.JobQueue;
-import com.ai.southernquiet.job.driver.JdbcJobQueue;
+import com.ai.southernquiet.job.JobEngine;
+import com.ai.southernquiet.job.driver.JdbcJobEngine;
 import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
 import instep.dao.sql.InstepSQL;
 import instep.springboot.CoreAutoConfiguration;
@@ -73,7 +73,7 @@ public class JdbcJobTest {
     }
 
     @Autowired
-    private JobQueue jobQueue;
+    private JobEngine jobEngine;
 
     @Autowired
     private FailedJobTable failedJobTable;
@@ -85,33 +85,33 @@ public class JdbcJobTest {
     @Test
     public void enqueue() {
         JdbcJob job = new JdbcJob();
-        System.out.println(String.format("Job(%s) enqueue on Thread(%s)", job.getId(), Thread.currentThread().getId()));
-        jobQueue.enqueue(job);
-        jobQueue.enqueue(new JobException());
+        System.out.println(String.format("Job(%s) arrange on Thread(%s)", job.getId(), Thread.currentThread().getId()));
+        jobEngine.arrange(job);
+        jobEngine.arrange(new JobException());
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = ClassCastException.class)
     public void enqueueWithNonSerializable() {
-        jobQueue.enqueue(new NonSerializableJob());
+        jobEngine.arrange(new NonSerializableJob());
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = ProcessorNotFoundException.class)
     public void enqueueWithException() {
-        jobQueue.enqueue(new NoProcessorJob());
+        jobEngine.arrange(new NoProcessorJob());
     }
 
     @Test
     public void queryFailedJob() {
-        JdbcJobQueue jdbcJobQueue = (JdbcJobQueue) jobQueue;
+        JdbcJobEngine jdbcJobQueue = (JdbcJobEngine) jobEngine;
 
         jdbcJobQueue.retryFailedJob();
     }
 
     @Test
     public void queryDirtyStatus() {
-        JdbcJobQueue jdbcJobQueue = (JdbcJobQueue) jobQueue;
+        JdbcJobEngine jdbcJobQueue = (JdbcJobEngine) jobEngine;
         jdbcJobQueue.cleanWorkingStatus();
     }
 }

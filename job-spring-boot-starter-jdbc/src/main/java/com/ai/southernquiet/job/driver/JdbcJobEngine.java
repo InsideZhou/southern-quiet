@@ -2,8 +2,8 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.FailedJobTable;
 import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
+import com.ai.southernquiet.job.JobEngine;
 import com.ai.southernquiet.job.JobProcessor;
-import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.SerializationUtils;
 import instep.dao.DaoException;
 import instep.dao.sql.*;
@@ -19,8 +19,8 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 
-public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> implements JobQueue<T> {
-    private final static Log log = LogFactory.getLog(JdbcJobQueue.class);
+public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> implements JobEngine<T> {
+    private final static Log log = LogFactory.getLog(JdbcJobEngine.class);
 
     public enum WorkingStatus {
         Prepared, Retry, Done
@@ -49,14 +49,14 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
 
     private ThreadLocal<Long> currentJobId = new ThreadLocal<>();
 
-    public JdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, JdbcJobAutoConfiguration.Properties properties) {
+    public JdbcJobEngine(FailedJobTable failedJobTable, InstepSQL instepSQL, JdbcJobAutoConfiguration.Properties properties) {
         this.failedJobTable = failedJobTable;
         this.instepSQL = instepSQL;
         this.properties = properties;
     }
 
     @Override
-    public void enqueue(T job) {
+    public void arrange(T job) {
         Instant now = Instant.now();
 
         JobCreated<T> jobCreated = instepSQL.transaction(context -> {
@@ -83,7 +83,12 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
 
         asyncRunner.run(() -> {
             currentJobId.set(jobCreated.getId());
-            process(job, jobCreated.getProcessor());
+            try {
+                exec(job, jobCreated.getProcessor());
+            }
+            catch (Exception e) {
+                addToFailedTable(jobCreated.getId(), e);
+            }
         });
     }
 
@@ -108,8 +113,7 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
         }
     }
 
-    @Override
-    protected void process(T job, JobProcessor<T> processor) {
+    private void exec(T job, JobProcessor<T> processor) throws Exception {
         Instant now = Instant.now();
         Long jobId = currentJobId.get();
         currentJobId.set(null);
@@ -135,23 +139,12 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
             return null;
         });
 
-        try {
-            if (null == exception) {
-                SQLPlan plan = failedJobTable.delete().whereKey(jobId);
-                instepSQL.executor().execute(plan);
-            }
-            else {
-                SQLPlan plan = failedJobTable.update()
-                    .step(failedJobTable.failureCount, 1)
-                    .set(failedJobTable.workingStatus, null)
-                    .set(failedJobTable.exception, exception.getMessage() + "\n" + exception.toString())
-                    .whereKey(jobId);
-
-                instepSQL.executor().execute(plan);
-            }
+        if (null == exception) {
+            SQLPlan plan = failedJobTable.delete().whereKey(jobId);
+            instepSQL.executor().execute(plan);
         }
-        catch (DaoException e) {
-            throw new RuntimeException(e);
+        else {
+            throw exception;
         }
     }
 
@@ -182,11 +175,11 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
                     T job = deserialize(row.get(failedJobTable.payload));
                     currentJobId.set(jobId);
 
-                    process(job, getProcessor(job));
+                    exec(job, getProcessor(job));
                 }
             }
         }
-        catch (DaoException e) {
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -242,6 +235,21 @@ public class JdbcJobQueue<T extends Serializable> extends OnSiteJobQueue<T> impl
         }
         else {
             throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
+        }
+    }
+
+    void addToFailedTable(Long jobId, Exception exception) {
+        try {
+            SQLPlan plan = failedJobTable.update()
+                .step(failedJobTable.failureCount, 1)
+                .set(failedJobTable.workingStatus, null)
+                .set(failedJobTable.exception, exception.getMessage() + "\n" + exception.toString())
+                .whereKey(jobId);
+
+            instepSQL.executor().execute(plan);
+        }
+        catch (DaoException e) {
+            throw new RuntimeException(e);
         }
     }
 }

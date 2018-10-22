@@ -1,6 +1,6 @@
 package com.ai.southernquiet.job;
 
-import com.ai.southernquiet.job.driver.JdbcJobQueue;
+import com.ai.southernquiet.job.driver.JdbcJobEngine;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
@@ -26,8 +26,8 @@ public class JdbcJobAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public JdbcJobQueue jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, Properties properties) {
-        return new JdbcJobQueue(failedJobTable, instepSQL, properties);
+    public JdbcJobEngine jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, Properties properties) {
+        return new JdbcJobEngine(failedJobTable, instepSQL, properties);
     }
 
     @Bean

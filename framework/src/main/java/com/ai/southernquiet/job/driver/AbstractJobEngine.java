@@ -1,10 +1,8 @@
 package com.ai.southernquiet.job.driver;
 
+import com.ai.southernquiet.job.JobEngine;
 import com.ai.southernquiet.job.JobProcessor;
-import com.ai.southernquiet.job.JobQueue;
 import com.ai.southernquiet.util.AsyncRunner;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -12,23 +10,10 @@ import org.springframework.context.ApplicationContextAware;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 任务加入队列时在当前ApplicationContext中立即被异步处理的队列。
- * 没有找到相应处理器时，会抛出ProcessorNotFoundException。
- */
-public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationContextAware {
-    private final static Log log = LogFactory.getLog(OnSiteJobQueue.class);
-
+public abstract class AbstractJobEngine<T> implements JobEngine<T>, ApplicationContextAware {
     protected Map<Class<T>, JobProcessor<T>> jobHandlerMap = new ConcurrentHashMap<>();
     protected List<JobProcessor<T>> jobProcessorList = Collections.emptyList();
     protected AsyncRunner asyncRunner;
-
-    @Override
-    public void enqueue(T job) {
-        JobProcessor<T> processor = getProcessor(job);
-
-        asyncRunner.run(() -> process(job, processor));
-    }
 
     @SuppressWarnings({"unchecked", "NullableProblems"})
     @Override
@@ -72,6 +57,4 @@ public abstract class OnSiteJobQueue<T> implements JobQueue<T>, ApplicationConte
 
         return optional.orElseThrow(() -> new ProcessorNotFoundException(jobClass.getName()));
     }
-
-    abstract void process(T job, JobProcessor<T> processor);
 }

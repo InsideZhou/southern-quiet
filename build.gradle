@@ -22,7 +22,7 @@ idea {
 
 subprojects {
     group = 'com.ai.southernquiet'
-    version = '0.1.8'
+    version = '1.0.0-SNAPSHOT'
 
     ext {
         instepVersion = '1.0.0'
@@ -72,10 +72,18 @@ subprojects {
     jar {
         enabled = true
         baseName = "$rootProject.name-$project.name"
+
+        manifest {
+            attributes 'Implementation-Version': version
+        }
     }
 
     bootJar {
         classifier = 'boot'
+
+        manifest {
+            attributes 'Implementation-Version': version
+        }
     }
 
     task sourceJar(type: Jar) {

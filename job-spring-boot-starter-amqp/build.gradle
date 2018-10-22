@@ -1,0 +1,10 @@
+dependencies {
+    api project(':framework')
+
+    implementation "org.springframework.boot:spring-boot-starter-amqp"
+
+    testImplementation project(':framework').sourceSets.test.output
+    testImplementation 'org.postgresql:postgresql:42.2.2'
+    testImplementation 'mysql:mysql-connector-java:8.0.11'
+    testImplementation "org.springframework.boot:spring-boot-starter-web"
+}

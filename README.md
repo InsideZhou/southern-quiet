@@ -43,10 +43,9 @@
 
 ----
     
-1. JobQueue 任务队列
+1. JobEngine 任务引擎
 
 - job-spring-boot-starter-*
-- 使用FileSystem驱动时，会有KEY规范（Job.getId）的问题需要考虑。
 
 ----
     
