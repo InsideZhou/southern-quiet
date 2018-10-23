@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -24,8 +25,8 @@ public class BroadcastingTestApp {
     }
 
     @Bean
-    public static CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisMessageListenerContainer container) {
-        return new CustomApplicationEventRedisRelay(builder, container);
+    public static CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory) {
+        return new CustomApplicationEventRedisRelay(builder, redisConnectionFactory);
     }
 
     @EventListener

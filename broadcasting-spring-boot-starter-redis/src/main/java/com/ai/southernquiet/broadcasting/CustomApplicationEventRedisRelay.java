@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -24,12 +25,13 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
     private ApplicationEventPublisher applicationEventPublisher;
     private RedisMessageListenerContainer container;
 
-    public CustomApplicationEventRedisRelay(RedisTemplateBuilder builder, RedisMessageListenerContainer container) {
+    public CustomApplicationEventRedisRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory) {
         this.redisTemplate = builder.getRedisTemplate();
         this.eventSerializer = builder.getEventSerializer();
         this.channelSerializer = builder.getChannelSerializer();
 
-        this.container = container;
+        this.container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
     }
 
     @PostConstruct
