@@ -45,9 +45,9 @@ subprojects {
 
     repositories {
         mavenLocal()
-        maven { url "http://nexus.cnbss.net/repository/maven-public/" }
         jcenter()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "http://nexus.cnbss.net/repository/maven-public/" }
     }
 
     dependencies {
