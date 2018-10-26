@@ -3,10 +3,13 @@ package test.job;
 import com.ai.southernquiet.job.JobEngine;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -15,7 +18,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class AmqpJobTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    public static class Config {}
+    public static class Config {
+        @Bean
+        public RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
+            RabbitTransactionManager manager = new RabbitTransactionManager();
+            manager.setConnectionFactory(connectionFactory);
+            return manager;
+        }
+    }
 
     @Autowired
     private JobEngine jobEngine;
