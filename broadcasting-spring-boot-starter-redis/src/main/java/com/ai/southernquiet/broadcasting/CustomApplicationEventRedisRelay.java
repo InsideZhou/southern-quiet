@@ -1,7 +1,7 @@
 package com.ai.southernquiet.broadcasting;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.redis.connection.Message;
@@ -16,7 +16,7 @@ import javax.annotation.PostConstruct;
 import static com.ai.southernquiet.broadcasting.Broadcaster.CustomApplicationEventChannel;
 
 public class CustomApplicationEventRedisRelay implements ApplicationEventPublisherAware {
-    private final static Log log = LogFactory.getLog(CustomApplicationEventRedisRelay.class);
+    private final static Logger log = LoggerFactory.getLogger(CustomApplicationEventRedisRelay.class);
 
     private RedisTemplate redisTemplate;
     private RedisSerializer eventSerializer;
@@ -41,11 +41,11 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
 
     protected void onMessage(Message message, byte[] pattern) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format(
-                "CustomApplicationEventRelay在 %s 频道收到事件，pattern=%s",
+            log.debug(
+                "CustomApplicationEventRelay在 {} 频道收到事件，pattern={}",
                 channelSerializer.deserialize(message.getChannel()),
                 redisTemplate.getStringSerializer().deserialize(pattern)
-            ));
+            );
         }
 
         Object event = eventSerializer.deserialize(message.getBody());

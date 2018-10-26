@@ -5,8 +5,8 @@ import com.ai.southernquiet.util.Metadata;
 import com.ai.southernquiet.util.SnowflakeIdGenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Random;
 
 public class JdbcIdGenerator implements IdGenerator {
-    private final static Log log = LogFactory.getLog(JdbcIdGenerator.class);
+    private final static Logger log = LoggerFactory.getLogger(JdbcIdGenerator.class);
 
     private IdGenerator idGenerator;
     private Metadata metadata;
@@ -135,7 +135,7 @@ public class JdbcIdGenerator implements IdGenerator {
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
             if (1 != rowAffected) {
-                log.warn(String.format("workerTime上报异常。workerId=%s,appId=%s,rowAffected=%s,time=%s", workerIdInUse, runtimeId, rowAffected, now));
+                log.warn("workerTime上报异常。workerId={},appId={},rowAffected={},time={}", workerIdInUse, runtimeId, rowAffected, now);
             }
         }
         catch (DaoException e) {

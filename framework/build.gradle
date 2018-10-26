@@ -1,7 +1,5 @@
 dependencies {
-    api("org.springframework.boot:spring-boot-starter") {
-        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
-    }
+    api("org.springframework.boot:spring-boot-starter")
 
     api('de.ruedigermoeller:fst:2.50') {
         //为什么可以exclude这些需要看fst的pom注释

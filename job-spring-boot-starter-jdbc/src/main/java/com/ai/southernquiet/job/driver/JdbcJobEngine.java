@@ -9,8 +9,8 @@ import instep.dao.DaoException;
 import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> implements JobEngine<T> {
-    private final static Log log = LogFactory.getLog(JdbcJobEngine.class);
+    private final static Logger log = LoggerFactory.getLogger(JdbcJobEngine.class);
 
     public enum WorkingStatus {
         Prepared, Retry, Done
@@ -196,7 +196,7 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
             if (rowAffected > 0) {
-                log.info(String.format("已经更正%s行状态异常的Job记录", rowAffected));
+                log.info("已经更正{}行状态异常的Job记录", rowAffected);
             }
         }
         catch (DaoException e) {

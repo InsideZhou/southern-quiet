@@ -6,13 +6,15 @@ import com.ai.southernquiet.broadcasting.Publisher;
 import com.ai.southernquiet.broadcasting.ShouldBroadcast;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.core.annotation.AnnotationUtils;
 
 public class DefaultPublisher implements Publisher, ApplicationEventPublisherAware {
-    private final static Log log = LogFactory.getLog(DefaultPublisher.class);
+    private final static Logger log = LoggerFactory.getLogger(DefaultPublisher.class);
 
     private ApplicationEventPublisher applicationEventPublisher;
     private Broadcaster broadcaster;

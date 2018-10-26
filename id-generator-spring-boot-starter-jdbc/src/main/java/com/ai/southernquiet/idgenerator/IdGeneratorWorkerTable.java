@@ -3,8 +3,8 @@ package com.ai.southernquiet.idgenerator;
 import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IdGeneratorWorkerTable extends Table {
     public IdGeneratorWorkerTable(String tableName) {
@@ -33,7 +33,7 @@ public class IdGeneratorWorkerTable extends Table {
 
     @SuppressWarnings("unused")
     public static class Cleaner {
-        private final static Log log = LogFactory.getLog(Cleaner.class);
+        private final static Logger log = LoggerFactory.getLogger(Cleaner.class);
 
         private IdGeneratorWorkerTable workerTable;
         private InstepSQL instepSQL;
@@ -56,7 +56,7 @@ public class IdGeneratorWorkerTable extends Table {
             }
 
             if (rowAffected > 0) {
-                log.info(String.format("已清理%s个长时间无上报的Worker", rowAffected));
+                log.info("已清理{}个长时间无上报的Worker", rowAffected);
             }
         }
 
