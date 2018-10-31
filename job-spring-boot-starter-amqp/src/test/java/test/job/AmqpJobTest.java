@@ -43,8 +43,17 @@ public class AmqpJobTest {
     @Test(expected = Exception.class)
     public void prepareButException() {
         transactionTemplate.execute(status -> {
-            jobEngine.arrange(new AmqpExceptionJob());
+            jobEngine.arrange(new AmqpOtherJob());
             throw new RuntimeException("引擎编排任务的事务中抛出异常");
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void prepareException() {
+        transactionTemplate.execute(status -> {
+            jobEngine.arrange(new AmqpExceptionJob());
+            return "";
         });
     }
 }
