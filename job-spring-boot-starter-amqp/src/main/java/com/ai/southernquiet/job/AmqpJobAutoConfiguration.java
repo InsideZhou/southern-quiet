@@ -46,7 +46,7 @@ public class AmqpJobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AmqpJobListener amqpJobListener(AmqpJobEngine jobEngine) {
-        return jobEngine::process;
+        return new AmqpJobEngine.Listener(jobEngine);
     }
 
     @Bean

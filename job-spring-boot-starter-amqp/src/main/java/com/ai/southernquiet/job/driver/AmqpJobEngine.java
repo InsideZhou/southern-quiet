@@ -69,6 +69,7 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
         rabbitTemplate.convertAndSend(properties.getWorkingQueue(), job);
     }
 
+    @Transactional
     @SuppressWarnings("unchecked")
     public void process(Message message) throws Exception {
         T job = (T) rabbitTemplate.getMessageConverter().fromMessage(message);
@@ -108,6 +109,19 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
                 messageProperties.setExpiration(null);
                 super.recover(message, cause);
             }
+        }
+    }
+
+    public static class Listener implements AmqpJobListener {
+        private AmqpJobEngine jobEngine;
+
+        public Listener(AmqpJobEngine jobEngine) {
+            this.jobEngine = jobEngine;
+        }
+
+        @Override
+        public void process(Message message) throws Exception {
+            jobEngine.process(message);
         }
     }
 }

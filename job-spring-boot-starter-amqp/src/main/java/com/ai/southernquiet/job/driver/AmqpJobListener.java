@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
  * @see org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor#checkProxy(Method, Object)
  */
 public interface AmqpJobListener {
-    @Transactional
     @RabbitListener(queues = "#{amqpJobProperties.workingQueue}")
     void process(Message message) throws Exception;
 }
