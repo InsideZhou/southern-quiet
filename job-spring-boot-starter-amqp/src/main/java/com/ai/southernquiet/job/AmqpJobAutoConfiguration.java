@@ -59,17 +59,17 @@ public class AmqpJobAutoConfiguration {
         /**
          * 任务队列名。
          */
-        private String workingQueue = "job.working-queue";
+        private String workingQueue = "JOB.WORKING-QUEUE";
 
         /**
          * 异常任务交换器名。
          */
-        private String deadJobExchange = "job.dead-exchange";
+        private String deadJobExchange = "JOB.DEAD-EXCHANGE";
 
         /**
          * 异常任务队列名。
          */
-        private String deadJobQueue = "job.dead-queue";
+        private String deadJobQueue = "JOB.DEAD-QUEUE";
 
         /**
          * 任务的生命周期，超时的任务在异常队列中不再重新投递。

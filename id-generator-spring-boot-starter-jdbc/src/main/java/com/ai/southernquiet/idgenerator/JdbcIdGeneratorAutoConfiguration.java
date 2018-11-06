@@ -57,7 +57,7 @@ public class JdbcIdGeneratorAutoConfiguration {
 
     @ConfigurationProperties("southern-quiet.framework.util.id-generator")
     public static class Properties {
-        private String workerTable = "id_generator_worker";
+        private String workerTable = "ID_GENERATOR_WORKER";
 
         @DurationUnit(ChronoUnit.MINUTES)
         private Duration considerWorkerDowned = Duration.ofDays(1);

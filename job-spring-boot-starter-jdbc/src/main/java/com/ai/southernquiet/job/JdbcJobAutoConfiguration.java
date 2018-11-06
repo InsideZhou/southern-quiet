@@ -51,7 +51,7 @@ public class JdbcJobAutoConfiguration {
         /**
          * 失败Job的表名称。
          */
-        private String failedTable = "failed_job";
+        private String failedTable = "FAILED_JOB";
 
         /**
          * 不正常状态Job的清理时间间隔，上次执行时间+间隔小于当前时间且状态不正常的任务会被清理，默认单位：秒。

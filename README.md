@@ -30,7 +30,7 @@
 
 ----
     
-1. Auth 身份及权限验证（可选）
+1. Auth 身份及权限验证
 
 - 提供Auth注解来验证身份及权限，使用在Controller及Action上。  
 - 要打开这个特性，需要提供AuthService类型的Bean。
@@ -69,7 +69,7 @@
 
 ### 需要注意的局限
 1. 因为Logging的特殊性，Logger的初始化在ApplicationContext之前，所以Logger的相关配置需要注意遵守Spring Boot的
-[约定](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/reference/htmlsingle/#boot-features-custom-log-configuration)。
+[约定](https://docs.spring.io/spring-boot/docs/2.0.6.RELEASE/reference/htmlsingle/#boot-features-custom-log-configuration)。
 
 1. 启用spring-boot-devtools的时候，可能会因为同一个类被不同ClassLoader载入导致类型判断失败。
 
