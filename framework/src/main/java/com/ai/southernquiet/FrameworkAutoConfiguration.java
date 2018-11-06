@@ -1,7 +1,5 @@
 package com.ai.southernquiet;
 
-import com.ai.southernquiet.broadcasting.Publisher;
-import com.ai.southernquiet.broadcasting.driver.DefaultPublisher;
 import com.ai.southernquiet.filesystem.FileSystem;
 import com.ai.southernquiet.filesystem.FileSystemSupport;
 import com.ai.southernquiet.filesystem.driver.LocalFileSystem;
@@ -23,12 +21,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
+import static com.ai.southernquiet.event.EventPublisher.DefaultEventChannel;
+
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableAsync
 @EnableConfigurationProperties({
     FrameworkAutoConfiguration.Properties.class,
-    FrameworkAutoConfiguration.BroadcastingProperties.class,
+    FrameworkAutoConfiguration.EventProperties.class,
     FrameworkAutoConfiguration.FileSystemProperties.class,
     FrameworkAutoConfiguration.LocalFileSystemProperties.class,
     FrameworkAutoConfiguration.KeyValueStoreProperties.class
@@ -45,13 +45,6 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean(FileSystem.class)
     public LocalFileSystem fileSystem(LocalFileSystemProperties properties) {
         return new LocalFileSystem(properties);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Bean
-    @ConditionalOnMissingBean(Publisher.class)
-    public DefaultPublisher publisher(BroadcastingProperties properties) {
-        return new DefaultPublisher(properties);
     }
 
     @Bean
@@ -97,9 +90,9 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("southern-quiet.framework.broadcasting")
-    public static class BroadcastingProperties {
-        private String[] defaultChannels = new String[]{"public"};
+    @ConfigurationProperties("southern-quiet.framework.event")
+    public static class EventProperties {
+        private String[] defaultChannels = new String[]{DefaultEventChannel};
 
         public String[] getDefaultChannels() {
             return defaultChannels;

@@ -16,10 +16,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> {
-    public final static String AMQP_DLX = "x-dead-letter-exchange";
-    public final static String AMQP_DLK = "x-dead-letter-routing-key";
+import static com.ai.southernquiet.Constants.AMQP_DLK;
+import static com.ai.southernquiet.Constants.AMQP_DLX;
 
+public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> {
     private RabbitTemplate rabbitTemplate;
     private AmqpAdmin amqpAdmin;
     private AmqpJobAutoConfiguration.Properties properties;

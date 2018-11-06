@@ -55,12 +55,13 @@
 
 ----
     
-1. Broadcaster 事件广播
+1. EventBroadcasting 事件广播
 
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
 
-- broadcasting-spring-boot-starter-*
-- com.ai.southernquiet.broadcasting.ShouldBroadcast
+- event-spring-boot-starter-*
+- com.ai.southernquiet.event.ShouldBroadcast
+- com.ai.southernquiet.event.CustomApplicationEvent
 
 
 ### 如何使用
