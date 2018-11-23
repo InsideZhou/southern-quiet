@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -27,20 +28,22 @@ import java.time.temporal.ChronoUnit;
 public class AmqpJobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public MessageConverter amqpJobMessageConverter() {
-        return new Jackson2JsonMessageConverter();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     public AmqpJobEngine.Recoverer amqpJobRecoverer(AmqpJobEngine jobEngine, Properties properties, RabbitProperties rabbitProperties) {
         return new AmqpJobEngine.Recoverer(jobEngine, properties, rabbitProperties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpJobEngine amqpJobEngine(ConnectionFactory connectionFactory, MessageConverter messageConverter, AmqpAdmin amqpAdmin, Properties properties) {
-        return new AmqpJobEngine(connectionFactory, messageConverter, amqpAdmin, properties);
+    public AmqpJobEngine amqpJobEngine(ConnectionFactory connectionFactory,
+                                       @Autowired(required = false) MessageConverter messageConverter,
+                                       AmqpAdmin amqpAdmin,
+                                       Properties properties) {
+        return new AmqpJobEngine(
+            connectionFactory,
+            null == messageConverter ? new Jackson2JsonMessageConverter() : messageConverter,
+            amqpAdmin,
+            properties
+        );
     }
 
     @Bean
@@ -50,11 +53,11 @@ public class AmqpJobAutoConfiguration {
     }
 
     @Bean
-    @ConfigurationProperties("southern-quiet.framework.job.amqp")
     public Properties amqpJobProperties() {
         return new Properties();
     }
 
+    @ConfigurationProperties("southern-quiet.framework.job.amqp")
     public static class Properties {
         /**
          * 任务队列名。

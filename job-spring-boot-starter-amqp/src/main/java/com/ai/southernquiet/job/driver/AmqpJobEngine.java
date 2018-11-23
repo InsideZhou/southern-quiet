@@ -88,6 +88,7 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
             this.properties = properties;
         }
 
+        @SuppressWarnings("Duplicates")
         @Override
         public void recover(Message message, Throwable cause) {
             MessageProperties messageProperties = message.getMessageProperties();

@@ -1,0 +1,5 @@
+dependencies {
+    api project(':framework-amqp-rabbit')
+
+    testImplementation "org.springframework.boot:spring-boot-starter-web"
+}

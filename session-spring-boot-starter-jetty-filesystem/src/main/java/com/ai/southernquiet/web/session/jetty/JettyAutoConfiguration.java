@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
-@EnableConfigurationProperties(JettyAutoConfiguration.FileSessionProperties.class)
+@EnableConfigurationProperties
 public class JettyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -30,6 +30,12 @@ public class JettyAutoConfiguration {
         JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
         factory.addConfigurations(jettyConfiguration);
         return factory;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FileSessionProperties fileSessionProperties() {
+        return new FileSessionProperties();
     }
 
     @ConfigurationProperties("web.session.file-system")

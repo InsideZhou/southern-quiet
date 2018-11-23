@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 
 @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "SpringFacetCodeInspection"})
 @Configuration
-@EnableConfigurationProperties(JdbcJobAutoConfiguration.Properties.class)
+@EnableConfigurationProperties
 @EnableTransactionManagement
 @AutoConfigureAfter(SQLAutoConfiguration.class)
 public class JdbcJobAutoConfiguration {
@@ -44,6 +44,12 @@ public class JdbcJobAutoConfiguration {
         }
 
         return table;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Properties properties() {
+        return new Properties();
     }
 
     @ConfigurationProperties("southern-quiet.framework.job.jdbc")

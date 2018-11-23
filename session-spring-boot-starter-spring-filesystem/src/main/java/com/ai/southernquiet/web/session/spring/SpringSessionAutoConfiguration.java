@@ -9,12 +9,18 @@ import org.springframework.context.annotation.Configuration;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
-@EnableConfigurationProperties(SpringSessionAutoConfiguration.FileSessionProperties.class)
+@EnableConfigurationProperties
 public class SpringSessionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FileSessionRepository fileSessionRepository(FileSystem fileSystem, FileSessionProperties properties) {
         return new FileSessionRepository(fileSystem, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FileSessionProperties fileSessionProperties() {
+        return new FileSessionProperties();
     }
 
     @ConfigurationProperties("web.session.file-system")

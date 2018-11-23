@@ -26,13 +26,7 @@ import static com.ai.southernquiet.event.EventPublisher.DefaultEventChannel;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties({
-    FrameworkAutoConfiguration.Properties.class,
-    FrameworkAutoConfiguration.EventProperties.class,
-    FrameworkAutoConfiguration.FileSystemProperties.class,
-    FrameworkAutoConfiguration.LocalFileSystemProperties.class,
-    FrameworkAutoConfiguration.KeyValueStoreProperties.class
-})
+@EnableConfigurationProperties
 public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = "framework.key-value")
@@ -70,8 +64,39 @@ public class FrameworkAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public AsyncRunner asyncRunner() {
         return new AsyncRunner();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Properties properties() {
+        return new Properties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public EventProperties eventProperties() {
+        return new EventProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FileSystemProperties fileSystemProperties() {
+        return new FileSystemProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public LocalFileSystemProperties localFileSystemProperties() {
+        return new LocalFileSystemProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public KeyValueStoreProperties keyValueStoreProperties() {
+        return new KeyValueStoreProperties();
     }
 
     @ConfigurationProperties("southern-quiet.framework")

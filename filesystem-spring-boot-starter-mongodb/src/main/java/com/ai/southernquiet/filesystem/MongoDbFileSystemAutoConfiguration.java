@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.gridfs.GridFsOperations;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
-@EnableConfigurationProperties(MongoDbFileSystemAutoConfiguration.Properties.class)
+@EnableConfigurationProperties
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -25,6 +25,12 @@ public class MongoDbFileSystemAutoConfiguration {
     @ConditionalOnMissingBean
     public GridFS gridFS(MongoDbFactory factory) {
         return new GridFS(factory.getLegacyDb());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Properties properties() {
+        return new Properties();
     }
 
     /**

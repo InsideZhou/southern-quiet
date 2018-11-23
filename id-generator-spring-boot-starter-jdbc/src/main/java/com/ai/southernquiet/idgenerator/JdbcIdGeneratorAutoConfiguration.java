@@ -22,7 +22,7 @@ import java.time.temporal.ChronoUnit;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
-@EnableConfigurationProperties(JdbcIdGeneratorAutoConfiguration.Properties.class)
+@EnableConfigurationProperties
 @EnableTransactionManagement
 @EnableScheduling
 @AutoConfigureAfter(SQLAutoConfiguration.class)
@@ -53,6 +53,12 @@ public class JdbcIdGeneratorAutoConfiguration {
     @ConditionalOnMissingBean(IdGenerator.class)
     public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, Properties properties) {
         return new JdbcIdGenerator(metadata, workerTable, instepSQL, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Properties properties() {
+        return new Properties();
     }
 
     @ConfigurationProperties("southern-quiet.framework.util.id-generator")
