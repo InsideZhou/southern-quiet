@@ -1,6 +1,5 @@
 package test.notification;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
 import com.ai.southernquiet.notification.NotificationListener;
 import com.ai.southernquiet.notification.NotificationPublisher;
 import org.junit.Test;
@@ -12,7 +11,6 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.Serializable;
@@ -24,7 +22,6 @@ public class NotificationTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @ComponentScan(basePackageClasses = {FrameworkAutoConfiguration.class})
     public static class Config {
         @Bean
         public Listener listener() {

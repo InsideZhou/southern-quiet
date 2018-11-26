@@ -53,11 +53,12 @@ public class AmqpJobAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.job.amqp")
     public Properties amqpJobProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.job.amqp")
     public static class Properties {
         /**
          * 任务队列名。

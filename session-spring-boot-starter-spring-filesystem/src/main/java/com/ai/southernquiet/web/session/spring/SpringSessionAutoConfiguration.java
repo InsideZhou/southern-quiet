@@ -19,11 +19,11 @@ public class SpringSessionAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FileSessionProperties fileSessionProperties() {
+    @ConfigurationProperties("web.session.file-system")
+    public FileSessionProperties springFileSessionProperties() {
         return new FileSessionProperties();
     }
 
-    @ConfigurationProperties("web.session.file-system")
     public static class FileSessionProperties {
         /**
          * Session持久化在FileSystem中的路径

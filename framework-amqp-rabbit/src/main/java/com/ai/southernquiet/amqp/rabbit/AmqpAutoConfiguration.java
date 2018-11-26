@@ -17,11 +17,11 @@ import java.time.temporal.ChronoUnit;
 public class AmqpAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework.amqp.rabbit")
+    public Properties amqpProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.amqp.rabbit")
     public static class Properties {
         @DurationUnit(ChronoUnit.SECONDS)
         private Duration initialExpiration = Duration.ofSeconds(5);

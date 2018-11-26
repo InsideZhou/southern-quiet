@@ -57,11 +57,11 @@ public class JdbcIdGeneratorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework.util.id-generator")
+    public Properties jdbcIdGeneratorProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.util.id-generator")
     public static class Properties {
         private String workerTable = "ID_GENERATOR_WORKER";
 

@@ -33,11 +33,11 @@ public class MongoDbLoggingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework.logging.mongodb")
+    public Properties mongodbLoggingProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.logging.mongodb")
     public static class Properties {
         /**
          * 日志集合

@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import static com.ai.southernquiet.event.EventPublisher.DefaultEventChannel;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableAsync
 @EnableConfigurationProperties
@@ -71,35 +70,39 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework")
+    public Properties frameworkProperties() {
         return new Properties();
     }
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.event")
     public EventProperties eventProperties() {
         return new EventProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.file-system")
     public FileSystemProperties fileSystemProperties() {
         return new FileSystemProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.file-system.local")
     public LocalFileSystemProperties localFileSystemProperties() {
         return new LocalFileSystemProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.key-value")
     public KeyValueStoreProperties keyValueStoreProperties() {
         return new KeyValueStoreProperties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework")
     public static class Properties {
         /**
          * 框架运行时的id，必须唯一。
@@ -115,7 +118,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("southern-quiet.framework.event")
     public static class EventProperties {
         private String[] defaultChannels = new String[]{DefaultEventChannel};
 
@@ -128,7 +130,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("southern-quiet.framework.file-system")
     public static class FileSystemProperties {
         /**
          * FileSystem中合法文件名的正则表达式
@@ -148,7 +149,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("southern-quiet.framework.file-system.local")
     public static class LocalFileSystemProperties {
         /**
          * FileSystem默认驱动在本地文件系统中的实际路径
@@ -164,7 +164,6 @@ public class FrameworkAutoConfiguration {
         }
     }
 
-    @ConfigurationProperties("southern-quiet.framework.key-value")
     public static class KeyValueStoreProperties {
         /**
          * 是否启用key-value特性

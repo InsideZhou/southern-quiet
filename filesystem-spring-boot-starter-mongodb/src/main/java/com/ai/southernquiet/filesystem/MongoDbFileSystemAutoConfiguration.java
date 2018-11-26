@@ -29,14 +29,14 @@ public class MongoDbFileSystemAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework.file-system.mongodb")
+    public Properties mongodbFileSystemProperties() {
         return new Properties();
     }
 
     /**
      * @see org.springframework.boot.autoconfigure.mongo.MongoProperties
      */
-    @ConfigurationProperties("southern-quiet.framework.file-system.mongodb")
     public static class Properties {
         /**
          * 路径集合

@@ -48,11 +48,11 @@ public class JdbcJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Properties properties() {
+    @ConfigurationProperties("southern-quiet.framework.job.jdbc")
+    public Properties jdbcJobProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.job.jdbc")
     public static class Properties {
         /**
          * 失败Job的表名称。

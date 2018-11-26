@@ -74,11 +74,11 @@ public class AmqpNotificationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties("southern-quiet.framework.notification.amqp")
     public Properties amqpNotificationProperties() {
         return new Properties();
     }
 
-    @ConfigurationProperties("southern-quiet.framework.notification.amqp")
     public static class Properties {
     }
 }

@@ -34,11 +34,11 @@ public class JettyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FileSessionProperties fileSessionProperties() {
+    @ConfigurationProperties("web.session.file-system")
+    public FileSessionProperties jettyFileSessionProperties() {
         return new FileSessionProperties();
     }
 
-    @ConfigurationProperties("web.session.file-system")
     public static class FileSessionProperties {
         /**
          * Session持久化在FileSystem中的路径
