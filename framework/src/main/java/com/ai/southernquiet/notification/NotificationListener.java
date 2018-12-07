@@ -23,6 +23,8 @@ public @interface NotificationListener {
      */
     String name();
 
+    boolean isTransactionEnabled() default true;
+
     @Target({ElementType.METHOD})
     @Retention(RUNTIME)
     @Inherited

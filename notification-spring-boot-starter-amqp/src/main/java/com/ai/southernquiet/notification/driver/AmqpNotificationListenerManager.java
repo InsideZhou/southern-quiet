@@ -17,6 +17,7 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 
 import java.lang.reflect.Method;
@@ -40,11 +41,14 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private RabbitProperties rabbitProperties;
     private ApplicationContext applicationContext;
 
+    private PlatformTransactionManager transactionManager;
+
     public AmqpNotificationListenerManager(ConnectionFactory connectionFactory,
                                            RabbitAdmin rabbitAdmin,
                                            AmqpNotificationPublisher publisher,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
+                                           PlatformTransactionManager transactionManager,
                                            ApplicationContext applicationContext
     ) {
         this.connectionFactory = connectionFactory;
@@ -52,6 +56,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         this.publisher = publisher;
         this.amqpProperties = amqpProperties;
         this.rabbitProperties = rabbitProperties;
+        this.transactionManager = transactionManager;
         this.applicationContext = applicationContext;
 
         this.messageConverter = publisher.getMessageConverter();
@@ -60,17 +65,20 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
         initListener(applicationContext);
 
-        listenerEndpoints.forEach((endpoint, notificationCls) -> {
+        listenerEndpoints.forEach((endpoint, listenerAnnotation) -> {
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer();
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
                 publisher.getRabbitTemplate(),
-                getDeadExchange(notificationCls),
-                getDeadRouting(notificationCls),
+                getDeadExchange(listenerAnnotation),
+                getDeadRouting(listenerAnnotation),
                 amqpProperties
             ));
 
             DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
+            if (listenerAnnotation.isTransactionEnabled()) {
+                factory.setTransactionManager(transactionManager);
+            }
             factory.setMessageConverter(publisher.getMessageConverter());
             containerFactoryConfigurer.configure(factory, connectionFactory);
 

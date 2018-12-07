@@ -18,6 +18,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
@@ -54,6 +55,7 @@ public class AmqpNotificationAutoConfiguration {
         RabbitAdmin rabbitAdmin,
         AmqpAutoConfiguration.Properties amqpProperties,
         RabbitProperties rabbitProperties,
+        PlatformTransactionManager transactionManager,
         ApplicationContext applicationContext
     ) {
         return new AmqpNotificationListenerManager(
@@ -62,6 +64,7 @@ public class AmqpNotificationAutoConfiguration {
             publisher,
             amqpProperties,
             rabbitProperties,
+            transactionManager,
             applicationContext
         );
     }
