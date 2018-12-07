@@ -18,7 +18,13 @@ public class FileInfo {
     }
 
     public void setUrl(String url) {
-        this.url = url;
+        int i = url.indexOf("://");
+        if (i >= 0) {
+            this.url = url.substring(i + 1);
+        }
+        else {
+            this.url = url;
+        }
     }
 
     public String getContentType() {

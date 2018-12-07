@@ -67,6 +67,7 @@ public class MainControllerTest {
 
         Arrays.stream(fileInfoArray).forEach(info -> {
             Assert.assertEquals("image/png", info.getContentType());
+            Assert.assertTrue(info.getUrl().startsWith("//"));
             System.out.println(String.format("%s|%s", info.getId(), info.getUrl()));
         });
 
