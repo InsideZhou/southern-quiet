@@ -4,6 +4,7 @@ import com.ai.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import com.ai.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import com.ai.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import com.ai.southernquiet.notification.NotificationListener;
+import com.ai.southernquiet.util.Tuple;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
@@ -19,12 +20,10 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.ai.southernquiet.Constants.AMQP_DLK;
 import static com.ai.southernquiet.Constants.AMQP_DLX;
@@ -33,7 +32,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private MessageConverter messageConverter;
     private ConnectionFactory connectionFactory;
 
-    private Map<RabbitListenerEndpoint, NotificationListener> listenerEndpoints = new HashMap<>();
+    private List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
     private RabbitAdmin rabbitAdmin;
     private AmqpNotificationPublisher publisher;
     private AmqpAutoConfiguration.Properties amqpProperties;
@@ -65,13 +64,17 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
         initListener(applicationContext);
 
-        listenerEndpoints.forEach((endpoint, listenerAnnotation) -> {
+        listenerEndpoints.forEach(tuple -> {
+            RabbitListenerEndpoint endpoint = tuple.getFirst();
+            NotificationListener listenerAnnotation = tuple.getSecond();
+            String listenerDefaultName = tuple.getThird();
+
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer();
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
                 publisher.getRabbitTemplate(),
-                getDeadExchange(listenerAnnotation),
-                getDeadRouting(listenerAnnotation),
+                getDeadExchange(listenerAnnotation, listenerDefaultName),
+                getDeadRouting(listenerAnnotation, listenerDefaultName),
                 amqpProperties
             ));
 
@@ -90,11 +93,13 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     protected void initListener(NotificationListener listener, Object bean, Method method) {
         SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
 
+        String listenerDefaultName = method.getName();
+
         endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setQueueNames(getListenerRouting(listener));
+        endpoint.setQueueNames(getListenerRouting(listener, listenerDefaultName));
         endpoint.setAdmin(rabbitAdmin);
 
-        declareExchangeAndQueue(listener);
+        declareExchangeAndQueue(listener, listenerDefaultName);
 
         endpoint.setMessageListener(message -> {
             Object notification = messageConverter.fromMessage(message);
@@ -121,36 +126,41 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             }
         });
 
-        listenerEndpoints.put(endpoint, listener);
+        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerDefaultName));
     }
 
     @SuppressWarnings("unchecked")
-    private String getDeadSource(NotificationListener listener) {
-        return suffix("DEAD." + publisher.getNotificationSource(listener.notification()), listener);
+    private String getDeadSource(NotificationListener listener, String listenerDefaultName) {
+        return suffix("DEAD." + publisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
     }
 
-    private String getDeadExchange(NotificationListener listener) {
-        return publisher.getExchange(getDeadSource(listener));
+    private String getDeadExchange(NotificationListener listener, String listenerDefaultName) {
+        return publisher.getExchange(getDeadSource(listener, listenerDefaultName));
     }
 
-    private String getDeadRouting(NotificationListener listener) {
-        return publisher.getRouting(getDeadSource(listener));
-    }
-
-    @SuppressWarnings("unchecked")
-    private String getListenerRouting(NotificationListener listener) {
-        return suffix(publisher.getRouting(publisher.getNotificationSource(listener.notification())), listener);
-    }
-
-    private String suffix(String routing, NotificationListener listener) {
-        return routing + "#" + listener.name();
+    private String getDeadRouting(NotificationListener listener, String listenerDefaultName) {
+        return publisher.getRouting(getDeadSource(listener, listenerDefaultName));
     }
 
     @SuppressWarnings("unchecked")
-    private void declareExchangeAndQueue(NotificationListener listener) {
-        Assert.hasText(listener.name(), "监听器的名称不能为空");
+    private String getListenerRouting(NotificationListener listener, String listenerDefaultName) {
+        return suffix(publisher.getRouting(publisher.getNotificationSource(listener.notification())), listener, listenerDefaultName);
+    }
 
-        String routing = getListenerRouting(listener);
+    private String suffix(String routing, NotificationListener listener, String listenerDefaultName) {
+        String listenerName = listener.name();
+        if (StringUtils.isEmpty(listenerName)) {
+            listenerName = listenerDefaultName;
+        }
+
+        Assert.hasText(listenerName, "监听器的名称不能为空");
+
+        return routing + "#" + listenerName;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
+        String routing = getListenerRouting(listener, listenerDefaultName);
 
         Exchange exchange = publisher.declareExchange(listener.notification());
         Queue queue = new Queue(routing);
@@ -164,8 +174,8 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         deadQueueArgs.put(AMQP_DLX, exchange.getName());
         deadQueueArgs.put(AMQP_DLK, queue.getName());
 
-        Exchange deadExchange = new DirectExchange(getDeadExchange(listener));
-        Queue deadRouting = new Queue(getDeadRouting(listener), true, false, false, deadQueueArgs);
+        Exchange deadExchange = new DirectExchange(getDeadExchange(listener, listenerDefaultName));
+        Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
 
         rabbitAdmin.declareExchange(deadExchange);
         rabbitAdmin.declareQueue(deadRouting);
