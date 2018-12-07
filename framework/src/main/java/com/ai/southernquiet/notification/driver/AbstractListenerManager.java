@@ -3,6 +3,7 @@ package com.ai.southernquiet.notification.driver;
 import com.ai.southernquiet.notification.NotificationListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -22,11 +23,21 @@ public abstract class AbstractListenerManager {
         initListener(event.getApplicationContext());
     }
 
+    @SuppressWarnings("unchecked")
     public void initListener(ApplicationContext applicationContext) {
         if (inited) return;
 
         Arrays.stream(applicationContext.getBeanDefinitionNames())
-            .map(name -> applicationContext.getBean(name))
+            .map(name -> {
+                try {
+                    return applicationContext.getBean(name);
+                }
+                catch (BeansException e) {
+                    log.warn("查找NotificationListener时，遇到bean初始化异常", e);
+                    return null;
+                }
+            })
+            .filter(bean -> null != bean)
             .forEach(bean -> {
                 Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                     .forEach(method -> {
