@@ -21,7 +21,7 @@ public @interface NotificationListener {
     /**
      * 监听器的名称。
      */
-    String name();
+    String name() default "";
 
     boolean isTransactionEnabled() default true;
 
