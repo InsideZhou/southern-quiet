@@ -1,15 +1,12 @@
 package com.ai.southernquiet.notification.driver;
 
 import com.ai.southernquiet.notification.NotificationPublisher;
-import com.ai.southernquiet.notification.NotificationSource;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -45,22 +42,14 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
         return messageConverter;
     }
 
-    @SuppressWarnings({"ConstantConditions", "unchecked"})
     @Override
-    public void publish(N notification) {
-        String source = getNotificationSource((Class<N>) notification.getClass());
+    public void publish(N notification, String source) {
         String exchange = getExchange(source);
         String routing = getRouting(source);
 
         declareExchange(exchange);
 
         rabbitTemplate.convertAndSend(exchange, routing, notification);
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    public String getNotificationSource(Class<N> cls) {
-        NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
-        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getName() : annotation.source();
     }
 
     public String getExchange(String source) {
