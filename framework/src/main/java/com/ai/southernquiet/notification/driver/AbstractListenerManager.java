@@ -33,7 +33,7 @@ public abstract class AbstractListenerManager {
                     return applicationContext.getBean(name);
                 }
                 catch (BeansException e) {
-                    log.warn("查找NotificationListener时，遇到bean初始化异常", e);
+                    log.info("查找NotificationListener时，bean未能初始化: {}", name);
                     return null;
                 }
             })

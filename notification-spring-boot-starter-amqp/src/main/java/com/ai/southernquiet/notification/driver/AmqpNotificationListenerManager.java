@@ -5,6 +5,8 @@ import com.ai.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import com.ai.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import com.ai.southernquiet.notification.NotificationListener;
 import com.ai.southernquiet.util.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
@@ -29,6 +31,8 @@ import static com.ai.southernquiet.Constants.AMQP_DLK;
 import static com.ai.southernquiet.Constants.AMQP_DLX;
 
 public class AmqpNotificationListenerManager extends AbstractListenerManager {
+    private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
+
     private MessageConverter messageConverter;
     private ConnectionFactory connectionFactory;
 
@@ -117,6 +121,10 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                     throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：" + parameter.toString());
                 })
                 .toArray();
+
+            if (log.isDebugEnabled()) {
+                log.debug("使用监听器{}收到通知: {}", endpoint.getQueueNames(), notification);
+            }
 
             try {
                 method.invoke(bean, parameters);
