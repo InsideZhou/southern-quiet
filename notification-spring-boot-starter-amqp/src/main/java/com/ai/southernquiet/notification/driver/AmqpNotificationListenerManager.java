@@ -123,7 +123,12 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                 .toArray();
 
             if (log.isDebugEnabled()) {
-                log.debug("使用监听器{}收到通知: {}", endpoint.getQueueNames(), notification);
+                log.debug(
+                    "使用监听器({}#{})收到通知: {}",
+                    listener.notification().getSimpleName(),
+                    StringUtils.isEmpty(listener.name()) ? listenerDefaultName : listener.name(),
+                    notification
+                );
             }
 
             try {
