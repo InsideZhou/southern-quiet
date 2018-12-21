@@ -13,6 +13,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AbstractListenerManager.class);
 
@@ -23,7 +24,6 @@ public abstract class AbstractListenerManager {
         initListener(event.getApplicationContext());
     }
 
-    @SuppressWarnings("unchecked")
     public void initListener(ApplicationContext applicationContext) {
         if (inited) return;
 

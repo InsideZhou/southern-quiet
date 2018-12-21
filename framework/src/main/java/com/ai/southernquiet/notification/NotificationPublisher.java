@@ -20,9 +20,8 @@ public interface NotificationPublisher<N> {
      */
     void publish(N notification, String source);
 
-    @SuppressWarnings("ConstantConditions")
     default String getNotificationSource(Class<N> cls) {
         NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
-        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getName() : annotation.source();
+        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 }
