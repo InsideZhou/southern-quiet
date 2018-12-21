@@ -29,7 +29,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             }
 
             long expiry = (long) value;
-            return expiry + expiry * properties.getMultiplier();
+            return expiry + expiry * (long) properties.getMultiplier();
         });
 
         if (expiration < properties.getExpiration().toMillis()) {
