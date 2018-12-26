@@ -1,6 +1,6 @@
-package com.ai.southernquiet.file.http.controller.advice;
+package com.ai.southernquiet.file.web.controller.advice;
 
-import com.ai.southernquiet.file.http.exception.NotFoundException;
+import com.ai.southernquiet.file.web.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;

@@ -1,14 +1,14 @@
 package test;
 
-import com.ai.southernquiet.file.http.FileHttpServiceAutoConfiguration;
+import com.ai.southernquiet.file.web.FileWebFluxAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@ImportAutoConfiguration(FileHttpServiceAutoConfiguration.class)
-public class FileHttpServiceTest {
+@ImportAutoConfiguration(FileWebFluxAutoConfiguration.class)
+public class FileWebTest {
     public static void main(String[] args) {
-        SpringApplication.run(FileHttpServiceTest.class);
+        SpringApplication.run(FileWebTest.class);
     }
 }

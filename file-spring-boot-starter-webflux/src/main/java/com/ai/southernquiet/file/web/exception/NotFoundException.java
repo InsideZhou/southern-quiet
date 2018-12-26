@@ -1,4 +1,4 @@
-package com.ai.southernquiet.file.http.exception;
+package com.ai.southernquiet.file.web.exception;
 
 public class NotFoundException extends RuntimeException {
 }

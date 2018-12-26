@@ -1,4 +1,4 @@
-package com.ai.southernquiet.file.http.model;
+package com.ai.southernquiet.file.web.model;
 
 public class FileInfo {
     private String id;

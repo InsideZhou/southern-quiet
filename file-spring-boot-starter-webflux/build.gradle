@@ -1,6 +1,6 @@
 dependencies {
     implementation project(':framework')
-    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-webflux"
     implementation 'commons-codec:commons-codec'
     implementation 'org.apache.tika:tika-core:1.18'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
