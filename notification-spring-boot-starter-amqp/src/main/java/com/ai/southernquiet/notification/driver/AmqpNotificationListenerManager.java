@@ -184,7 +184,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
-        deadQueueArgs.put(AMQP_DLX, exchange.getName());
+        deadQueueArgs.put(AMQP_DLX, "");
         deadQueueArgs.put(AMQP_DLK, queue.getName());
 
         Exchange deadExchange = new DirectExchange(getDeadExchange(listener, listenerDefaultName));
