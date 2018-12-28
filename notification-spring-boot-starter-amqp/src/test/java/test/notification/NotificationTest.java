@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -27,6 +29,13 @@ public class NotificationTest {
         public Listener listener() {
             return new Listener();
         }
+
+        @Bean
+        public RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
+            RabbitTransactionManager manager = new RabbitTransactionManager();
+            manager.setConnectionFactory(connectionFactory);
+            return manager;
+        }
     }
 
     @Autowired
@@ -42,6 +51,11 @@ public class NotificationTest {
         @NotificationListener(notification = StandardNotification.class, name = "b")
         public void standard(StandardNotification notification, NotificationListener listener) {
             log.info("使用监听器{}接到通知：{}", listener.name(), notification.getId());
+        }
+
+        @NotificationListener(notification = StandardNotification.class, name = "e")
+        public void exception(StandardNotification notification, NotificationListener listener) {
+            throw new RuntimeException("在通知中抛出异常通知：listener=" + listener.name() + ", notification=" + notification.getId());
         }
     }
 }

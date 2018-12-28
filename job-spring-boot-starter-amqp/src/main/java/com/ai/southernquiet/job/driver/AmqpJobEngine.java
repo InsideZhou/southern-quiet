@@ -2,6 +2,8 @@ package com.ai.southernquiet.job.driver;
 
 import com.ai.southernquiet.job.AmqpJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -20,6 +22,8 @@ import static com.ai.southernquiet.Constants.AMQP_DLK;
 import static com.ai.southernquiet.Constants.AMQP_DLX;
 
 public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> {
+    private final static Logger log = LoggerFactory.getLogger(AmqpJobEngine.class);
+
     private RabbitTemplate rabbitTemplate;
     private AmqpAdmin amqpAdmin;
     private AmqpJobAutoConfiguration.Properties properties;
@@ -101,6 +105,10 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
                 long expiry = (long) value;
                 return expiry + expiry * (long) retry.getMultiplier();
             });
+
+            if (log.isDebugEnabled()) {
+                log.debug("准备把Job送进DEAD QUEUE: expiration/ttl={}/{}, message={}", expiration, properties.getJobTTL().toMillis(), message);
+            }
 
             if (expiration < properties.getJobTTL().toMillis()) {
                 messageProperties.setExpiration(String.valueOf(expiration));

@@ -1,0 +1,8 @@
+southern-quiet:
+  framework:
+    file-system:
+      local:
+        working-root: ${user.home}/sq_filesystem
+    key-value:
+      file-system:
+        working-root: TMP_KEY_VALUE

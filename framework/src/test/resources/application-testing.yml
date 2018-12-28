@@ -1,0 +1,5 @@
+southern-quiet:
+  framework:
+    key-value:
+      file-system:
+        name-separator: _|_

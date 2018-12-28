@@ -1,5 +1,7 @@
 package com.ai.southernquiet.amqp.rabbit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -7,6 +9,8 @@ import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.util.StringUtils;
 
 public class AmqpMessageRecover extends RepublishMessageRecoverer {
+    private final static Logger log = LoggerFactory.getLogger(AmqpMessageRecover.class);
+
     private AmqpAutoConfiguration.Properties properties;
 
     public AmqpMessageRecover(AmqpTemplate amqpTemplate,
@@ -31,6 +35,10 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             long expiry = (long) value;
             return expiry + (long) Math.pow(expiry, properties.getPower());
         });
+
+        if (log.isDebugEnabled()) {
+            log.debug("准备把消息送进死信队列: expiration/ttl={}/{}, message={}", expiration, properties.getExpiration().toMillis(), message);
+        }
 
         if (expiration < properties.getExpiration().toMillis()) {
             messageProperties.setExpiration(String.valueOf(expiration));
