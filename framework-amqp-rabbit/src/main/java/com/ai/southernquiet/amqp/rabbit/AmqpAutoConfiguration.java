@@ -22,14 +22,15 @@ public class AmqpAutoConfiguration {
         return new Properties();
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class Properties {
         @DurationUnit(ChronoUnit.SECONDS)
-        private Duration initialExpiration = Duration.ofSeconds(5);
+        private Duration initialExpiration = Duration.ofSeconds(3);
 
         @DurationUnit(ChronoUnit.SECONDS)
         private Duration expiration = Duration.ofDays(1);
 
-        private double multiplier = 2.0;
+        private double power = 1.2;
 
         public Duration getInitialExpiration() {
             return initialExpiration;
@@ -47,12 +48,12 @@ public class AmqpAutoConfiguration {
             this.expiration = expiration;
         }
 
-        public double getMultiplier() {
-            return multiplier;
+        public double getPower() {
+            return power;
         }
 
-        public void setMultiplier(double multiplier) {
-            this.multiplier = multiplier;
+        public void setPower(double power) {
+            this.power = power;
         }
     }
 }
