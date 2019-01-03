@@ -18,8 +18,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.ai.southernquiet.Constants.AMQP_DLK;
-import static com.ai.southernquiet.Constants.AMQP_DLX;
+import static com.ai.southernquiet.Constants.*;
 
 public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> {
     private final static Logger log = LoggerFactory.getLogger(AmqpJobEngine.class);
@@ -43,6 +42,7 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
         this.rabbitTemplate = rabbitTemplate;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public RabbitTemplate getRabbitTemplate() {
         return rabbitTemplate;
     }
@@ -50,20 +50,17 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     @PostConstruct
     public void init() {
         Map<String, Object> deadQueueArgs = new HashMap<>();
-        deadQueueArgs.put(AMQP_DLX, "");
+        deadQueueArgs.put(AMQP_DLX, AMQP_DIRECT);
         deadQueueArgs.put(AMQP_DLK, properties.getWorkingQueue());
         Queue deadQueue = new Queue(properties.getDeadJobQueue(), true, false, false, deadQueueArgs);
-
-        Exchange deadExchange = new DirectExchange(properties.getDeadJobExchange());
-
-        Binding deadBinding = BindingBuilder.bind(deadQueue).to(deadExchange).with(properties.getDeadJobQueue()).noargs();
-
 
         amqpAdmin.declareQueue(new Queue(properties.getWorkingQueue()));
         amqpAdmin.declareQueue(deadQueue);
 
-        amqpAdmin.declareExchange(deadExchange);
+        Exchange deadExchange = new DirectExchange(properties.getDeadJobExchange());
+        Binding deadBinding = BindingBuilder.bind(deadQueue).to(deadExchange).with(properties.getDeadJobQueue()).noargs();
 
+        amqpAdmin.declareExchange(deadExchange);
         amqpAdmin.declareBinding(deadBinding);
     }
 

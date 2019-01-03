@@ -8,7 +8,6 @@ import com.ai.southernquiet.util.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
@@ -27,8 +26,7 @@ import org.springframework.util.StringUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static com.ai.southernquiet.Constants.AMQP_DLK;
-import static com.ai.southernquiet.Constants.AMQP_DLX;
+import static com.ai.southernquiet.Constants.*;
 
 public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
@@ -77,7 +75,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
                 publisher.getRabbitTemplate(),
-                getDeadExchange(listenerAnnotation, listenerDefaultName),
+                AMQP_DIRECT,
                 getDeadRouting(listenerAnnotation, listenerDefaultName),
                 amqpProperties
             ));
@@ -147,10 +145,6 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         return suffix("DEAD." + publisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
     }
 
-    private String getDeadExchange(NotificationListener listener, String listenerDefaultName) {
-        return publisher.getExchange(getDeadSource(listener, listenerDefaultName));
-    }
-
     private String getDeadRouting(NotificationListener listener, String listenerDefaultName) {
         return publisher.getRouting(getDeadSource(listener, listenerDefaultName));
     }
@@ -184,14 +178,10 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
-        deadQueueArgs.put(AMQP_DLX, "");
+        deadQueueArgs.put(AMQP_DLX, AMQP_DIRECT);
         deadQueueArgs.put(AMQP_DLK, queue.getName());
 
-        Exchange deadExchange = new DirectExchange(getDeadExchange(listener, listenerDefaultName));
         Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
-
-        rabbitAdmin.declareExchange(deadExchange);
         rabbitAdmin.declareQueue(deadRouting);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(deadRouting).to(deadExchange).with(deadRouting.getName()).noargs());
     }
 }
