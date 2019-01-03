@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import static com.ai.southernquiet.Constants.AMQP_DIRECT;
+import static com.ai.southernquiet.Constants.AMQP_DEFAULT;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
@@ -70,7 +70,7 @@ public class AmqpJobAutoConfiguration {
         /**
          * 异常任务交换器名。
          */
-        private String deadJobExchange = AMQP_DIRECT;
+        private String deadJobExchange = AMQP_DEFAULT;
 
         /**
          * 异常任务队列名。

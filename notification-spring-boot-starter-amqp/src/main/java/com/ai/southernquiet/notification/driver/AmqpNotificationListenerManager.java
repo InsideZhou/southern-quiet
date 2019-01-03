@@ -75,7 +75,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
                 publisher.getRabbitTemplate(),
-                AMQP_DIRECT,
+                AMQP_DEFAULT,
                 getDeadRouting(listenerAnnotation, listenerDefaultName),
                 amqpProperties
             ));
@@ -178,7 +178,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
-        deadQueueArgs.put(AMQP_DLX, AMQP_DIRECT);
+        deadQueueArgs.put(AMQP_DLX, AMQP_DEFAULT);
         deadQueueArgs.put(AMQP_DLK, queue.getName());
 
         Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);

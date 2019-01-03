@@ -50,7 +50,7 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     @PostConstruct
     public void init() {
         Map<String, Object> deadQueueArgs = new HashMap<>();
-        deadQueueArgs.put(AMQP_DLX, AMQP_DIRECT);
+        deadQueueArgs.put(AMQP_DLX, AMQP_DEFAULT);
         deadQueueArgs.put(AMQP_DLK, properties.getWorkingQueue());
         Queue deadQueue = new Queue(properties.getDeadJobQueue(), true, false, false, deadQueueArgs);
 
