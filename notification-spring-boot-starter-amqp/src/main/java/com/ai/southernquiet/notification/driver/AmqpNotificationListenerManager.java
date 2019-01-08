@@ -122,10 +122,11 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
             if (log.isDebugEnabled()) {
                 log.debug(
-                    "监听器收到通知: listener={}#{}\nnotification={}",
+                    "监听器收到通知: listener={}#{}, notification={}\nmessage={}",
                     bean.getClass().getSimpleName(),
                     listenerDefaultName,
-                    notification
+                    notification.getClass().getSimpleName(),
+                    message
                 );
             }
 

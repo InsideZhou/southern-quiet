@@ -1,9 +1,7 @@
 package com.ai.southernquiet.notification.driver;
 
 import com.ai.southernquiet.notification.NotificationPublisher;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Exchange;
-import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -14,6 +12,7 @@ import java.util.Set;
 
 import static com.ai.southernquiet.notification.AmqpNotificationAutoConfiguration.NAME_PREFIX;
 
+@SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N extends Serializable> implements NotificationPublisher<N> {
     private RabbitTemplate rabbitTemplate;
     private AmqpAdmin amqpAdmin;
@@ -49,7 +48,11 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
 
         declareExchange(exchange);
 
-        rabbitTemplate.convertAndSend(exchange, routing, notification);
+        rabbitTemplate.convertAndSend(exchange, routing, notification, message -> {
+            MessageProperties properties = message.getMessageProperties();
+            properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            return message;
+        });
     }
 
     public String getExchange(String source) {

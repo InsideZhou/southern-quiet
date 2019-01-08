@@ -67,7 +67,11 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     @Transactional
     @Override
     public void arrange(T job) {
-        rabbitTemplate.convertAndSend(properties.getWorkingQueue(), job);
+        rabbitTemplate.convertAndSend(properties.getWorkingQueue(), job, message -> {
+            MessageProperties properties = message.getMessageProperties();
+            properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            return message;
+        });
     }
 
     @Transactional
@@ -104,8 +108,16 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
             });
 
             if (log.isDebugEnabled()) {
-                log.debug("准备把Job送进DEAD QUEUE: expiration/ttl={}/{}, message={}", expiration, properties.getJobTTL().toMillis(), message);
+                log.debug(
+                    "准备把消息送进死信队列: expiration/ttl={}/{}, deliveryMode={}, message={}",
+                    expiration,
+                    properties.getJobTTL().toMillis(),
+                    messageProperties.getDeliveryMode(),
+                    message
+                );
             }
+
+            messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (expiration < properties.getJobTTL().toMillis()) {
                 messageProperties.setExpiration(String.valueOf(expiration));

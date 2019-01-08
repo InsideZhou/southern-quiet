@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.util.StringUtils;
@@ -19,7 +20,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
                               AmqpAutoConfiguration.Properties properties) {
 
         super(amqpTemplate, errorExchange, errorRoutingKey);
-
+        setDeliveryMode(MessageDeliveryMode.PERSISTENT);
         this.properties = properties;
     }
 
@@ -37,7 +38,17 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         });
 
         if (log.isDebugEnabled()) {
-            log.debug("准备把消息送进死信队列: expiration/ttl={}/{}, message={}", expiration, properties.getExpiration().toMillis(), message);
+            log.debug(
+                "准备把消息送进死信队列: expiration/ttl={}/{}, deliveryMode={}, message={}",
+                expiration,
+                properties.getExpiration().toMillis(),
+                messageProperties.getDeliveryMode(),
+                message
+            );
+        }
+
+        if (null == messageProperties.getDeliveryMode()) {
+            messageProperties.setDeliveryMode(getDeliveryMode());
         }
 
         if (expiration < properties.getExpiration().toMillis()) {
