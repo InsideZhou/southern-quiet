@@ -107,17 +107,18 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
                 return expiry + expiry * (long) retry.getMultiplier();
             });
 
+            messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+
             if (log.isDebugEnabled()) {
                 log.debug(
                     "准备把消息送进死信队列: expiration/ttl={}/{}, deliveryMode={}, message={}",
                     expiration,
                     properties.getJobTTL().toMillis(),
                     messageProperties.getDeliveryMode(),
-                    message
+                    message,
+                    cause
                 );
             }
-
-            messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (expiration < properties.getJobTTL().toMillis()) {
                 messageProperties.setExpiration(String.valueOf(expiration));

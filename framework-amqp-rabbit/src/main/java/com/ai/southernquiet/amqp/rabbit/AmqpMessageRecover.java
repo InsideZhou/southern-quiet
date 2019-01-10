@@ -37,18 +37,19 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             return expiry + (long) Math.pow(expiry, properties.getPower());
         });
 
+        if (null == messageProperties.getDeliveryMode()) {
+            messageProperties.setDeliveryMode(getDeliveryMode());
+        }
+
         if (log.isDebugEnabled()) {
             log.debug(
                 "准备把消息送进死信队列: expiration/ttl={}/{}, deliveryMode={}, message={}",
                 expiration,
                 properties.getExpiration().toMillis(),
                 messageProperties.getDeliveryMode(),
-                message
+                message,
+                cause
             );
-        }
-
-        if (null == messageProperties.getDeliveryMode()) {
-            messageProperties.setDeliveryMode(getDeliveryMode());
         }
 
         if (expiration < properties.getExpiration().toMillis()) {
