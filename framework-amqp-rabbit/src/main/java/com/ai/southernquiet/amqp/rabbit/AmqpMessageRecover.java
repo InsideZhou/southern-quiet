@@ -67,7 +67,9 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
 
         if (log.isDebugEnabled()) {
             log.debug(
-                "准备把通知送进死信队列: expiration={}/{}, recoverCount={}, deliveryMode={}, messageCount={}, message={}",
+                "准备把通知送进死信队列: exchange={}, queue={}, expiration={}/{}, recoverCount={}, deliveryMode={}, messageCount={}, message={}",
+                errorExchangeName,
+                errorRoutingKey,
                 expiration,
                 properties.getExpiration().toMillis(),
                 recoverCount,
