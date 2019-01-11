@@ -17,6 +17,7 @@ import javax.annotation.PostConstruct;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.ai.southernquiet.Constants.*;
 
@@ -85,36 +86,60 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     public static class Recoverer extends RepublishMessageRecoverer {
         private RabbitProperties.ListenerRetry retry;
         private AmqpJobAutoConfiguration.Properties properties;
+        private AmqpAdmin amqpAdmin;
 
         public Recoverer(AmqpJobEngine amqpJobEngine, AmqpJobAutoConfiguration.Properties properties, RabbitProperties rabbitProperties) {
             super(amqpJobEngine.getRabbitTemplate(), properties.getDeadJobExchange(), properties.getDeadJobQueue());
 
             this.retry = rabbitProperties.getListener().getSimple().getRetry();
             this.properties = properties;
+            this.amqpAdmin = amqpJobEngine.amqpAdmin;
         }
 
         @SuppressWarnings("Duplicates")
         @Override
         public void recover(Message message, Throwable cause) {
             MessageProperties messageProperties = message.getMessageProperties();
+            Map<String, Object> headers = messageProperties.getHeaders();
+            headers.putIfAbsent("x-recover-count", 0);
+            headers.putIfAbsent("x-expiration", retry.getInitialInterval().toMillis());
 
-            long expiration = (long) messageProperties.getHeaders().compute("original-expiration", (key, value) -> {
-                if (StringUtils.isEmpty(value)) {
-                    return retry.getInitialInterval().toMillis();
-                }
+            int messageCount;
+            if (null != messageProperties.getMessageCount()) {
+                messageCount = messageProperties.getMessageCount();
+            }
+            else {
+                Properties queueProperties = amqpAdmin.getQueueProperties(messageProperties.getConsumerQueue());
+                messageCount = (int) queueProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0);
+            }
 
-                long expiry = (long) value;
-                return expiry + expiry * (long) retry.getMultiplier();
-            });
+            int recoverCount = (int) headers.get("x-recover-count");
 
-            messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            long expiration;
+            if (StringUtils.isEmpty(messageProperties.getExpiration())) {
+                expiration = (long) headers.get("x-expiration");
+            }
+            else {
+                expiration = Long.parseLong(messageProperties.getExpiration());
+            }
+            expiration += messageCount * recoverCount * retry.getMultiplier();
+            expiration += expiration * retry.getMultiplier();
+
+            messageProperties.setHeader("x-recover-count", ++recoverCount);
+            messageProperties.setHeader("x-expiration", expiration);
+
+            if (null == messageProperties.getDeliveryMode()) {
+                messageProperties.setDeliveryMode(getDeliveryMode());
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug(
-                    "准备把消息送进死信队列: expiration/ttl={}/{}, deliveryMode={}, message={}",
+                    "准备把任务送进死信队列: expiration={}/{}, recoverCount={}, deliveryMode={}, messageCount={}, message={}",
                     expiration,
                     properties.getJobTTL().toMillis(),
+                    recoverCount,
                     messageProperties.getDeliveryMode(),
+                    messageCount,
                     message,
                     cause
                 );
@@ -122,7 +147,7 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
 
             if (expiration < properties.getJobTTL().toMillis()) {
                 messageProperties.setExpiration(String.valueOf(expiration));
-                errorTemplate.send(properties.getDeadJobExchange(), properties.getDeadJobQueue(), message);
+                errorTemplate.send(errorExchangeName, errorRoutingKey, message);
             }
             else {
                 messageProperties.setExpiration(null);

@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.Serializable;
+import java.util.stream.IntStream;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -43,7 +44,9 @@ public class NotificationTest {
 
     @Test
     public void dummy() {
-        notificationPublisher.publish(new StandardNotification());
+        IntStream.range(0, 1000).forEach(i -> {
+            notificationPublisher.publish(new StandardNotification());
+        });
     }
 
     public static class Listener {

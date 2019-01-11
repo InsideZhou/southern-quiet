@@ -75,6 +75,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
                 publisher.getRabbitTemplate(),
+                rabbitAdmin,
                 AMQP_DEFAULT,
                 getDeadRouting(listenerAnnotation, listenerDefaultName),
                 amqpProperties
