@@ -1,20 +1,98 @@
 package com.ai.southernquiet.amqp.rabbit;
 
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ReflectionUtils;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties
 public class AmqpAutoConfiguration {
+
+    @SuppressWarnings({"ConstantConditions", "Duplicates"})
+    public static CachingConnectionFactory rabbitConnectionFactory(RabbitProperties rabbitProperties, ObjectProvider<ConnectionNameStrategy> connectionNameStrategy) {
+        PropertyMapper map = PropertyMapper.get();
+        CachingConnectionFactory factory;
+        try {
+            factory = new CachingConnectionFactory(getRabbitConnectionFactoryBean(rabbitProperties).getObject());
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        map.from(rabbitProperties::determineAddresses).to(factory::setAddresses);
+        map.from(rabbitProperties::isPublisherConfirms).to(factory::setPublisherConfirms);
+        map.from(rabbitProperties::isPublisherReturns).to(factory::setPublisherReturns);
+        RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
+        map.from(channel::getSize).whenNonNull().to(factory::setChannelCacheSize);
+        map.from(channel::getCheckoutTimeout).whenNonNull().as(Duration::toMillis)
+            .to(factory::setChannelCheckoutTimeout);
+        RabbitProperties.Cache.Connection connection = rabbitProperties.getCache()
+            .getConnection();
+        map.from(connection::getMode).whenNonNull().to(factory::setCacheMode);
+        map.from(connection::getSize).whenNonNull()
+            .to(factory::setConnectionCacheSize);
+        map.from(connectionNameStrategy::getIfUnique).whenNonNull()
+            .to(factory::setConnectionNameStrategy);
+        return factory;
+    }
+
+    @SuppressWarnings({"Duplicates", "WeakerAccess"})
+    public static RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) throws Exception {
+        PropertyMapper map = PropertyMapper.get();
+        RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
+        map.from(rabbitProperties::determineHost).whenNonNull().to(factory::setHost);
+        map.from(rabbitProperties::determinePort).to(factory::setPort);
+        map.from(rabbitProperties::determineUsername).whenNonNull()
+            .to(factory::setUsername);
+        map.from(rabbitProperties::determinePassword).whenNonNull()
+            .to(factory::setPassword);
+        map.from(rabbitProperties::determineVirtualHost).whenNonNull()
+            .to(factory::setVirtualHost);
+        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull()
+            .asInt(Duration::getSeconds).to(factory::setRequestedHeartbeat);
+        RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
+        if (ssl.isEnabled()) {
+            factory.setUseSSL(true);
+            map.from(ssl::getAlgorithm).whenNonNull().to(factory::setSslAlgorithm);
+            map.from(ssl::getKeyStoreType).to(factory::setKeyStoreType);
+            map.from(ssl::getKeyStore).to(factory::setKeyStore);
+            map.from(ssl::getKeyStorePassword).to(factory::setKeyStorePassphrase);
+            map.from(ssl::getTrustStoreType).to(factory::setTrustStoreType);
+            map.from(ssl::getTrustStore).to(factory::setTrustStore);
+            map.from(ssl::getTrustStorePassword).to(factory::setTrustStorePassphrase);
+            map.from(ssl::isValidateServerCertificate).to((validate) -> factory
+                .setSkipServerCertificateValidation(!validate));
+            map.from(ssl::getVerifyHostname).when(Objects::nonNull)
+                .to(factory::setEnableHostnameVerification);
+            if (ssl.getVerifyHostname() == null
+                && ReflectionUtils.findMethod(com.rabbitmq.client.ConnectionFactory.class, "enableHostnameVerification") != null
+            ) {
+                factory.setEnableHostnameVerification(true);
+            }
+        }
+        map.from(rabbitProperties::getConnectionTimeout).whenNonNull()
+            .asInt(Duration::toMillis).to(factory::setConnectionTimeout);
+        factory.afterPropertiesSet();
+        return factory;
+    }
+
+
     @Bean
     @ConditionalOnMissingBean
     @ConfigurationProperties("southern-quiet.framework.amqp.rabbit")

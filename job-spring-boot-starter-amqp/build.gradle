@@ -1,5 +1,5 @@
 dependencies {
-    api project(':framework')
+    api project(':framework-amqp-rabbit')
 
     implementation "org.springframework.boot:spring-boot-starter-amqp"
 

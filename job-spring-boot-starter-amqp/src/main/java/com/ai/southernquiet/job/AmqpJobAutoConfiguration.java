@@ -4,9 +4,10 @@ import com.ai.southernquiet.job.driver.AmqpJobEngine;
 import com.ai.southernquiet.job.driver.AmqpJobListener;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,15 +37,18 @@ public class AmqpJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpJobEngine amqpJobEngine(ConnectionFactory connectionFactory,
-                                       @Autowired(required = false) MessageConverter messageConverter,
+    public AmqpJobEngine amqpJobEngine(@Autowired(required = false) MessageConverter messageConverter,
                                        AmqpAdmin amqpAdmin,
-                                       Properties properties) {
+                                       Properties properties,
+                                       RabbitProperties rabbitProperties,
+                                       ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    ) {
         return new AmqpJobEngine(
-            connectionFactory,
             null == messageConverter ? new Jackson2JsonMessageConverter() : messageConverter,
             amqpAdmin,
-            properties
+            properties,
+            rabbitProperties,
+            connectionNameStrategy
         );
     }
 

@@ -1,14 +1,17 @@
 package com.ai.southernquiet.job.driver;
 
+import com.ai.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import com.ai.southernquiet.job.AmqpJobAutoConfiguration;
 import com.ai.southernquiet.job.JobProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,13 +31,17 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     private AmqpAdmin amqpAdmin;
     private AmqpJobAutoConfiguration.Properties properties;
 
-    public AmqpJobEngine(ConnectionFactory connectionFactory,
-                         MessageConverter messageConverter,
+    public AmqpJobEngine(MessageConverter messageConverter,
                          AmqpAdmin amqpAdmin,
-                         AmqpJobAutoConfiguration.Properties properties
+                         AmqpJobAutoConfiguration.Properties properties,
+                         RabbitProperties rabbitProperties,
+                         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
         this.amqpAdmin = amqpAdmin;
         this.properties = properties;
+
+        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, connectionNameStrategy);
+        connectionFactory.setPublisherConfirms(false);
 
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter);

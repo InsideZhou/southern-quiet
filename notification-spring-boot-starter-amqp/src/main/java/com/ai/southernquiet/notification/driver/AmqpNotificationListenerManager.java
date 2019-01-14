@@ -12,11 +12,14 @@ import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -32,27 +35,25 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
     private MessageConverter messageConverter;
-    private ConnectionFactory connectionFactory;
+    private CachingConnectionFactory cachingConnectionFactory;
 
     private List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
     private RabbitAdmin rabbitAdmin;
     private AmqpNotificationPublisher publisher;
     private AmqpAutoConfiguration.Properties amqpProperties;
 
+    private PlatformTransactionManager transactionManager;
     private RabbitProperties rabbitProperties;
     private ApplicationContext applicationContext;
 
-    private PlatformTransactionManager transactionManager;
-
-    public AmqpNotificationListenerManager(ConnectionFactory connectionFactory,
-                                           RabbitAdmin rabbitAdmin,
+    public AmqpNotificationListenerManager(RabbitAdmin rabbitAdmin,
                                            AmqpNotificationPublisher publisher,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
                                            PlatformTransactionManager transactionManager,
+                                           ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
                                            ApplicationContext applicationContext
     ) {
-        this.connectionFactory = connectionFactory;
         this.rabbitAdmin = rabbitAdmin;
         this.publisher = publisher;
         this.amqpProperties = amqpProperties;
@@ -61,10 +62,15 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         this.applicationContext = applicationContext;
 
         this.messageConverter = publisher.getMessageConverter();
+
+        this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, connectionNameStrategy);
+        cachingConnectionFactory.setPublisherConfirms(false);
     }
 
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
         initListener(applicationContext);
+
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
 
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
@@ -74,7 +80,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer();
             containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
             containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
-                publisher.getRabbitTemplate(),
+                rabbitTemplate,
                 rabbitAdmin,
                 AMQP_DEFAULT,
                 getDeadRouting(listenerAnnotation, listenerDefaultName),
@@ -86,7 +92,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                 factory.setTransactionManager(transactionManager);
             }
             factory.setMessageConverter(publisher.getMessageConverter());
-            containerFactoryConfigurer.configure(factory, connectionFactory);
+            containerFactoryConfigurer.configure(factory, cachingConnectionFactory);
 
             registrar.registerEndpoint(endpoint, factory);
         });
