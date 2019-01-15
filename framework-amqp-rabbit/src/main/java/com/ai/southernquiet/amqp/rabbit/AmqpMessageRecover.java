@@ -37,7 +37,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         headers.putIfAbsent("x-recover-count", 0);
         headers.putIfAbsent("x-expiration", properties.getInitialExpiration().toMillis());
 
-        int messageCount = -1;
+        int queuedMessageCount = 0;
         int recoverCount = (int) headers.get("x-recover-count");
 
         long expiration;
@@ -50,14 +50,14 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
 
         if (recoverCount > 0) {
             if (null != messageProperties.getMessageCount()) {
-                messageCount = messageProperties.getMessageCount();
+                queuedMessageCount = messageProperties.getMessageCount();
             }
             else {
                 Properties queueProperties = amqpAdmin.getQueueProperties(messageProperties.getConsumerQueue());
-                messageCount = (int) queueProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0);
+                queuedMessageCount = (int) queueProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0);
             }
 
-            expiration += (long) Math.pow(expiration + messageCount * recoverCount, properties.getPower());
+            expiration += (long) Math.pow(expiration + queuedMessageCount * recoverCount, properties.getPower());
         }
 
         messageProperties.setHeader("x-recover-count", ++recoverCount);
@@ -76,7 +76,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
                 properties.getExpiration().toMillis(),
                 recoverCount,
                 messageProperties.getDeliveryMode(),
-                messageCount,
+                queuedMessageCount,
                 message,
                 cause
             );
