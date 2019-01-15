@@ -5,48 +5,46 @@ import com.ai.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import com.ai.southernquiet.notification.NotificationPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.ai.southernquiet.notification.AmqpNotificationAutoConfiguration.NAME_PREFIX;
 
 @SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N extends Serializable> implements NotificationPublisher<N> {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private RabbitTemplate rabbitTemplate;
-    private AmqpAdmin amqpAdmin;
     private MessageConverter messageConverter;
-    private AmqpNotificationAutoConfiguration.Properties properties;
-
-    private Set<String> declaredExchanges = new HashSet<>();
+    private AmqpNotificationAutoConfiguration.Properties notificationProperties;
+    private AmqpAutoConfiguration.Properties properties;
 
     private boolean enablePublisherConfirm;
 
     public AmqpNotificationPublisher(
         MessageConverter messageConverter,
-        AmqpAdmin amqpAdmin,
-        AmqpNotificationAutoConfiguration.Properties properties,
+        AmqpNotificationAutoConfiguration.Properties notificationProperties,
+        AmqpAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
         boolean enablePublisherConfirm
     ) {
-        this.amqpAdmin = amqpAdmin;
         this.messageConverter = messageConverter;
+        this.notificationProperties = notificationProperties;
         this.properties = properties;
         this.enablePublisherConfirm = enablePublisherConfirm;
 
-        ConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, connectionNameStrategy);
+        ConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
         ((CachingConnectionFactory) connectionFactory).setPublisherConfirms(enablePublisherConfirm);
 
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
@@ -71,10 +69,9 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
 
     @Override
     public void publish(N notification, String source) {
-        String exchange = getExchange(source);
-        String routing = getRouting(source);
-
-        declareExchange(exchange);
+        String prefix = notificationProperties.getNamePrefix();
+        String exchange = getExchange(prefix, source);
+        String routing = getRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
@@ -103,28 +100,5 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
                 messagePostProcessor
             );
         }
-    }
-
-    public String getExchange(String source) {
-        return NAME_PREFIX + "EXCHANGE." + source;
-    }
-
-    public String getRouting(String source) {
-        return NAME_PREFIX + source;
-    }
-
-    public Exchange declareExchange(String exchangeName) {
-        if (declaredExchanges.contains(exchangeName)) return new FanoutExchange(exchangeName);
-
-        Exchange exchange = new FanoutExchange(exchangeName);
-        amqpAdmin.declareExchange(exchange);
-
-        declaredExchanges.add(exchangeName);
-
-        return exchange;
-    }
-
-    public Exchange declareExchange(Class<N> cls) {
-        return declareExchange(getExchange(getNotificationSource(cls)));
     }
 }

@@ -25,11 +25,15 @@ import java.util.Objects;
 public class AmqpAutoConfiguration {
 
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
-    public static CachingConnectionFactory rabbitConnectionFactory(RabbitProperties rabbitProperties, ObjectProvider<ConnectionNameStrategy> connectionNameStrategy) {
+    public static CachingConnectionFactory rabbitConnectionFactory(
+        RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
+        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    ) {
         PropertyMapper map = PropertyMapper.get();
         CachingConnectionFactory factory;
         try {
-            factory = new CachingConnectionFactory(getRabbitConnectionFactoryBean(rabbitProperties).getObject());
+            factory = new CachingConnectionFactory(factoryBean.getObject());
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -52,8 +56,10 @@ public class AmqpAutoConfiguration {
         return factory;
     }
 
-    @SuppressWarnings({"Duplicates", "WeakerAccess"})
-    public static RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) throws Exception {
+    @SuppressWarnings({"Duplicates", "SpringJavaInjectionPointsAutowiringInspection"})
+    @Bean
+    @ConditionalOnMissingBean
+    public RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) throws Exception {
         PropertyMapper map = PropertyMapper.get();
         RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
         map.from(rabbitProperties::determineHost).whenNonNull().to(factory::setHost);
@@ -102,13 +108,53 @@ public class AmqpAutoConfiguration {
 
     @SuppressWarnings("WeakerAccess")
     public static class Properties {
+        /**
+         * 消息的初始超时时间。
+         */
         @DurationUnit(ChronoUnit.SECONDS)
-        private Duration initialExpiration = Duration.ofSeconds(3);
+        private Duration initialExpiration = Duration.ofSeconds(5);
 
+        /**
+         * 消息的超时上限，当前超时超过上限时，永远进入死信队列不再重新投递到工作队列。
+         */
         @DurationUnit(ChronoUnit.SECONDS)
         private Duration expiration = Duration.ofDays(1);
 
-        private double power = 1.2;
+        /**
+         * 消息重试间隔的指数
+         */
+        private double power = 1.1;
+
+        /**
+         * 在开启publisher confirm的情况下，等待confirm的超时时间，单位：毫秒。
+         */
+        private long publisherConfirmTimeout = 5000;
+
+        /**
+         * 是否打开publisher confirm
+         */
+        private boolean enablePublisherConfirm = false;
+
+        /**
+         * @see RabbitProperties.Retry#getMaxAttempts()
+         */
+        private int maxDeliveryAttempts = 0;
+
+        public long getPublisherConfirmTimeout() {
+            return publisherConfirmTimeout;
+        }
+
+        public void setPublisherConfirmTimeout(long publisherConfirmTimeout) {
+            this.publisherConfirmTimeout = publisherConfirmTimeout;
+        }
+
+        public boolean isEnablePublisherConfirm() {
+            return enablePublisherConfirm;
+        }
+
+        public void setEnablePublisherConfirm(boolean enablePublisherConfirm) {
+            this.enablePublisherConfirm = enablePublisherConfirm;
+        }
 
         public Duration getInitialExpiration() {
             return initialExpiration;
@@ -132,6 +178,14 @@ public class AmqpAutoConfiguration {
 
         public void setPower(double power) {
             this.power = power;
+        }
+
+        public int getMaxDeliveryAttempts() {
+            return maxDeliveryAttempts;
+        }
+
+        public void setMaxDeliveryAttempts(int maxDeliveryAttempts) {
+            this.maxDeliveryAttempts = maxDeliveryAttempts;
         }
     }
 }

@@ -27,11 +27,6 @@ public class NotificationTest {
     @EnableAutoConfiguration
     public static class Config {
         @Bean
-        public Listener listener() {
-            return new Listener();
-        }
-
-        @Bean
         public RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
             RabbitTransactionManager manager = new RabbitTransactionManager();
             manager.setConnectionFactory(connectionFactory);

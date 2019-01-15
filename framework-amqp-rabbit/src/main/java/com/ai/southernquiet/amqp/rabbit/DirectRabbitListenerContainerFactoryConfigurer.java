@@ -8,21 +8,23 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
 
 public class DirectRabbitListenerContainerFactoryConfigurer extends AbstractRabbitListenerContainerFactoryConfigurer<DirectRabbitListenerContainerFactory> {
+    private AmqpAutoConfiguration.Properties properties;
+
+    public DirectRabbitListenerContainerFactoryConfigurer(RabbitProperties rabbitProperties,
+                                                          MessageRecoverer messageRecoverer,
+                                                          AmqpAutoConfiguration.Properties properties) {
+        this.properties = properties;
+
+        setRabbitProperties(rabbitProperties);
+        setMessageRecoverer(messageRecoverer);
+    }
+
     @Override
     public void configure(DirectRabbitListenerContainerFactory factory, ConnectionFactory connectionFactory) {
         PropertyMapper map = PropertyMapper.get();
         RabbitProperties.DirectContainer config = getRabbitProperties().getListener().getDirect();
+        config.getRetry().setMaxAttempts(properties.getMaxDeliveryAttempts());
         configure(factory, connectionFactory, config);
         map.from(config::getConsumersPerQueue).whenNonNull().to(factory::setConsumersPerQueue);
-    }
-
-    @Override
-    public void setMessageRecoverer(MessageRecoverer messageRecoverer) {
-        super.setMessageRecoverer(messageRecoverer);
-    }
-
-    @Override
-    public void setRabbitProperties(RabbitProperties rabbitProperties) {
-        super.setRabbitProperties(rabbitProperties);
     }
 }

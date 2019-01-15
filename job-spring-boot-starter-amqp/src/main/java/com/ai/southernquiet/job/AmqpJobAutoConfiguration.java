@@ -5,6 +5,7 @@ import com.ai.southernquiet.job.driver.AmqpJobListener;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,6 +42,7 @@ public class AmqpJobAutoConfiguration {
                                        AmqpAdmin amqpAdmin,
                                        Properties properties,
                                        RabbitProperties rabbitProperties,
+                                       RabbitConnectionFactoryBean factoryBean,
                                        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
         return new AmqpJobEngine(
@@ -48,6 +50,7 @@ public class AmqpJobAutoConfiguration {
             amqpAdmin,
             properties,
             rabbitProperties,
+            factoryBean,
             connectionNameStrategy
         );
     }

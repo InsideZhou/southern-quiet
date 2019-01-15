@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -35,12 +36,13 @@ public class AmqpJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
                          AmqpAdmin amqpAdmin,
                          AmqpJobAutoConfiguration.Properties properties,
                          RabbitProperties rabbitProperties,
+                         RabbitConnectionFactoryBean factoryBean,
                          ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
         this.amqpAdmin = amqpAdmin;
         this.properties = properties;
 
-        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, connectionNameStrategy);
+        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
         connectionFactory.setPublisherConfirms(false);
 
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);

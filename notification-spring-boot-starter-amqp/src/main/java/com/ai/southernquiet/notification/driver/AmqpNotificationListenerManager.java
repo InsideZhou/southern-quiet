@@ -3,17 +3,20 @@ package com.ai.southernquiet.notification.driver;
 import com.ai.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import com.ai.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import com.ai.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
+import com.ai.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import com.ai.southernquiet.notification.NotificationListener;
 import com.ai.southernquiet.util.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpoint;
@@ -41,6 +44,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private RabbitAdmin rabbitAdmin;
     private AmqpNotificationPublisher publisher;
     private AmqpAutoConfiguration.Properties amqpProperties;
+    private AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
 
     private PlatformTransactionManager transactionManager;
     private RabbitProperties rabbitProperties;
@@ -48,14 +52,17 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
     public AmqpNotificationListenerManager(RabbitAdmin rabbitAdmin,
                                            AmqpNotificationPublisher publisher,
+                                           AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
                                            PlatformTransactionManager transactionManager,
+                                           RabbitConnectionFactoryBean factoryBean,
                                            ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
                                            ApplicationContext applicationContext
     ) {
         this.rabbitAdmin = rabbitAdmin;
         this.publisher = publisher;
+        this.amqpNotificationProperties = amqpNotificationProperties;
         this.amqpProperties = amqpProperties;
         this.rabbitProperties = rabbitProperties;
         this.transactionManager = transactionManager;
@@ -63,7 +70,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
         this.messageConverter = publisher.getMessageConverter();
 
-        this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, connectionNameStrategy);
+        this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
         cachingConnectionFactory.setPublisherConfirms(false);
     }
 
@@ -77,15 +84,17 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             NotificationListener listenerAnnotation = tuple.getSecond();
             String listenerDefaultName = tuple.getThird();
 
-            DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer();
-            containerFactoryConfigurer.setRabbitProperties(rabbitProperties);
-            containerFactoryConfigurer.setMessageRecoverer(new AmqpMessageRecover(
-                rabbitTemplate,
-                rabbitAdmin,
-                AMQP_DEFAULT,
-                getDeadRouting(listenerAnnotation, listenerDefaultName),
+            DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
+                rabbitProperties,
+                new AmqpMessageRecover(
+                    rabbitTemplate,
+                    rabbitAdmin,
+                    AMQP_DEFAULT,
+                    getDeadRouting(listenerAnnotation, listenerDefaultName),
+                    amqpProperties
+                ),
                 amqpProperties
-            ));
+            );
 
             DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
             if (listenerAnnotation.isTransactionEnabled()) {
@@ -129,9 +138,11 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
             if (log.isDebugEnabled()) {
                 log.debug(
-                    "监听器收到通知: listener={}#{}, notification={}, message={}",
+                    "监听器收到通知: queue={}, listener={}#{}({}), notification={}, message={}",
+                    endpoint.getQueueNames(),
                     bean.getClass().getSimpleName(),
                     listenerDefaultName,
+                    endpoint.getId(),
                     notification.getClass().getSimpleName(),
                     message
                 );
@@ -154,12 +165,12 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     }
 
     private String getDeadRouting(NotificationListener listener, String listenerDefaultName) {
-        return publisher.getRouting(getDeadSource(listener, listenerDefaultName));
+        return publisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
     }
 
     @SuppressWarnings("unchecked")
     private String getListenerRouting(NotificationListener listener, String listenerDefaultName) {
-        return suffix(publisher.getRouting(publisher.getNotificationSource(listener.notification())), listener, listenerDefaultName);
+        return suffix(publisher.getRouting(amqpNotificationProperties.getNamePrefix(), publisher.getNotificationSource(listener.notification())), listener, listenerDefaultName);
     }
 
     private String suffix(String routing, NotificationListener listener, String listenerDefaultName) {
@@ -177,7 +188,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
         String routing = getListenerRouting(listener, listenerDefaultName);
 
-        Exchange exchange = publisher.declareExchange(listener.notification());
+        Exchange exchange = new FanoutExchange(publisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
         Queue queue = new Queue(routing);
 
         rabbitAdmin.declareExchange(exchange);

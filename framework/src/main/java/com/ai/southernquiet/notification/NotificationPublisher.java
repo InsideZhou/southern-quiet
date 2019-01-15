@@ -24,4 +24,20 @@ public interface NotificationPublisher<N> {
         NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
+
+    default String getExchange(String prefix, Class<N> cls) {
+        return getExchange(prefix, getNotificationSource(cls));
+    }
+
+    default String getExchange(String prefix, String source) {
+        return prefix + "EXCHANGE." + source;
+    }
+
+    default String getRouting(String prefix, Class<N> cls) {
+        return getRouting(prefix, getNotificationSource(cls));
+    }
+
+    default String getRouting(String prefix, String source) {
+        return prefix + source;
+    }
 }
