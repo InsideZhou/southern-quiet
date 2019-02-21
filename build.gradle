@@ -42,6 +42,7 @@ subprojects {
     apply plugin: 'propdeps-eclipse'
 
     apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     repositories {
         mavenLocal()
@@ -78,6 +79,10 @@ subprojects {
         }
     }
 
+    javadoc {
+        options.encoding = 'UTF-8'
+    }
+
     bootJar {
         classifier = 'boot'
 
@@ -91,9 +96,50 @@ subprojects {
         from sourceSets.main.allSource
     }
 
+    task docJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
     publishing {
         publications {
-            all(MavenPublication) {
+            full(MavenPublication) {
+                artifactId jar.baseName
+
+                from components.java
+
+                artifact sourceJar
+                artifact docJar
+
+                pom {
+                    name = 'SouthernQuiet'
+                    description = '这是一个基于Spring Boot，为了复用一些公共代码而存在的库。'
+                    url = 'https://github.com/InsideZhou/southern-quiet'
+
+                    scm {
+                        connection = 'scm:git:git://github.com/InsideZhou/southern-quiet.git'
+                        developerConnection = 'scm:git:ssh://github.com/InsideZhou/southern-quiet.git'
+                        url = 'https://github.com/InsideZhou/southern-quiet'
+
+                    }
+
+                    licenses {
+                        license {
+                            name = 'The 3-Clause BSD License'
+                            url = 'https://opensource.org/licenses/BSD-3-Clause'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            name = 'Inside Zhou'
+                            email = 'inside@insidezhou.me'
+                        }
+                    }
+                }
+            }
+
+            simple(MavenPublication) {
                 artifactId jar.baseName
 
                 from components.java
@@ -105,21 +151,20 @@ subprojects {
         repositories {
             maven {
                 def isSnapshot = version.endsWith("SNAPSHOT")
-                def releasesRepoUrl = project.hasProperty('cnbssReleaseUrl') ? cnbssReleaseUrl : ''
-                def snapshotsRepoUrl = project.hasProperty('cnbssSnapshotUrl') ? cnbssSnapshotUrl : ''
+                def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+                def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
 
                 url isSnapshot ? snapshotsRepoUrl : releasesRepoUrl
-
-                name 'cnbss'
-
-                def cnbssUsername = isSnapshot ? (project.hasProperty('cnbssSnapshotUsername') ? cnbssSnapshotUsername : '') : (project.hasProperty('cnbssReleaseUsername') ? cnbssReleaseUsername : '')
-                def cnbssPassword = isSnapshot ? (project.hasProperty('cnbssSnapshotPassword') ? cnbssSnapshotPassword : '') : (project.hasProperty('cnbssReleasePassword') ? cnbssReleasePassword : '')
-
+                name 'sonatype'
                 credentials {
-                    username = cnbssUsername
-                    password = cnbssPassword
+                    username = ossrhUsername
+                    password = ossrhPassword
                 }
             }
         }
+    }
+
+    signing {
+        sign publishing.publications.full
     }
 }
