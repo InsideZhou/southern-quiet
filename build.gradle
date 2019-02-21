@@ -21,7 +21,7 @@ idea {
 }
 
 subprojects {
-    group = 'com.ai.southernquiet'
+    group = 'me.insidezhou.southernquiet'
     version = '2.0.0'
 
     ext {
