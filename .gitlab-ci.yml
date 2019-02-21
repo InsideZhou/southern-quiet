@@ -1,9 +1,0 @@
-types:
-  - build
-
-buid:
-  type: build
-  script:
-    - bash gradlew clean publishAllPublicationToCnbssRepository
-  tags:
-    - CNBSS
