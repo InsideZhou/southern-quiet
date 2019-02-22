@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-@SuppressWarnings({"unchecked", "ConstantConditions"})
 @SpringBootApplication
 @ImportAutoConfiguration({FrameworkAutoConfiguration.class, RedisEventAutoConfiguration.class})
 public class BroadcastingTestApp {
@@ -30,6 +29,6 @@ public class BroadcastingTestApp {
 
     @EventListener
     public void testListener(BroadcastingDone broadcastingDone) {
-        log.debug("{}", broadcastingDone.getId());
+        log.debug("{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
     }
 }

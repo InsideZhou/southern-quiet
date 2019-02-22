@@ -7,6 +7,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.core.annotation.AnnotationUtils;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractEventPublisher<E> implements EventPublisher<E>, ApplicationEventPublisherAware {
     private ApplicationEventPublisher applicationEventPublisher;
     private String[] defaultChannel;
@@ -15,7 +16,6 @@ public abstract class AbstractEventPublisher<E> implements EventPublisher<E>, Ap
         this.defaultChannel = properties.getDefaultChannels();
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
@@ -26,7 +26,7 @@ public abstract class AbstractEventPublisher<E> implements EventPublisher<E>, Ap
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SuppressWarnings({"ConstantConditions", "unchecked"})
+    @SuppressWarnings({"ConstantConditions"})
     @Override
     public void publish(E event) {
         publishToLocalOnly(event);

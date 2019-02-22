@@ -21,6 +21,7 @@ public class RedisBroadcastingTest {
     @Test
     public void sendSuccess() {
         eventPublisher.publish(new BroadcastingDone());
+        eventPublisher.publish(new ChildBroadcastingDone());
     }
 
     @Test(expected = ClassCastException.class)
