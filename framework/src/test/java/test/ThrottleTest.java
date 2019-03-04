@@ -1,36 +1,54 @@
 package test;
 
-import com.ai.southernquiet.throttle.FixedFrequencyThrottle;
-import com.ai.southernquiet.throttle.ScheduledFixedFrequencyThrottle;
-import com.ai.southernquiet.throttle.Throttle;
+import com.ai.southernquiet.throttle.DebouncedThrottle;
+import com.ai.southernquiet.throttle.FixedWaitingThrottle;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 public class ThrottleTest {
-    private Throttle fixed = new FixedFrequencyThrottle(1000);
-    private ScheduledFixedFrequencyThrottle scheduledFixed = new ScheduledFixedFrequencyThrottle(1000);
 
     @Test
-    public void fixed() {
-        long beginning = System.currentTimeMillis();
+    public void fixedWaiting() throws InterruptedException {
+        FixedWaitingThrottle fixedWaiting = new FixedWaitingThrottle(1000);
 
-        while (System.currentTimeMillis() - beginning < 10000) {
-            fixed.run((counter, elapsed) -> {
-                System.out.println("被节流的方法在执行中: elapsed=" + elapsed + ", counter=" + counter);
-            });
-        }
+        Thread.sleep(300);
+
+        boolean opened = fixedWaiting.open();
+        Assert.assertTrue(opened);
+        Assert.assertEquals(1, fixedWaiting.counter());
+
+        opened = fixedWaiting.open();
+        Assert.assertFalse(opened);
     }
 
     @Test
-    public void scheduledFixed() {
-        long beginning = System.currentTimeMillis();
+    public void debouncedThrottle() throws InterruptedException {
+        DebouncedThrottle debouncedThrottle = new DebouncedThrottle(300, 1000L);
 
-        while (System.currentTimeMillis() - beginning < 10000) {
-            scheduledFixed.run((counter, elapsed) -> {
-                System.out.println("被节流的方法在执行中: elapsed=" + elapsed + ", counter=" + counter + ", debouncedCounter=" + scheduledFixed.getDebouncedCount());
-            });
+        boolean opened = debouncedThrottle.open();
+        Assert.assertFalse(opened);
+
+        Thread.sleep(1000);
+
+        opened = debouncedThrottle.open();
+        Assert.assertTrue(opened);
+        Assert.assertEquals(1L, debouncedThrottle.counter());
+    }
+
+    @Test
+    public void debouncedCount() {
+        DebouncedThrottle debouncedThrottle = new DebouncedThrottle(300, 3000L);
+        long begin = System.currentTimeMillis();
+
+        boolean opened = debouncedThrottle.open();
+
+        while (System.currentTimeMillis() - begin < 2000) {
+            opened = debouncedThrottle.open();
         }
+
+        Assert.assertFalse(opened);
     }
 }
