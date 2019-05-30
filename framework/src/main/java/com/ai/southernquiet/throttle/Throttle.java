@@ -3,17 +3,14 @@ package com.ai.southernquiet.throttle;
 /**
  * 节流器
  */
-@SuppressWarnings("unused")
 public interface Throttle {
     /**
-     * 节流器存活了多长时间
+     * 以时间为依据打开节流器，上次打开之后必须至少节流了指定时间才能再次打开，如果打开失败返回false。
      */
-    long elapsed();
+    boolean openByTime(long threshold);
 
     /**
-     * 节流器开启计数器
+     * 以次数为依据打开节流器，上次打开之后必须至少节流了指定次数才能再次打开，如果打开失败返回false。
      */
-    long counter();
-
-    boolean open();
+    boolean openByCount(long threshold);
 }
