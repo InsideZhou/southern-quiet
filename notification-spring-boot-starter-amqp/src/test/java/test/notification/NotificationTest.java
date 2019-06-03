@@ -1,7 +1,7 @@
 package test.notification;
 
-import com.ai.southernquiet.notification.NotificationListener;
-import com.ai.southernquiet.notification.NotificationPublisher;
+import me.insidezhou.southernquiet.notification.NotificationListener;
+import me.insidezhou.southernquiet.notification.NotificationPublisher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;

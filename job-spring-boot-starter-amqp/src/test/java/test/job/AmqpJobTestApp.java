@@ -1,8 +1,8 @@
 package test.job;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.job.AmqpJobAutoConfiguration;
-import com.ai.southernquiet.job.JobProcessor;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
+import me.insidezhou.southernquiet.job.JobProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

@@ -1,6 +1,6 @@
 package test.job;
 
-import com.ai.southernquiet.job.JobEngine;
+import me.insidezhou.southernquiet.job.JobEngine;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

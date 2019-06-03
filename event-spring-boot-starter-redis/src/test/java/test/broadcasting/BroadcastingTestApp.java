@@ -1,9 +1,9 @@
 package test.broadcasting;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.event.CustomApplicationEventRedisRelay;
-import com.ai.southernquiet.event.RedisEventAutoConfiguration;
-import com.ai.southernquiet.event.RedisTemplateBuilder;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.event.CustomApplicationEventRedisRelay;
+import me.insidezhou.southernquiet.event.RedisEventAutoConfiguration;
+import me.insidezhou.southernquiet.event.RedisTemplateBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;

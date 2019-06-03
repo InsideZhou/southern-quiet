@@ -1,7 +1,7 @@
 package test.notification;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.notification.AmqpNotificationAutoConfiguration;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.boot.SpringApplication;

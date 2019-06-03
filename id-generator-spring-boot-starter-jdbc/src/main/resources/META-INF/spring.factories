@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.ai.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=me.insidezhou.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration

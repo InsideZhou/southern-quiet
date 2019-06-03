@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.ai.southernquiet.web.session.spring.SpringSessionAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=me.insidezhou.southernquiet.web.session.spring.SpringSessionAutoConfiguration

@@ -1,6 +1,6 @@
 package test;
 
-import com.ai.southernquiet.file.web.FileWebFluxAutoConfiguration;
+import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

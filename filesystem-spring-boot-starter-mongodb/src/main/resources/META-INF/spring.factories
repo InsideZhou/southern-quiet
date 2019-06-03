@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.ai.southernquiet.filesystem.MongoDbFileSystemAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=me.insidezhou.southernquiet.filesystem.MongoDbFileSystemAutoConfiguration

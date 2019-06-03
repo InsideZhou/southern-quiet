@@ -1,6 +1,6 @@
 package test;
 
-import com.ai.southernquiet.util.SnowflakeIdGenerator;
+import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

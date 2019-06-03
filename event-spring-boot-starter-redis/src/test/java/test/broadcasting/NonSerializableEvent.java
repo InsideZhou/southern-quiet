@@ -1,6 +1,6 @@
 package test.broadcasting;
 
-import com.ai.southernquiet.event.CustomApplicationEvent;
+import me.insidezhou.southernquiet.event.CustomApplicationEvent;
 
 import java.util.UUID;
 

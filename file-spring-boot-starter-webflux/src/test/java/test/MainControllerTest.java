@@ -1,9 +1,9 @@
 package test;
 
-import com.ai.southernquiet.file.web.FileWebFluxAutoConfiguration;
-import com.ai.southernquiet.file.web.controller.MainController;
-import com.ai.southernquiet.file.web.model.FileInfo;
-import com.ai.southernquiet.filesystem.FileSystem;
+import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
+import me.insidezhou.southernquiet.file.web.controller.MainController;
+import me.insidezhou.southernquiet.file.web.model.FileInfo;
+import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
 import org.junit.Before;

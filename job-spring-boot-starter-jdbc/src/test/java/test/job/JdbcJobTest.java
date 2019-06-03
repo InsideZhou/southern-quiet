@@ -1,12 +1,12 @@
 package test.job;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.job.FailedJobTable;
-import com.ai.southernquiet.job.JdbcJobAutoConfiguration;
-import com.ai.southernquiet.job.JobProcessor;
-import com.ai.southernquiet.job.JobEngine;
-import com.ai.southernquiet.job.driver.JdbcJobEngine;
-import com.ai.southernquiet.job.driver.ProcessorNotFoundException;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.job.FailedJobTable;
+import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
+import me.insidezhou.southernquiet.job.JobProcessor;
+import me.insidezhou.southernquiet.job.JobEngine;
+import me.insidezhou.southernquiet.job.driver.JdbcJobEngine;
+import me.insidezhou.southernquiet.job.driver.ProcessorNotFoundException;
 import instep.dao.sql.InstepSQL;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;

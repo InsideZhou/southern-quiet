@@ -1,10 +1,10 @@
 package test.filesystem;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.filesystem.FileSystem;
-import com.ai.southernquiet.filesystem.InvalidFileException;
-import com.ai.southernquiet.filesystem.NormalizedPath;
-import com.ai.southernquiet.filesystem.PathNotFoundException;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.filesystem.FileSystem;
+import me.insidezhou.southernquiet.filesystem.InvalidFileException;
+import me.insidezhou.southernquiet.filesystem.NormalizedPath;
+import me.insidezhou.southernquiet.filesystem.PathNotFoundException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

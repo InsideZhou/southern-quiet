@@ -46,8 +46,8 @@
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
 
 - event-spring-boot-starter-*
-- com.ai.southernquiet.event.ShouldBroadcast
-- com.ai.southernquiet.event.CustomApplicationEvent
+- me.insidezhou.southernquiet.event.ShouldBroadcast
+- me.insidezhou.southernquiet.event.CustomApplicationEvent
 
 
 ### 如何使用
