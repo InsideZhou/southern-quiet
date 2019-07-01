@@ -1,14 +1,14 @@
 package me.insidezhou.southernquiet.job.driver;
 
+import instep.dao.DaoException;
+import instep.dao.sql.*;
+import instep.dao.sql.dialect.MySQLDialect;
+import instep.dao.sql.dialect.PostgreSQLDialect;
 import me.insidezhou.southernquiet.job.FailedJobTable;
 import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobEngine;
 import me.insidezhou.southernquiet.job.JobProcessor;
 import me.insidezhou.southernquiet.util.SerializationUtils;
-import instep.dao.DaoException;
-import instep.dao.sql.*;
-import instep.dao.sql.dialect.MySQLDialect;
-import instep.dao.sql.dialect.PostgreSQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 
+@SuppressWarnings("WeakerAccess")
 public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> implements JobEngine<T> {
     private final static Logger log = LoggerFactory.getLogger(JdbcJobEngine.class);
 
@@ -207,11 +208,11 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     private Condition lastExecutionStartedAtPlusIntervalLesserThanNow(long interval) {
         Dialect dialect = failedJobTable.getDialect();
 
-        if (PostgreSQLDialect.class.isInstance(dialect)) {
+        if (dialect instanceof PostgreSQLDialect) {
             return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() +
                 "'" + interval + " SECONDS'::INTERVAL < CURRENT_TIMESTAMP");
         }
-        else if (MySQLDialect.class.isInstance(dialect)) {
+        else if (dialect instanceof MySQLDialect) {
             return Condition.Companion.plain(
                 "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
                     ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
@@ -224,11 +225,11 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     private Condition lastExecutionStartedAtPlusFailedCountIntervalLesserThanNow() {
         Dialect dialect = failedJobTable.getDialect();
 
-        if (PostgreSQLDialect.class.isInstance(dialect)) {
+        if (dialect instanceof PostgreSQLDialect) {
             return Condition.Companion.plain(failedJobTable.lastExecutionStartedAt.getName() +
                 " + ((" + failedJobTable.failureCount.getName() + " * 2) || ' SECONDS')::INTERVAL < CURRENT_TIMESTAMP");
         }
-        else if (MySQLDialect.class.isInstance(dialect)) {
+        else if (dialect instanceof MySQLDialect) {
             return Condition.Companion.plain(
                 "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
                     ", INTERVAL " + failedJobTable.failureCount.getName() + " * 2 SECOND) < CURRENT_TIMESTAMP");

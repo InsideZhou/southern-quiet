@@ -22,10 +22,10 @@ idea {
 
 subprojects {
     group = 'me.insidezhou.southernquiet'
-    version = '3.0.0'
+    version = '3.0.1'
 
     ext {
-        instepVersion = '1.0.0'
+        instepVersion = '1.0.1'
     }
 
     apply plugin: 'idea'

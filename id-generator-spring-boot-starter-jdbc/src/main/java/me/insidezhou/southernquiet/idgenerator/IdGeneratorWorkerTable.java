@@ -6,32 +6,17 @@ import instep.dao.sql.dialect.PostgreSQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class IdGeneratorWorkerTable extends Table {
     public IdGeneratorWorkerTable(String tableName) {
-        super(tableName);
+        super(tableName, "id生成器的worker记录");
     }
 
-    /**
-     * 对应id中的workerId部分
-     */
-    public IntegerColumn workerId = integer("worker_id").primary();
+    public IntegerColumn workerId = integer("worker_id").primary().comment("对应id中的workerId部分。");
+    public StringColumn workerName = varchar("worker_name", 512).comment("worker的名字，便于查看。");
+    public DateTimeColumn workerTime = instant("worker_time").comment("worker上报的时间，用于防止时间回退导致id重复。");
+    public StringColumn appId = varchar("app_id", 128).unique().comment("worker所在应用的标识，方便应用重启后获取其上次用过的workerId。");
 
-    /**
-     * worker的名字，便于查看。
-     */
-    public StringColumn workerName = varchar("worker_name", 512);
-
-    /**
-     * worker上报的时间，用于防止时间回退导致id重复。
-     */
-    public DateTimeColumn workerTime = instant("worker_time");
-
-    /**
-     * worker所在应用的标识，方便应用重启后获取其上次用过的workerId。
-     */
-    public StringColumn appId = varchar("app_id", 128).unique();
-
-    @SuppressWarnings("unused")
     public static class Cleaner {
         private final static Logger log = LoggerFactory.getLogger(Cleaner.class);
 
@@ -65,10 +50,10 @@ public class IdGeneratorWorkerTable extends Table {
 
             long interval = properties.getConsiderWorkerDowned().getSeconds();
 
-            if (PostgreSQLDialect.class.isInstance(dialect)) {
+            if (dialect instanceof PostgreSQLDialect) {
                 return Condition.Companion.plain(workerTable.workerTime.getName() + "+ INTERVAL '" + interval + " SECONDS') < CURRENT_TIMESTAMP");
             }
-            else if (MySQLDialect.class.isInstance(dialect)) {
+            else if (dialect instanceof MySQLDialect) {
                 return Condition.Companion.plain(
                     "DATE_ADD(" + workerTable.workerTime.getName() +
                         ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
