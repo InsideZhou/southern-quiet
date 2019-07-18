@@ -1,13 +1,12 @@
 package me.insidezhou.southernquiet;
 
+import me.insidezhou.southernquiet.event.EventPublisher;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
-import me.insidezhou.southernquiet.filesystem.FileSystemSupport;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
-import me.insidezhou.southernquiet.event.EventPublisher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,7 +19,6 @@ import org.springframework.util.StringUtils;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.regex.Pattern;
 
 @Configuration
 @EnableAsync
@@ -83,13 +81,6 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties("southern-quiet.framework.file-system")
-    public FileSystemProperties fileSystemProperties() {
-        return new FileSystemProperties();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     @ConfigurationProperties("southern-quiet.framework.file-system.local")
     public LocalFileSystemProperties localFileSystemProperties() {
         return new LocalFileSystemProperties();
@@ -102,6 +93,7 @@ public class FrameworkAutoConfiguration {
         return new KeyValueStoreProperties();
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class Properties {
         /**
          * 框架运行时的id，必须唯一。
@@ -126,25 +118,6 @@ public class FrameworkAutoConfiguration {
 
         public void setDefaultChannels(String[] defaultChannels) {
             this.defaultChannels = defaultChannels;
-        }
-    }
-
-    public static class FileSystemProperties {
-        /**
-         * FileSystem中合法文件名的正则表达式
-         */
-        private String nameRegex;
-
-        public String getNameRegex() {
-            return nameRegex;
-        }
-
-        public void setNameRegex(String nameRegex) {
-            this.nameRegex = nameRegex;
-
-            if (StringUtils.hasText(nameRegex)) {
-                FileSystemSupport.setNamePattern(Pattern.compile(nameRegex));
-            }
         }
     }
 

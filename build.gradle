@@ -1,26 +1,24 @@
-buildscript {
-    def path = 'buildscript.gradle'
+plugins {
+    id 'idea'
+    id 'eclipse'
+    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
 
-    if (this.name != 'southern-quiet') {
-        path = "deps/southern-quiet/buildscript.gradle"
-    }
-
-    buildscript { scriptHandler ->
-        apply from: path, to: scriptHandler
-    }
+    id 'org.jetbrains.kotlin.jvm' version '1.2.51'
+    id 'org.springframework.boot' version '2.1.6.RELEASE'
+    id "io.spring.dependency-management" version "1.0.8.RELEASE"
 }
-
-apply plugin: 'idea'
-apply plugin: 'eclipse'
 
 idea {
     project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
+        jdkName = JavaVersion.VERSION_1_8.toString()
+        languageLevel = JavaVersion.VERSION_1_8.toString()
     }
 }
 
-subprojects {
+allprojects {
     group = 'me.insidezhou.southernquiet'
     version = '3.0.1'
 
@@ -28,37 +26,33 @@ subprojects {
         instepVersion = '1.0.1'
     }
 
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    task showVersion {
+        doLast {
+            println 'Version: ' + project.version
+        }
+    }
+}
+
+subprojects {
     apply plugin: 'idea'
     apply plugin: 'eclipse'
-
     apply plugin: 'java'
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
 
-    apply plugin: 'propdeps'
-    apply plugin: 'propdeps-maven'
-    apply plugin: 'propdeps-idea'
-    apply plugin: 'propdeps-eclipse'
-
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-
-    repositories {
-        mavenLocal()
-        maven { url "https://maven.aliyun.com/nexus/content/groups/public/" }
-        maven { url "https://maven.aliyun.com/repository/spring" }
-        maven { url "https://maven.aliyun.com/repository/spring-plugin" }
-    }
-
     dependencies {
+        compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
         compileClasspath "org.springframework.boot:spring-boot-configuration-processor"
-
         testImplementation "org.springframework.boot:spring-boot-starter-test"
-    }
-
-    configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 0, 'minutes'
     }
 
     compileJava.dependsOn(processResources)
@@ -70,9 +64,21 @@ subprojects {
         options.encoding = "UTF-8"
     }
 
+    compileKotlin {
+        kotlinOptions {
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
+
+    compileTestKotlin {
+        kotlinOptions {
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
+
     jar {
         enabled = true
-        baseName = "$rootProject.name-$project.name"
+        archiveBaseName.set("$rootProject.name-$project.name")
 
         manifest {
             attributes 'Implementation-Version': version
@@ -85,7 +91,7 @@ subprojects {
     }
 
     bootJar {
-        classifier = 'boot'
+        archiveClassifier.set('boot')
 
         manifest {
             attributes 'Implementation-Version': version
@@ -93,12 +99,12 @@ subprojects {
     }
 
     task sourceJar(type: Jar) {
-        classifier = 'sources'
+        archiveClassifier.set('sources')
         from sourceSets.main.allSource
     }
 
     task docJar(type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
+        archiveClassifier.set('javadoc')
         from javadoc.destinationDir
     }
 
@@ -167,5 +173,21 @@ subprojects {
 
     signing {
         sign publishing.publications.full
+    }
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }

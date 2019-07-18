@@ -13,11 +13,9 @@ import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.ReflectionUtils;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 
 @EnableRabbit
 @Configuration
@@ -59,19 +57,16 @@ public class AmqpAutoConfiguration {
     @SuppressWarnings({"Duplicates", "SpringJavaInjectionPointsAutowiringInspection"})
     @Bean
     @ConditionalOnMissingBean
-    public RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) throws Exception {
+    public RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) {
         PropertyMapper map = PropertyMapper.get();
         RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
         map.from(rabbitProperties::determineHost).whenNonNull().to(factory::setHost);
         map.from(rabbitProperties::determinePort).to(factory::setPort);
-        map.from(rabbitProperties::determineUsername).whenNonNull()
-            .to(factory::setUsername);
-        map.from(rabbitProperties::determinePassword).whenNonNull()
-            .to(factory::setPassword);
-        map.from(rabbitProperties::determineVirtualHost).whenNonNull()
-            .to(factory::setVirtualHost);
-        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull()
-            .asInt(Duration::getSeconds).to(factory::setRequestedHeartbeat);
+        map.from(rabbitProperties::determineUsername).whenNonNull().to(factory::setUsername);
+        map.from(rabbitProperties::determinePassword).whenNonNull().to(factory::setPassword);
+        map.from(rabbitProperties::determineVirtualHost).whenNonNull().to(factory::setVirtualHost);
+        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds)
+            .to(factory::setRequestedHeartbeat);
         RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
         if (ssl.isEnabled()) {
             factory.setUseSSL(true);
@@ -82,18 +77,12 @@ public class AmqpAutoConfiguration {
             map.from(ssl::getTrustStoreType).to(factory::setTrustStoreType);
             map.from(ssl::getTrustStore).to(factory::setTrustStore);
             map.from(ssl::getTrustStorePassword).to(factory::setTrustStorePassphrase);
-            map.from(ssl::isValidateServerCertificate).to((validate) -> factory
-                .setSkipServerCertificateValidation(!validate));
-            map.from(ssl::getVerifyHostname).when(Objects::nonNull)
-                .to(factory::setEnableHostnameVerification);
-            if (ssl.getVerifyHostname() == null
-                && ReflectionUtils.findMethod(com.rabbitmq.client.ConnectionFactory.class, "enableHostnameVerification") != null
-            ) {
-                factory.setEnableHostnameVerification(true);
-            }
+            map.from(ssl::isValidateServerCertificate)
+                .to((validate) -> factory.setSkipServerCertificateValidation(!validate));
+            map.from(ssl::getVerifyHostname).to(factory::setEnableHostnameVerification);
         }
-        map.from(rabbitProperties::getConnectionTimeout).whenNonNull()
-            .asInt(Duration::toMillis).to(factory::setConnectionTimeout);
+        map.from(rabbitProperties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis)
+            .to(factory::setConnectionTimeout);
         factory.afterPropertiesSet();
         return factory;
     }

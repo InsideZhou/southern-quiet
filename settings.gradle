@@ -1,3 +1,13 @@
+pluginManagement {
+    repositories {
+        maven { url "https://repo.spring.io/plugins-release" }
+        maven {
+            url 'https://repo.spring.io/gradle-plugin'
+        }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'southern-quiet'
 include 'filesystem-spring-boot-starter-mongodb',
         'logging-spring-boot-starter-logback-filesystem',

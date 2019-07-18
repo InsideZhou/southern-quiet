@@ -14,11 +14,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 基于{@link FileSystem}的Jetty Session持久化.
  */
+@SuppressWarnings("WeakerAccess")
 public class FileSessionDataStore extends AbstractSessionDataStore {
     private FileSystem fileSystem;
     private String workingRoot; //Session持久化在FileSystem中的路径
@@ -48,9 +50,9 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
                     throw new RuntimeException(e);
                 }
             })
-            .flatMap(metas -> metas)
+            .flatMap(Function.identity())
             .filter(meta -> getByMeta(meta).getExpiry() <= now)
-            .map(meta -> meta.getName())
+            .map(PathMeta::getName)
             .collect(Collectors.toSet());
     }
 
@@ -67,7 +69,7 @@ public class FileSessionDataStore extends AbstractSessionDataStore {
     }
 
     @Override
-    public SessionData load(String id) throws Exception {
+    public SessionData doLoad(String id) throws Exception {
         Optional<? extends PathMeta> opt = fileSystem.files(workingRoot, id).findFirst();
         if (opt.isPresent()) {
             try (InputStream inputStream = fileSystem.openReadStream(opt.get().getPath())) {
