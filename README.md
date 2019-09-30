@@ -33,21 +33,25 @@
 
 - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
     
-##### JobEngine 任务引擎
-
-- job-spring-boot-starter-*
-    
 ##### IdGenerator 发号器/Id生成器
 
 - id-generator-spring-boot-starter-*
     
-##### EventBroadcasting 事件广播
+##### EventBroadcasting 事件广播 (At Most Once Message)
 
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
 
 - event-spring-boot-starter-*
 - me.insidezhou.southernquiet.event.ShouldBroadcast
 - me.insidezhou.southernquiet.event.CustomApplicationEvent
+    
+##### NotificationPublishing 通知发布 (At Least Once Message)
+
+- notification-spring-boot-starter-*
+    
+##### JobEngine 任务引擎 (Exactly Once Message)
+
+- job-spring-boot-starter-*
 
 
 ### 如何使用
