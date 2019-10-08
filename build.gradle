@@ -164,8 +164,8 @@ subprojects {
                 url isSnapshot ? snapshotsRepoUrl : releasesRepoUrl
                 name 'sonatype'
                 credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                    username = project.hasProperty('ossrhUsername') ? ossrhUsername : ''
+                    password = project.hasProperty('ossrhPassword') ? ossrhPassword : ''
                 }
             }
         }
