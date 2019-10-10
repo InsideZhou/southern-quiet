@@ -11,12 +11,12 @@ import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.Serializable;
-import java.util.stream.IntStream;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -26,6 +26,7 @@ public class NotificationTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     public static class Config {
+        @ConditionalOnMissingBean
         @Bean
         public RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
             RabbitTransactionManager manager = new RabbitTransactionManager();
@@ -39,9 +40,7 @@ public class NotificationTest {
 
     @Test
     public void dummy() {
-        IntStream.range(0, 1000).forEach(i -> {
-            notificationPublisher.publish(new StandardNotification());
-        });
+        notificationPublisher.publish(new StandardNotification());
     }
 
     public static class Listener {

@@ -125,9 +125,11 @@ public class AmqpAutoConfiguration {
         private boolean enablePublisherConfirm = false;
 
         /**
+         * 最大投递次数，包括重试次数在内，小于1的值会被强行设置为1。
+         *
          * @see RabbitProperties.Retry#getMaxAttempts()
          */
-        private int maxDeliveryAttempts = 0;
+        private int maxDeliveryAttempts = 1;
 
         public long getPublisherConfirmTimeout() {
             return publisherConfirmTimeout;

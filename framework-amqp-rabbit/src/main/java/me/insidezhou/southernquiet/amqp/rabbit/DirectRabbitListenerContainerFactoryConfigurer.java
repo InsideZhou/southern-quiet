@@ -23,7 +23,9 @@ public class DirectRabbitListenerContainerFactoryConfigurer extends AbstractRabb
     public void configure(DirectRabbitListenerContainerFactory factory, ConnectionFactory connectionFactory) {
         PropertyMapper map = PropertyMapper.get();
         RabbitProperties.DirectContainer config = getRabbitProperties().getListener().getDirect();
-        config.getRetry().setMaxAttempts(properties.getMaxDeliveryAttempts());
+        RabbitProperties.ListenerRetry retry = config.getRetry();
+        retry.setEnabled(true); //这里必须强行设置为true，否则recover机制不生效，上游的实现依赖了这个值。
+        retry.setMaxAttempts(properties.getMaxDeliveryAttempts() > 0 ? properties.getMaxDeliveryAttempts() : 1);
         configure(factory, connectionFactory, config);
         map.from(config::getConsumersPerQueue).whenNonNull().to(factory::setConsumersPerQueue);
     }
