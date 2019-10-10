@@ -17,13 +17,6 @@ public class NotificationTestApp {
     }
 
     @Bean
-    public static RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
-        RabbitTransactionManager manager = new RabbitTransactionManager();
-        manager.setConnectionFactory(connectionFactory);
-        return manager;
-    }
-
-    @Bean
     public NotificationTest.Listener listener() {
         return new NotificationTest.Listener();
     }
