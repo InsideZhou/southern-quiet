@@ -43,7 +43,7 @@ public class JdbcIdGenerator implements IdGenerator {
             properties.getWorkerIdBits(),
             properties.getLowPaddingBits(),
             properties.getEpoch(),
-            new Random(),
+            properties.isRandomSequenceStart() ? new Random() : null,
             properties.getSequenceStartRange(),
             properties.getTickAccuracy()
         );

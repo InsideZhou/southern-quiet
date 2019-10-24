@@ -78,11 +78,17 @@ public class JdbcIdGeneratorAutoConfiguration {
         private int workerIdBits = 12;
         private int lowPaddingBits = 2;
         private int sequenceStartRange = 1000;
+        private boolean randomSequenceStart = true;
 
         /**
          * 发号器的时间精度/步长，单位：毫秒。如果值为1000，则发号器每滴答（发生变化的最小时间单位）一次，时间实际过去了1秒。
          */
         private int tickAccuracy = 1000;
+
+        /**
+         * Thu Feb 01 2018 00:00:00 GMT, seconds
+         */
+        private long epoch = 1517414400L;
 
         public int getTickAccuracy() {
             return tickAccuracy;
@@ -92,10 +98,13 @@ public class JdbcIdGeneratorAutoConfiguration {
             this.tickAccuracy = tickAccuracy;
         }
 
-        /**
-         * Thu Feb 01 2018 00:00:00 GMT, seconds
-         */
-        private long epoch = 1517414400L;
+        public boolean isRandomSequenceStart() {
+            return randomSequenceStart;
+        }
+
+        public void setRandomSequenceStart(boolean randomSequenceStart) {
+            this.randomSequenceStart = randomSequenceStart;
+        }
 
         public int getSequenceStartRange() {
             return sequenceStartRange;
