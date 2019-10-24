@@ -3,10 +3,11 @@ package me.insidezhou.southernquiet.util;
 import java.util.Random;
 
 /**
- * 基于twiiter snowflake算法、64bit、秒级精度的发号器
+ * 基于twiiter snowflake算法、64bit、默认秒级精度的发号器
  * <p>
  * 0 - timestamp - highPadding - worker - lowPadding - sequence
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class SnowflakeIdGenerator implements IdGenerator {
     public final static long EPOCH = 1517414400L; //Thu Feb 01 2018 00:00:00 GMT, seconds
 
@@ -16,6 +17,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
     public final static int LowPaddingBits = 0;
 
     public final static int SequenceStartRange = 0;
+
+    public final static int TickAccuracy = 1000;
 
     public static int maxIntegerAtBits(int bits) {
         return ~(-1 << bits);
@@ -31,12 +34,16 @@ public class SnowflakeIdGenerator implements IdGenerator {
 
     private int workerId;
 
-    public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, Random random, int sequenceStartRange) {
+    private int currentTimeAccuracy;
+
+    public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, Random random, int sequenceStartRange, int tickAccuracy) {
         sequenceBits = 63 - timestampBits - highPaddingBits - workerIdBits - lowPaddingBits;
         currentTimestampBits = timestampBits;
         currentHighPaddingBits = highPaddingBits;
 
-        maxWorkerId = maxIntegerAtBits(workerIdBits);
+        currentTimeAccuracy = tickAccuracy;
+
+        int maxWorkerId = maxIntegerAtBits(workerIdBits);
         maxSequenceValue = maxIntegerAtBits(sequenceBits);
         workerIdShift = sequenceBits + lowPaddingBits;
         timestampShift = sequenceBits + lowPaddingBits + workerIdBits + highPaddingBits;
@@ -60,7 +67,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             lowPaddingBits,
             EPOCH,
             null,
-            SequenceStartRange);
+            SequenceStartRange,
+            TickAccuracy);
     }
 
     public SnowflakeIdGenerator(int workerId, Random random, int sequenceStartRange) {
@@ -71,7 +79,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             LowPaddingBits,
             EPOCH,
             random,
-            sequenceStartRange);
+            sequenceStartRange,
+            TickAccuracy);
     }
 
     public SnowflakeIdGenerator(int workerId, long epoch) {
@@ -82,7 +91,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             LowPaddingBits,
             epoch,
             null,
-            SequenceStartRange);
+            SequenceStartRange,
+            TickAccuracy);
     }
 
     public SnowflakeIdGenerator(int workerId) {
@@ -93,17 +103,15 @@ public class SnowflakeIdGenerator implements IdGenerator {
             LowPaddingBits,
             EPOCH,
             null,
-            SequenceStartRange);
+            SequenceStartRange,
+            TickAccuracy);
     }
 
+    private int maxSequenceValue;
 
-    private int maxWorkerId = -1;
+    private int workerIdShift;
 
-    private int maxSequenceValue = -1;
-
-    private int workerIdShift = -1;
-
-    private int timestampShift = -1;
+    private int timestampShift;
 
     private int sequence = 0;
 
@@ -159,6 +167,6 @@ public class SnowflakeIdGenerator implements IdGenerator {
     }
 
     private long timeGen() {
-        return System.currentTimeMillis() / 1000;
+        return System.currentTimeMillis() / currentTimeAccuracy;
     }
 }

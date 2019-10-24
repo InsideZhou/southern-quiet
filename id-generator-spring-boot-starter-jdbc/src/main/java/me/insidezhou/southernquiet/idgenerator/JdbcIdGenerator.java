@@ -1,10 +1,10 @@
 package me.insidezhou.southernquiet.idgenerator;
 
+import instep.dao.DaoException;
+import instep.dao.sql.*;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
-import instep.dao.DaoException;
-import instep.dao.sql.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -44,7 +44,8 @@ public class JdbcIdGenerator implements IdGenerator {
             properties.getLowPaddingBits(),
             properties.getEpoch(),
             new Random(),
-            properties.getSequenceStartRange()
+            properties.getSequenceStartRange(),
+            properties.getTickAccuracy()
         );
     }
 

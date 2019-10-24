@@ -1,12 +1,12 @@
 package me.insidezhou.southernquiet.idgenerator;
 
-import me.insidezhou.southernquiet.util.IdGenerator;
-import me.insidezhou.southernquiet.util.Metadata;
-import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
 import instep.springboot.SQLAutoConfiguration;
+import me.insidezhou.southernquiet.util.IdGenerator;
+import me.insidezhou.southernquiet.util.Metadata;
+import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -78,6 +78,19 @@ public class JdbcIdGeneratorAutoConfiguration {
         private int workerIdBits = 12;
         private int lowPaddingBits = 2;
         private int sequenceStartRange = 1000;
+
+        /**
+         * 发号器的时间精度/步长，单位：毫秒。如果值为1000，则发号器每滴答（发生变化的最小时间单位）一次，时间实际过去了1秒。
+         */
+        private int tickAccuracy = 1000;
+
+        public int getTickAccuracy() {
+            return tickAccuracy;
+        }
+
+        public void setTickAccuracy(int tickAccuracy) {
+            this.tickAccuracy = tickAccuracy;
+        }
 
         /**
          * Thu Feb 01 2018 00:00:00 GMT, seconds
