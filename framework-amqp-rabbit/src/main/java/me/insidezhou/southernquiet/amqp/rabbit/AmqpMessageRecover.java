@@ -29,7 +29,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         this.amqpAdmin = amqpAdmin;
     }
 
-    @SuppressWarnings("Duplicates")
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void recover(Message message, Throwable cause) {
         MessageProperties messageProperties = message.getMessageProperties();

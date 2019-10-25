@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.amqp.rabbit;
 
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
@@ -125,6 +126,11 @@ public class AmqpAutoConfiguration {
         private boolean enablePublisherConfirm = false;
 
         /**
+         * 消费者应答模式。
+         */
+        private AcknowledgeMode acknowledgeMode = AcknowledgeMode.AUTO;
+
+        /**
          * 最大投递次数，包括重试次数在内，小于1的值会被强行设置为1。
          *
          * @see RabbitProperties.Retry#getMaxAttempts()
@@ -145,6 +151,14 @@ public class AmqpAutoConfiguration {
 
         public void setEnablePublisherConfirm(boolean enablePublisherConfirm) {
             this.enablePublisherConfirm = enablePublisherConfirm;
+        }
+
+        public AcknowledgeMode getAcknowledgeMode() {
+            return acknowledgeMode;
+        }
+
+        public void setAcknowledgeMode(AcknowledgeMode acknowledgeMode) {
+            this.acknowledgeMode = acknowledgeMode;
         }
 
         public Duration getInitialExpiration() {

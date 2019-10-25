@@ -1,12 +1,12 @@
 package me.insidezhou.southernquiet.notification.driver;
 
+import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.util.Tuple;
-import me.insidezhou.southernquiet.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.BindingBuilder;
@@ -26,7 +26,6 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -45,7 +44,6 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private AmqpAutoConfiguration.Properties amqpProperties;
     private AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
 
-    private PlatformTransactionManager transactionManager;
     private RabbitProperties rabbitProperties;
     private ApplicationContext applicationContext;
 
@@ -54,7 +52,6 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                                            AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
-                                           PlatformTransactionManager transactionManager,
                                            RabbitConnectionFactoryBean factoryBean,
                                            ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
                                            ApplicationContext applicationContext
@@ -64,13 +61,11 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         this.amqpNotificationProperties = amqpNotificationProperties;
         this.amqpProperties = amqpProperties;
         this.rabbitProperties = rabbitProperties;
-        this.transactionManager = transactionManager;
         this.applicationContext = applicationContext;
 
         this.messageConverter = publisher.getMessageConverter();
 
         this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
-        cachingConnectionFactory.setPublisherConfirms(false);
     }
 
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
@@ -96,10 +91,8 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             );
 
             DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
-            if (listenerAnnotation.isTransactionEnabled()) {
-                factory.setTransactionManager(transactionManager);
-            }
-            factory.setMessageConverter(publisher.getMessageConverter());
+            factory.setMessageConverter(messageConverter);
+            factory.setAcknowledgeMode(amqpProperties.getAcknowledgeMode());
             containerFactoryConfigurer.configure(factory, cachingConnectionFactory);
 
             registrar.registerEndpoint(endpoint, factory);

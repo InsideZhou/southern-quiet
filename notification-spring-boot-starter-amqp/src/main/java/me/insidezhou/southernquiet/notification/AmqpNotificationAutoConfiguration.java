@@ -64,7 +64,6 @@ public class AmqpNotificationAutoConfiguration {
         AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
         AmqpAutoConfiguration.Properties amqpProperties,
         RabbitProperties rabbitProperties,
-        PlatformTransactionManager transactionManager,
         RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
         ApplicationContext applicationContext
@@ -75,7 +74,6 @@ public class AmqpNotificationAutoConfiguration {
             amqpNotificationProperties,
             amqpProperties,
             rabbitProperties,
-            transactionManager,
             factoryBean,
             connectionNameStrategy,
             applicationContext

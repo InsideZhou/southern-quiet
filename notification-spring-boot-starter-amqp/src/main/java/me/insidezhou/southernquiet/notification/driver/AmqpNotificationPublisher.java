@@ -44,8 +44,8 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
         this.properties = properties;
         this.enablePublisherConfirm = enablePublisherConfirm;
 
-        ConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
-        ((CachingConnectionFactory) connectionFactory).setPublisherConfirms(enablePublisherConfirm);
+        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
+        connectionFactory.setPublisherConfirms(enablePublisherConfirm);
 
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter);
