@@ -22,10 +22,11 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
-import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -35,7 +36,7 @@ import java.util.*;
 public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
-    private MessageConverter messageConverter;
+    private SmartMessageConverter messageConverter;
     private CachingConnectionFactory cachingConnectionFactory;
 
     private List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
@@ -111,20 +112,21 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
         declareExchangeAndQueue(listener, listenerDefaultName);
 
+        Class<?> notificationClass = listener.notification();
+        ParameterizedTypeReference<?> typeReference = ParameterizedTypeReference.forType(notificationClass);
+
         endpoint.setMessageListener(message -> {
-            Object notification = messageConverter.fromMessage(message);
+            Object notification = messageConverter.fromMessage(message, typeReference);
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
-                    Class<?> cls = parameter.getType();
-
-                    if (cls.isInstance(notification)) {
+                    if (notificationClass.isInstance(notification)) {
                         return notification;
                     }
-                    else if (cls.isInstance(listener)) {
+                    else if (notificationClass.isInstance(listener)) {
                         return listener;
                     }
 
-                    throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：" + parameter.toString());
+                    throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：parameter=" + parameter.getClass() + ", notification=" + notificationClass);
                 })
                 .toArray();
 

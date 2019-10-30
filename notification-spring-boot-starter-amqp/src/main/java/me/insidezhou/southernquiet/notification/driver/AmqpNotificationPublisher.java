@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 
@@ -24,14 +25,14 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private RabbitTemplate rabbitTemplate;
-    private MessageConverter messageConverter;
+    private SmartMessageConverter messageConverter;
     private AmqpNotificationAutoConfiguration.Properties notificationProperties;
     private AmqpAutoConfiguration.Properties properties;
 
     private boolean enablePublisherConfirm;
 
     public AmqpNotificationPublisher(
-        MessageConverter messageConverter,
+        SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
@@ -63,7 +64,7 @@ public class AmqpNotificationPublisher<N extends Serializable> implements Notifi
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public MessageConverter getMessageConverter() {
+    public SmartMessageConverter getMessageConverter() {
         return messageConverter;
     }
 
