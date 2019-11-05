@@ -117,18 +117,6 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
         endpoint.setMessageListener(message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
-            Object[] parameters = Arrays.stream(method.getParameters())
-                .map(parameter -> {
-                    if (notificationClass.isInstance(notification)) {
-                        return notification;
-                    }
-                    else if (notificationClass.isInstance(listener)) {
-                        return listener;
-                    }
-
-                    throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：parameter=" + parameter.getClass() + ", notification=" + notificationClass);
-                })
-                .toArray();
 
             if (log.isDebugEnabled()) {
                 log.debug(
@@ -141,6 +129,19 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                     message
                 );
             }
+
+            Object[] parameters = Arrays.stream(method.getParameters())
+                .map(parameter -> {
+                    if (notificationClass.isInstance(notification)) {
+                        return notification;
+                    }
+                    else if (notificationClass.isInstance(listener)) {
+                        return listener;
+                    }
+
+                    throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：parameter=" + parameter.getClass() + ", notification=" + notificationClass);
+                })
+                .toArray();
 
             try {
                 method.invoke(bean, parameters);
