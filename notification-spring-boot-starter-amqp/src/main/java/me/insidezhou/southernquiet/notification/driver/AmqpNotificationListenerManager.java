@@ -132,10 +132,12 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
-                    if (notificationClass.isInstance(notification)) {
+                    Class<?> parameterClass = parameter.getType();
+
+                    if (parameterClass.isInstance(notification)) {
                         return notification;
                     }
-                    else if (notificationClass.isInstance(listener)) {
+                    else if (parameterClass.isInstance(listener)) {
                         return listener;
                     }
 

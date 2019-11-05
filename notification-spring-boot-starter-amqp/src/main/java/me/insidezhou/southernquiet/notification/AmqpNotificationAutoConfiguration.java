@@ -8,10 +8,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
@@ -37,7 +35,7 @@ public class AmqpNotificationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AmqpNotificationPublisher amqpNotificationPublisher(
-        @Autowired(required = false) SmartMessageConverter messageConverter,
+        SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
@@ -45,7 +43,7 @@ public class AmqpNotificationAutoConfiguration {
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
         return new AmqpNotificationPublisher(
-            null == messageConverter ? new Jackson2JsonMessageConverter() : messageConverter,
+            messageConverter,
             notificationProperties,
             properties,
             rabbitProperties,

@@ -12,10 +12,8 @@ import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFacto
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -38,7 +36,7 @@ public class AmqpJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpJobEngine amqpJobEngine(@Autowired(required = false) MessageConverter messageConverter,
+    public AmqpJobEngine amqpJobEngine(MessageConverter messageConverter,
                                        AmqpAdmin amqpAdmin,
                                        Properties properties,
                                        RabbitProperties rabbitProperties,
@@ -46,7 +44,7 @@ public class AmqpJobAutoConfiguration {
                                        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
         return new AmqpJobEngine(
-            null == messageConverter ? new Jackson2JsonMessageConverter() : messageConverter,
+            messageConverter,
             amqpAdmin,
             properties,
             rabbitProperties,
@@ -58,7 +56,7 @@ public class AmqpJobAutoConfiguration {
     @Bean(AmqpJobListenerContainerFactory)
     @ConditionalOnMissingBean
     public DirectRabbitListenerContainerFactory amqpJobListenerContainerFactory(
-        @Autowired(required = false) MessageConverter messageConverter,
+        MessageConverter messageConverter,
         AmqpAutoConfiguration.Properties amqpProperties,
         AmqpJobAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
@@ -82,7 +80,7 @@ public class AmqpJobAutoConfiguration {
         );
 
         DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
-        factory.setMessageConverter(null == messageConverter ? new Jackson2JsonMessageConverter() : messageConverter);
+        factory.setMessageConverter(messageConverter);
         factory.setAcknowledgeMode(amqpProperties.getAcknowledgeMode());
         containerFactoryConfigurer.configure(factory, cachingConnectionFactory);
 
