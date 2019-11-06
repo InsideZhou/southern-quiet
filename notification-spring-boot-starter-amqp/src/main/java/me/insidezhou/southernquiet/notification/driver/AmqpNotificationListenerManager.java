@@ -148,6 +148,11 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             try {
                 method.invoke(bean, parameters);
             }
+            catch (RuntimeException e) {
+                log.error("通知处理器抛出异常", e);
+
+                throw e;
+            }
             catch (Exception e) {
                 throw new RuntimeException(e);
             }

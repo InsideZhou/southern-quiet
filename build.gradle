@@ -19,7 +19,7 @@ idea {
 
 allprojects {
     group = 'me.insidezhou.southernquiet'
-    version = '4.0.2'
+    version = '4.0.3'
 
     ext {
         instepVersion = '1.0.1'
