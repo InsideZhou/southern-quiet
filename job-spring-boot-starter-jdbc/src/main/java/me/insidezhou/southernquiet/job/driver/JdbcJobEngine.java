@@ -4,6 +4,7 @@ import instep.dao.DaoException;
 import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
+import instep.dao.sql.dialect.SQLServerDialect;
 import me.insidezhou.southernquiet.job.FailedJobTable;
 import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobEngine;
@@ -60,10 +61,11 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
     public void arrange(T job) {
         Instant now = Instant.now();
 
-        JobCreated<T> jobCreated = instepSQL.transaction(context -> {
-            JobCreated<T> result = new JobCreated<>();
+        JobCreated<T> jobCreated;
+        try {
+            jobCreated = instepSQL.transaction(context -> {
+                JobCreated<T> result = new JobCreated<>();
 
-            try {
                 SQLPlan plan = failedJobTable.insert()
                     .addValue(failedJobTable.payload, serialize(job))
                     .addValue(failedJobTable.failureCount, 0)
@@ -72,15 +74,17 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
 
                 Long id = Long.parseLong(instepSQL.executor().executeScalar(plan));
                 result.setId(id);
-            }
-            catch (DaoException e) {
-                throw new RuntimeException(e);
-            }
+                result.setProcessor(getProcessor(job)); //放在同步的位置，以便调用端可以方便的感知到任务创建失败异常。
 
-            result.setProcessor(getProcessor(job)); //放在同步的位置，以便调用端可以方便的感知到任务创建失败异常。
-
-            return result;
-        });
+                return result;
+            });
+        }
+        catch (ProcessorNotFoundException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         asyncRunner.run(() -> {
             currentJobId.set(jobCreated.getId());
@@ -119,69 +123,64 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
         Long jobId = currentJobId.get();
         currentJobId.set(null);
 
-        Exception exception = instepSQL.transaction(context -> {
+        instepSQL.transaction(context -> {
+            SQLPlan plan = failedJobTable.update()
+                .set(failedJobTable.workingStatus, WorkingStatus.Done)
+                .set(failedJobTable.lastExecutionStartedAt, now)
+                .whereKey(jobId);
+
+            int rowAffected = instepSQL.executor().executeUpdate(plan);
+            if (1 != rowAffected) {
+                return new RuntimeException(String.format("任务在处理前，任务状态更新结果不正确，jobId=%s，rowAffected=%s", jobId, rowAffected));
+            }
+
             try {
-                SQLPlan plan = failedJobTable.update()
-                    .set(failedJobTable.workingStatus, WorkingStatus.Done)
-                    .set(failedJobTable.lastExecutionStartedAt, now)
-                    .whereKey(jobId);
-
-                int rowAffected = instepSQL.executor().executeUpdate(plan);
-                if (1 != rowAffected) {
-                    return new RuntimeException(String.format("任务在处理前，任务状态更新结果不正确，jobId=%s，rowAffected=%s", jobId, rowAffected));
-                }
-
                 processor.process(job);
             }
             catch (Exception e) {
-                return e;
+                context.abort(e);
             }
 
             return null;
         });
 
-        if (null == exception) {
-            SQLPlan plan = failedJobTable.delete().whereKey(jobId);
-            instepSQL.executor().execute(plan);
-        }
-        else {
-            throw exception;
-        }
+        SQLPlan plan = failedJobTable.delete().whereKey(jobId);
+        instepSQL.executor().execute(plan);
     }
 
     public void retryFailedJob() {
-        try {
-            SQLPlan plan = failedJobTable.select()
-                .where(
-                    ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
-                    ColumnExtensionKt.isNull(failedJobTable.workingStatus),
-                    null == properties.getFailedJobRetryInterval() ? lastExecutionStartedAtPlusFailedCountIntervalLesserThanNow() :
-                        lastExecutionStartedAtPlusIntervalLesserThanNow(properties.getFailedJobRetryInterval().getSeconds())
-                )
-                .limit(1)
-                .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
+        SQLPlan plan = failedJobTable.select()
+            .where(
+                ColumnExtensionKt.gt(failedJobTable.failureCount, 0),
+                ColumnExtensionKt.isNull(failedJobTable.workingStatus),
+                null == properties.getFailedJobRetryInterval() ? lastExecutionStartedAtPlusFailedCountIntervalLesserThanNow() :
+                    lastExecutionStartedAtPlusIntervalLesserThanNow(properties.getFailedJobRetryInterval().getSeconds())
+            )
+            .limit(1)
+            .orderBy(ColumnExtensionKt.asc(failedJobTable.lastExecutionStartedAt)).debug();
 
-            List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
-            if (rowList.size() > 0) {
-                TableRow row = rowList.get(0);
+        List<TableRow> rowList = instepSQL.executor().execute(plan, TableRow.class);
+        if (rowList.size() > 0) {
+            TableRow row = rowList.get(0);
 
-                Long jobId = row.getLong(failedJobTable.id);
+            Long jobId = row.getLong(failedJobTable.id);
 
-                plan = failedJobTable.update()
-                    .set(failedJobTable.workingStatus, WorkingStatus.Retry)
-                    .where(ColumnExtensionKt.isNull(failedJobTable.workingStatus))
-                    .whereKey(jobId).debug();
+            plan = failedJobTable.update()
+                .set(failedJobTable.workingStatus, WorkingStatus.Retry)
+                .where(ColumnExtensionKt.isNull(failedJobTable.workingStatus))
+                .whereKey(jobId).debug();
 
-                if (instepSQL.executor().executeUpdate(plan) > 0) {
-                    T job = deserialize(row.get(failedJobTable.payload));
-                    currentJobId.set(jobId);
+            if (instepSQL.executor().executeUpdate(plan) > 0) {
+                T job = deserialize(row.get(failedJobTable.payload));
+                currentJobId.set(jobId);
 
+                try {
                     exec(job, getProcessor(job));
                 }
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -217,6 +216,10 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
                 "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
                     ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
         }
+        else if (dialect instanceof SQLServerDialect) {
+            return Condition.Companion.plain(
+                "DATEADD(second, " + interval + "," + failedJobTable.lastExecutionStartedAt.getName() + ") < CURRENT_TIMESTAMP");
+        }
         else {
             throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
         }
@@ -233,6 +236,10 @@ public class JdbcJobEngine<T extends Serializable> extends AbstractJobEngine<T> 
             return Condition.Companion.plain(
                 "DATE_ADD(" + failedJobTable.lastExecutionStartedAt.getName() +
                     ", INTERVAL " + failedJobTable.failureCount.getName() + " * 2 SECOND) < CURRENT_TIMESTAMP");
+        }
+        else if (dialect instanceof SQLServerDialect) {
+            return Condition.Companion.plain(
+                "DATEADD(second, " + failedJobTable.failureCount.getName() + " * 2," + failedJobTable.lastExecutionStartedAt.getName() + ") < CURRENT_TIMESTAMP");
         }
         else {
             throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());

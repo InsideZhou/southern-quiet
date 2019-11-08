@@ -1,15 +1,15 @@
 package test.job;
 
-import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.job.FailedJobTable;
-import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
-import me.insidezhou.southernquiet.job.JobProcessor;
-import me.insidezhou.southernquiet.job.JobEngine;
-import me.insidezhou.southernquiet.job.driver.JdbcJobEngine;
-import me.insidezhou.southernquiet.job.driver.ProcessorNotFoundException;
 import instep.dao.sql.InstepSQL;
 import instep.springboot.CoreAutoConfiguration;
 import instep.springboot.SQLAutoConfiguration;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.job.FailedJobTable;
+import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
+import me.insidezhou.southernquiet.job.JobEngine;
+import me.insidezhou.southernquiet.job.JobProcessor;
+import me.insidezhou.southernquiet.job.driver.JdbcJobEngine;
+import me.insidezhou.southernquiet.job.driver.ProcessorNotFoundException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,10 @@ public class JdbcJobTest {
             return new JobProcessor<JobException>() {
                 @Override
                 public void process(JobException job) throws Exception {
-                    throw job;
+
+                    if (job.getFailureCount() < 1) throw job;
+
+                    System.out.println(String.format("JobException is done after %s failures on Thread(%s)", job.getFailureCount(), Thread.currentThread().getId()));
                 }
 
                 @Override

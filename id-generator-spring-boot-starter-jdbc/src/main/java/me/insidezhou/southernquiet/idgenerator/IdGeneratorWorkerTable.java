@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.idgenerator;
 import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
+import instep.dao.sql.dialect.SQLServerDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,10 @@ public class IdGeneratorWorkerTable extends Table {
                 return Condition.Companion.plain(
                     "DATE_ADD(" + workerTable.workerTime.getName() +
                         ", INTERVAL " + interval + " SECOND) < CURRENT_TIMESTAMP");
+            }
+            else if (dialect instanceof SQLServerDialect) {
+                return Condition.Companion.plain(
+                    "DATEADD(second, " + interval + "," + workerTable.workerTime.getName() + ") < CURRENT_TIMESTAMP");
             }
             else {
                 throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
