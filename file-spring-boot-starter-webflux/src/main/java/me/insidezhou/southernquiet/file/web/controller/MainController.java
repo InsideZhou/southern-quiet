@@ -194,8 +194,8 @@ public class MainController {
     }
 
     @SuppressWarnings("MVCPathVariableInspection")
-    @GetMapping("image/{id}/{scale}")
-    public Flux<DataBuffer> image(@PathVariable String id, ImageScale scale, ServerHttpResponse response) {
+    @GetMapping(value = {"image/{id}/{scale}", "image/{id}"})
+    public Flux<DataBuffer> image(@PathVariable String id, @RequestParam(required = false) ImageScale scale, ServerHttpResponse response) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) throw new NotFoundException();

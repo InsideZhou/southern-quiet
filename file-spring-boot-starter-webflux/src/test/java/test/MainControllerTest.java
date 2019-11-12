@@ -153,7 +153,7 @@ public class MainControllerTest {
         FileInfo fileInfo = uploadAssert(builder, "upload");
 
         EntityExchangeResult<byte[]> result = client.get()
-            .uri("/image/{hash}/300", fileInfo.getId())
+            .uri("/image/{hash}", fileInfo.getId())
             .exchange()
             .expectStatus().is2xxSuccessful()
             .expectHeader().contentTypeCompatibleWith(MediaType.IMAGE_PNG)
