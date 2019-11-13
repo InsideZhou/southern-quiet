@@ -64,7 +64,6 @@ subprojects {
 
     jar {
         enabled = true
-        archiveBaseName.set("$rootProject.name-$project.name")
 
         manifest {
             attributes 'Implementation-Version': version
