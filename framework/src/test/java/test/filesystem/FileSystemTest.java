@@ -37,11 +37,15 @@ public class FileSystemTest {
     @Test
     public void splitString() {
         Assert.assertArrayEquals(new String[]{"name"}, "name".split("/"));
+        Assert.assertArrayEquals(new String[]{}, "/".split("/"));
+        Assert.assertArrayEquals(new String[]{""}, "".split("/"));
     }
 
     @Test
     public void joinString() {
-        Assert.assertArrayEquals(new String[]{"name"}, "name".split("/"));
+        Assert.assertEquals("name", String.join("/", "name"));
+        Assert.assertEquals("/", String.join("/", "/"));
+        Assert.assertEquals("//name", String.join("/", "/", "name"));
     }
 
     @Test
@@ -56,7 +60,7 @@ public class FileSystemTest {
         Assert.assertEquals("/", normalizedPath.toString());
 
         normalizedPath = new NormalizedPath("//test////hello.text/");
-        Assert.assertEquals(normalizedPath.toString(), "/test/hello.text");
+        Assert.assertEquals("/test/hello.text", normalizedPath.toString());
 
         Assert.assertTrue("/".split("/").length == 0);
         Assert.assertTrue("/abc".split("/").length == 2);
@@ -68,7 +72,7 @@ public class FileSystemTest {
 
         normalizedPath = new NormalizedPath("/");
         Assert.assertEquals("", normalizedPath.getParent());
-        Assert.assertEquals("", normalizedPath.getName());
+        Assert.assertEquals("/", normalizedPath.getName());
 
         normalizedPath = new NormalizedPath("/hello.text");
         Assert.assertEquals("/", normalizedPath.getParent());

@@ -370,14 +370,20 @@ public class MongoDbFileSystem implements FileSystem {
     private MongoPathMeta createAndGetDirectory(NormalizedPath normalizedPath) {
         MongoPathMeta meta = queryPathMeta(normalizedPath);
         if (null != meta) {
-            if (!meta.isDirectory())
+            if (!meta.isDirectory()) {
                 throw new RuntimeException(String.format("该路径%s指向一个已经存在的文件。", normalizedPath.getName()));
+            }
 
             return meta;
         }
 
-        createAndGetDirectory(normalizedPath.getParentPath());
         meta = new MongoPathMeta(normalizedPath, null);
+
+        if (!NormalizedPath.ROOT.equals(normalizedPath)) {
+            MongoPathMeta parent = createAndGetDirectory(normalizedPath.getParentPath());
+            meta.setParentId(parent.getId());
+        }
+
         mongoOperations.insert(meta, pathCollection);
 
         return meta;
@@ -391,7 +397,13 @@ public class MongoDbFileSystem implements FileSystem {
         if (null == file) {
             MongoPathMeta directory = createAndGetDirectory(normalizedPath.getParentPath());
             file = new MongoPathMeta(normalizedPath, stream);
+            file.setId(ObjectId.get().toString());
             file.setParentId(directory.getId());
+
+            Instant now = Instant.now();
+            file.setCreationTime(now);
+            file.setLastModifiedTime(now);
+            file.setLastAccessTime(now);
         }
         else if (file.isDirectory()) {
             throw new InvalidFileException(normalizedPath.toString());

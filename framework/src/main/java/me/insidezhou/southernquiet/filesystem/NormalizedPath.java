@@ -4,7 +4,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static me.insidezhou.southernquiet.filesystem.FileSystem.PATH_SEPARATOR_STRING;
 
@@ -16,43 +17,48 @@ import static me.insidezhou.southernquiet.filesystem.FileSystem.PATH_SEPARATOR_S
 public class NormalizedPath implements Serializable {
     private final static long serialVersionUID = -8700923055584230554L;
 
-    public final static NormalizedPath root = new NormalizedPath("");
+    public final static NormalizedPath ROOT = new NormalizedPath(PATH_SEPARATOR_STRING);
 
     public NormalizedPath(String path) {
-        if (!StringUtils.hasText(path)) return;
-        if ("".equalsIgnoreCase(path)) return;
-
-        String p = path.replace("\\", PATH_SEPARATOR_STRING);
-
-        String[] pathElements = Stream.of(p.split(PATH_SEPARATOR_STRING))
-            .filter(item -> StringUtils.hasText(item))
-            .toArray(String[]::new);
-
-        if (0 == pathElements.length) return;
-        if (1 == pathElements.length) {
-            this.setName(pathElements[0]);
-            return;
-        }
-
-        int lastIndex = pathElements.length - 1;
-        this.setParentNames(Arrays.copyOf(pathElements, lastIndex));
-        this.setName(pathElements[lastIndex]);
+        init(path);
     }
 
     public NormalizedPath(String[] pathElements) {
-        if (0 == pathElements.length) return;
+        if (0 == pathElements.length) {
+            init(PATH_SEPARATOR_STRING);
+            return;
+        }
 
-        int lastIndex = pathElements.length - 1;
-        this.setParentNames(Arrays.copyOf(pathElements, lastIndex));
-        this.setName(pathElements[lastIndex]);
+        init(String.join(PATH_SEPARATOR_STRING, pathElements));
+    }
+
+    private void init(String path) {
+        List<String> pathList = Arrays.stream(path.split(PATH_SEPARATOR_STRING))
+            .filter(p -> !StringUtils.isEmpty(p))
+            .collect(Collectors.toList());
+
+        if (0 == pathList.size()) {
+            name = PATH_SEPARATOR_STRING;
+        }
+        else if (1 == pathList.size()) {
+            this.setParentNames(new String[]{PATH_SEPARATOR_STRING});
+            name = pathList.get(0);
+        }
+        else {
+            pathList.add(0, PATH_SEPARATOR_STRING);
+
+            int lastIndex = pathList.size() - 1;
+            this.setName(pathList.get(lastIndex));
+            this.setParentNames(pathList.subList(0, lastIndex).toArray(new String[0]));
+        }
     }
 
     /**
-     * 路径父级的名称集合。当前路径是根路径或一级路径时，为空集合。
+     * 路径父级的名称集合。当前路径是根路径时，为空集合，否则第一个元素为{@link FileSystem#PATH_SEPARATOR_STRING}。
      */
     private String[] parentNames = new String[0];
     /**
-     * 路径名称。当前路径是根路径时，为空字符串。
+     * 路径名称。当前路径是根路径时，为{@link FileSystem#PATH_SEPARATOR_STRING}。
      */
     private String name = "";
 
@@ -75,11 +81,11 @@ public class NormalizedPath implements Serializable {
     public String getParent() {
         switch (parentNames.length) {
             case 0:
-                return StringUtils.isEmpty(name) ? "" : PATH_SEPARATOR_STRING;
+                return "";
             case 1:
-                return PATH_SEPARATOR_STRING + parentNames[0];
+                return parentNames[0];
             default:
-                return PATH_SEPARATOR_STRING + String.join(PATH_SEPARATOR_STRING, parentNames);
+                return String.join(PATH_SEPARATOR_STRING, parentNames).substring(1);
         }
     }
 
@@ -94,8 +100,14 @@ public class NormalizedPath implements Serializable {
      */
     @Override
     public String toString() {
-        String parent = getParent();
-        return parent.equals(PATH_SEPARATOR_STRING) ? PATH_SEPARATOR_STRING + name : parent + PATH_SEPARATOR_STRING + name;
+        switch (parentNames.length) {
+            case 0:
+                return name;
+            case 1:
+                return PATH_SEPARATOR_STRING + name;
+            default:
+                return String.join(PATH_SEPARATOR_STRING, parentNames).substring(1) + PATH_SEPARATOR_STRING + name;
+        }
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
