@@ -125,7 +125,7 @@ public class FrameworkAutoConfiguration {
         /**
          * FileSystem默认驱动在本地文件系统中的实际路径
          */
-        private String workingRoot = "${user.home}/sq_filesystem";
+        private String workingRoot = "${user.home}/.SQ_FILESYSTEM";
 
         public String getWorkingRoot() {
             return workingRoot;
