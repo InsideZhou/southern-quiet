@@ -5,5 +5,5 @@ pipelines:
     - step:
         script:
           - openssl aes-256-cbc -pass pass:$opensslPassword -in private-key.gpg.enc -out private-key.gpg -d
-          - gradle publishFullPToSR -Psigning.keyId=A5E6CDB4 -Psigning.password=$signPassword -Psigning.secretKeyRingFile=$BUILD_DIR/private-key.gpg -PossrhUsername=$ossrhUsername -PossrhPassword=$ossrhPassword
-          - rm ./private-key.gpg
+          - gradle publishFullPToSR -Psigning.keyId=A5E6CDB4 -Psigning.password=$signPassword -Psigning.secretKeyRingFile=$BITBUCKET_CLONE_DIR/private-key.gpg -PossrhUsername=$ossrhUsername -PossrhPassword=$ossrhPassword
+          - rm $BITBUCKET_CLONE_DIR/private-key.gpg
