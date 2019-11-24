@@ -26,6 +26,8 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
         super(new NormalizedPath(path), null);
     }
 
+    public MongoPathMeta() {}
+
     @Override
     public MongoPathMeta clone() {
         try {

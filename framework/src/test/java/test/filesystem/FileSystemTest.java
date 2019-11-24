@@ -1,10 +1,7 @@
 package test.filesystem;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.filesystem.FileSystem;
-import me.insidezhou.southernquiet.filesystem.InvalidFileException;
-import me.insidezhou.southernquiet.filesystem.NormalizedPath;
-import me.insidezhou.southernquiet.filesystem.PathNotFoundException;
+import me.insidezhou.southernquiet.filesystem.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,6 +16,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @SpringBootTest(classes = FrameworkAutoConfiguration.class)
 @RunWith(SpringRunner.class)
@@ -45,6 +44,7 @@ public class FileSystemTest {
     public void joinString() {
         Assert.assertEquals("name", String.join("/", "name"));
         Assert.assertEquals("/", String.join("/", "/"));
+        Assert.assertEquals("//", String.join("/", "/", ""));
         Assert.assertEquals("//name", String.join("/", "/", "name"));
     }
 
@@ -62,9 +62,9 @@ public class FileSystemTest {
         normalizedPath = new NormalizedPath("//test////hello.text/");
         Assert.assertEquals("/test/hello.text", normalizedPath.toString());
 
-        Assert.assertTrue("/".split("/").length == 0);
-        Assert.assertTrue("/abc".split("/").length == 2);
-        Assert.assertTrue("abc/".split("/").length == 1);
+        Assert.assertEquals(0, "/".split("/").length);
+        Assert.assertEquals(2, "/abc".split("/").length);
+        Assert.assertEquals(1, "abc/".split("/").length);
 
         normalizedPath = new NormalizedPath("hello.text");
         Assert.assertEquals("/", normalizedPath.getParent());
@@ -143,6 +143,24 @@ public class FileSystemTest {
             Assert.assertTrue(fileSystem.files("/", file).anyMatch(meta -> meta.getName().equals(file)));
         }
         catch (PathNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void files() {
+        try {
+            fileSystem.put("hello/world.txt", "你好，Spring Boot。");
+            fileSystem.put("hello/girl/lily.txt", "Hello，美女。");
+
+            List<? extends PathMeta> files = fileSystem.files("hello", true).collect(Collectors.toList());
+
+            Assert.assertEquals(2, files.size());
+
+            Assert.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/world.txt")).count());
+            Assert.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/girl/lily.txt")).count());
+        }
+        catch (InvalidFileException | PathNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

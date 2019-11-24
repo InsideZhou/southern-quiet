@@ -23,17 +23,18 @@ public class PathMeta implements Serializable {
      */
     public PathMeta(NormalizedPath normalizedPath, InputStream stream) {
         Assert.notNull(normalizedPath, "normalizedPath");
-        this.parent = normalizedPath.getParent();
-        this.name = normalizedPath.getName();
+        parent = normalizedPath.getParent();
+        name = normalizedPath.getName();
 
         if (null == stream) {
-            this.setDirectory(true);
-            this.setSize(-1);
+            isDirectory = true;
+            size = -1;
         }
         else {
-            this.setDirectory(false);
+            isDirectory = false;
+
             try {
-                this.setSize(stream.available());
+                size = stream.available();
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
@@ -53,6 +54,8 @@ public class PathMeta implements Serializable {
         this(new NormalizedPath(path), null);
     }
 
+    public PathMeta() {}
+
     /**
      * 父路径名。
      */
@@ -61,7 +64,7 @@ public class PathMeta implements Serializable {
      * 当前路径元素名（文件或目录名）。
      */
     private String name;
-    private boolean isDirectory = true;
+    private boolean isDirectory;
     /**
      * 以当前时间为默认值。
      */
@@ -83,7 +86,7 @@ public class PathMeta implements Serializable {
      * 路径名
      */
     public String getPath() {
-        return getParent() + PATH_SEPARATOR_STRING + name;
+        return String.join(PATH_SEPARATOR_STRING, parent, name).replace(PATH_SEPARATOR_STRING + PATH_SEPARATOR_STRING, PATH_SEPARATOR_STRING);
     }
 
     public Map<String, Object> toMap() {

@@ -3,6 +3,8 @@ package me.insidezhou.southernquiet.filesystem;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +35,8 @@ public class NormalizedPath implements Serializable {
     }
 
     private void init(String path) {
+        path = path.replace('\\', '/');
+
         List<String> pathList = Arrays.stream(path.split(PATH_SEPARATOR_STRING))
             .filter(p -> !StringUtils.isEmpty(p))
             .collect(Collectors.toList());

@@ -191,10 +191,11 @@ public class LocalFileSystem implements FileSystem {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public PathMeta meta(String path) {
+    public <M extends PathMeta> M meta(String path) {
         NormalizedPath normalizedPath = new NormalizedPath(path);
-        return meta(normalizedPath, getWorkingPath(normalizedPath));
+        return (M) meta(normalizedPath, getWorkingPath(normalizedPath));
     }
 
     @Override
@@ -300,10 +301,10 @@ public class LocalFileSystem implements FileSystem {
         opts.add(StandardCopyOption.COPY_ATTRIBUTES);
 
         if (move) {
-            Files.move(src, dest, opts.toArray(new CopyOption[opts.size()]));
+            Files.move(src, dest, opts.toArray(new CopyOption[0]));
         }
         else {
-            Files.copy(src, dest, opts.toArray(new CopyOption[opts.size()]));
+            Files.copy(src, dest, opts.toArray(new CopyOption[0]));
         }
     }
 

@@ -214,7 +214,7 @@ public interface FileSystem {
      * @param path 路径
      * @return 路径不存在时，返回null。
      */
-    PathMeta meta(String path);
+    <M extends PathMeta> M meta(String path);
 
     /**
      * 获取目录下子目录，非递归。
@@ -223,6 +223,15 @@ public interface FileSystem {
      */
     default Stream<? extends PathMeta> directories(String path) throws PathNotFoundException {
         return directories(path, "", false);
+    }
+
+    /**
+     * 获取目录下子目录。
+     *
+     * @see #directories(String, String, boolean, int, int, PathMetaSort)
+     */
+    default Stream<? extends PathMeta> directories(String path, boolean recursive) throws PathNotFoundException {
+        return directories(path, "", recursive);
     }
 
     /**
@@ -263,6 +272,15 @@ public interface FileSystem {
      */
     default Stream<? extends PathMeta> files(String path) throws PathNotFoundException {
         return files(path, "", false);
+    }
+
+    /**
+     * 获取目录下文件。
+     *
+     * @see #files(String, String, boolean, int, int, PathMetaSort)
+     */
+    default Stream<? extends PathMeta> files(String path, boolean recursive) throws PathNotFoundException {
+        return files(path, "", recursive);
     }
 
     /**

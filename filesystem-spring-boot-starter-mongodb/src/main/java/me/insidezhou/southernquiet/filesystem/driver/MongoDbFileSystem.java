@@ -90,7 +90,13 @@ public class MongoDbFileSystem implements FileSystem {
     @Override
     public OutputStream openWriteStream(String path) throws InvalidFileException {
         MongoPathMeta pathMeta = meta(path);
-        if (null == pathMeta || pathMeta.isDirectory()) throw new InvalidFileException(path);
+
+        if (null == pathMeta) {
+            pathMeta = new MongoPathMeta(path);
+            pathMeta.setDirectory(false);
+        }
+
+        if (pathMeta.isDirectory()) throw new InvalidFileException(path);
 
         File tmp;
         try {
@@ -101,17 +107,17 @@ public class MongoDbFileSystem implements FileSystem {
             throw new RuntimeException(e);
         }
 
-        if (null == pathMeta.getFileId()) {
-            try (FileOutputStream fileOutputStream = new FileOutputStream(tmp)) {
-                fileOutputStream.write(pathMeta.getFileData().getData());
+        if (null != pathMeta.getFileId()) {
+            try {
+                gridFs.findOne(pathMeta.getFileId()).writeTo(tmp);
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        else {
-            try {
-                gridFs.findOne(pathMeta.getFileId()).writeTo(tmp);
+        else if (null != pathMeta.getFileData()) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(tmp)) {
+                fileOutputStream.write(pathMeta.getFileData().getData());
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
@@ -196,9 +202,10 @@ public class MongoDbFileSystem implements FileSystem {
         touchPath(new NormalizedPath(path), meta -> meta.setLastAccessTime(Instant.now()));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MongoPathMeta meta(String path) {
-        return queryPathMeta(new NormalizedPath(path));
+    public <M extends PathMeta> M meta(String path) {
+        return (M) queryPathMeta(new NormalizedPath(path));
     }
 
     @Override
@@ -207,7 +214,7 @@ public class MongoDbFileSystem implements FileSystem {
         MongoPathMeta root = queryPathMeta(normalizePath);
         if (null == root || !root.isDirectory()) throw new PathNotFoundException(path);
 
-        Stream<MongoPathMeta> stream = directories(root, search, recursive);
+        Stream<MongoPathMeta> stream = subDirectories(root, search, recursive);
 
         if (null != sort) {
             stream = FileSystem.sort(stream, sort);
@@ -252,7 +259,7 @@ public class MongoDbFileSystem implements FileSystem {
             return iteratorToStream(mongoOperations.stream(query.addCriteria(criteria), MongoPathMeta.class, pathCollection));
         }
 
-        List<String> directories = directories(root, "", true).map(PathMeta::getPath).collect(Collectors.toList());
+        List<String> directories = subDirectories(root, search, true).map(MongoPathMeta::getPath).collect(Collectors.toList());
         directories.add(root.getPath());
         query = query.addCriteria(Criteria.where("parent").in(directories));
 
@@ -268,7 +275,7 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     private Query newPathQuery(NormalizedPath normalizedPath) {
-        return Query.query(Criteria.where("name").is(normalizedPath.getName()).and("parent").is(normalizedPath.getParentPath()));
+        return Query.query(Criteria.where("name").is(normalizedPath.getName()).and("parent").is(normalizedPath.getParent()));
     }
 
     private MongoPathMeta queryPathMeta(NormalizedPath normalizedPath) {
@@ -307,7 +314,7 @@ public class MongoDbFileSystem implements FileSystem {
         );
     }
 
-    private Stream<MongoPathMeta> directories(MongoPathMeta root, String search, boolean recursive) throws PathNotFoundException {
+    private Stream<MongoPathMeta> subDirectories(MongoPathMeta root, String search, boolean recursive) {
         Query query = Query.query(Criteria.where("parent").is(root.getPath()).and("isDirectory").is(true));
         if (StringUtils.hasText(search)) {
             query = query.addCriteria(Criteria.where("name").regex("*" + search + "*"));
@@ -318,16 +325,8 @@ public class MongoDbFileSystem implements FileSystem {
         Stream<MongoPathMeta> stream = iteratorToStream(mongoOperations.stream(query, MongoPathMeta.class, pathCollection));
         if (!recursive) return stream;
 
-        Stream<MongoPathMeta> subStream = stream.flatMap(d -> {
-            try {
-                return directories(d, search, true);
-            }
-            catch (PathNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        return Stream.concat(stream, subStream);
+        List<MongoPathMeta> subDirectories = stream.collect(Collectors.toList());
+        return Stream.concat(subDirectories.stream(), subDirectories.stream().flatMap(d -> subDirectories(d, search, true)));
     }
 
     private Query sort(Query query, PathMetaSort sort) {
