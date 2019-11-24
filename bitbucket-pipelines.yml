@@ -8,10 +8,11 @@ pipelines:
           - mkdir -p $BITBUCKET_CLONE_DIR/.gnupg
           - gpg --homedir $BITBUCKET_CLONE_DIR/.gnupg --batch --import private-key.gpg
           - rm $BITBUCKET_CLONE_DIR/private-key.gpg
-          - gradle publishFullPToSR \
-            -Psigning.gnupg.executable=gpg \
-            -Psigning.gnupg.keyName=A5E6CDB4 \
-            -Psigning.gnupg.homeDir=$BITBUCKET_CLONE_DIR/.gnupg \
-            -Psigning.gnupg.passphrase=$signPassword \
-            -PossrhUsername=$ossrhUsername \
+          - >
+            gradle publishFullPToSR
+            -Psigning.gnupg.executable=gpg
+            -Psigning.gnupg.keyName=A5E6CDB4
+            -Psigning.gnupg.homeDir=$BITBUCKET_CLONE_DIR/.gnupg
+            -Psigning.gnupg.passphrase=$signPassword
+            -PossrhUsername=$ossrhUsername
             -PossrhPassword=$ossrhPassword
