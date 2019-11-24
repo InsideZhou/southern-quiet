@@ -157,6 +157,7 @@ subprojects {
     }
 
     signing {
+        useGpgCmd()
         sign publishing.publications.full
     }
 }
