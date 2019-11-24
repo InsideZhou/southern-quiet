@@ -1,4 +1,4 @@
-images: inside/publish-to-sonatype
+image: inside/publish-to-sonatype
 
 pipelines:
   default:
