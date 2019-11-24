@@ -2,7 +2,7 @@ image: inside/publish-to-sonatype
 
 pipelines:
   tags:
-    - *:
+    '*':
       - step:
           script:
             - openssl aes-256-cbc -pass pass:$opensslPassword -in private-key.gpg.enc -out private-key.gpg -d
