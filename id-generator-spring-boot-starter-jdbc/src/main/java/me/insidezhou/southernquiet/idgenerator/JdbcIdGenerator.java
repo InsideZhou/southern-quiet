@@ -26,6 +26,7 @@ public class JdbcIdGenerator implements IdGenerator {
     private int workerIdInUse;
     private int maxWorkerId;
 
+    @SuppressWarnings("WeakerAccess")
     public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
         this.metadata = metadata;
         this.workerTable = workerTable;
@@ -43,8 +44,8 @@ public class JdbcIdGenerator implements IdGenerator {
             properties.getWorkerIdBits(),
             properties.getLowPaddingBits(),
             properties.getEpoch(),
-            properties.isRandomSequenceStart() ? new Random() : null,
             properties.getSequenceStartRange(),
+            properties.isRandomSequenceStart() ? new Random() : null,
             properties.getTickAccuracy()
         );
     }

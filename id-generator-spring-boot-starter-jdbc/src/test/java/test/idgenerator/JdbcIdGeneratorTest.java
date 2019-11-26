@@ -1,11 +1,9 @@
 package test.idgenerator;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration;
+import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
-import instep.springboot.CoreAutoConfiguration;
-import instep.springboot.SQLAutoConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +20,6 @@ public class JdbcIdGeneratorTest {
     @ImportAutoConfiguration({
         JdbcIdGeneratorAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
-        CoreAutoConfiguration.class,
-        SQLAutoConfiguration.class,
         FrameworkAutoConfiguration.class
     })
     public static class Config {}

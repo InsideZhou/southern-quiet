@@ -1,5 +1,7 @@
 package me.insidezhou.southernquiet;
 
+import instep.Instep;
+import instep.InstepLogger;
 import me.insidezhou.southernquiet.event.EventPublisher;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -7,6 +9,8 @@ import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -19,11 +23,83 @@ import org.springframework.util.StringUtils;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @EnableAsync
 @EnableConfigurationProperties
 public class FrameworkAutoConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public Instep instep(InstepLogger instepLogger) {
+        Instep.INSTANCE.bind(InstepLogger.class, instepLogger);
+        InstepLogger.Companion.setLogger(instepLogger);
+
+        return Instep.INSTANCE;
+    }
+
+    @SuppressWarnings("NullableProblems")
+    @Bean
+    @ConditionalOnMissingBean
+    public InstepLogger instepLogger() {
+        final Map<String, Logger> loggerCache = new ConcurrentHashMap<>();
+        InstepLogger instepLogger = new InstepLogger() {
+            @Override
+            public boolean getEnableDebug() {
+                return true;
+            }
+
+            @Override
+            public boolean getEnableInfo() {
+                return true;
+            }
+
+            @Override
+            public boolean getEnableWarning() {
+                return true;
+            }
+
+            @Override
+            public void debug(String s, String s1) {
+                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
+                logger.debug(s);
+                loggerCache.putIfAbsent(s1, logger);
+            }
+
+            @Override
+            public void info(String s, String s1) {
+                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
+                logger.info(s);
+                loggerCache.putIfAbsent(s1, logger);
+            }
+
+            @Override
+            public void warning(String s, String s1) {
+                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
+                logger.warn(s);
+                loggerCache.putIfAbsent(s1, logger);
+            }
+
+            @Override
+            public void debug(String s, Class<?> aClass) {
+                debug(s, aClass.getName());
+            }
+
+            @Override
+            public void info(String s, Class<?> aClass) {
+                info(s, aClass.getName());
+            }
+
+            @Override
+            public void warning(String s, Class<?> aClass) {
+                warning(s, aClass.getName());
+            }
+        };
+        Instep.INSTANCE.bind(InstepLogger.class, instepLogger);
+        return instepLogger;
+    }
+
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = "framework.key-value")
     @ConditionalOnMissingBean(KeyValueStore.class)

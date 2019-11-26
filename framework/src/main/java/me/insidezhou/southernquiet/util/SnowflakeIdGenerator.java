@@ -1,5 +1,8 @@
 package me.insidezhou.southernquiet.util;
 
+import instep.util.LongIdGenerator;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Random;
 
 /**
@@ -7,8 +10,8 @@ import java.util.Random;
  * <p>
  * 0 - timestamp - highPadding - worker - lowPadding - sequence
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class SnowflakeIdGenerator implements IdGenerator {
+@SuppressWarnings("WeakerAccess")
+public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator {
     public final static long EPOCH = 1517414400L; //Thu Feb 01 2018 00:00:00 GMT, seconds
 
     public final static int TimestampBits = 32;
@@ -24,41 +27,15 @@ public class SnowflakeIdGenerator implements IdGenerator {
         return ~(-1 << bits);
     }
 
-    private Random random;
-    private long epoch;
-    private int sequenceStartRange;
-
-    private int currentTimestampBits;
-    private int currentHighPaddingBits;
-    private int sequenceBits;
-
-    private int workerId;
-
     private int currentTimeAccuracy;
 
-    public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, Random random, int sequenceStartRange, int tickAccuracy) {
-        sequenceBits = 63 - timestampBits - highPaddingBits - workerIdBits - lowPaddingBits;
-        currentTimestampBits = timestampBits;
-        currentHighPaddingBits = highPaddingBits;
+    public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, int sequenceStartRange, @Nullable Random random, int tickAccuracy) {
+        super(workerId, timestampBits, highPaddingBits, workerIdBits, lowPaddingBits, epoch, sequenceStartRange, random);
 
         currentTimeAccuracy = tickAccuracy;
-
-        int maxWorkerId = maxIntegerAtBits(workerIdBits);
-        maxSequenceValue = maxIntegerAtBits(sequenceBits);
-        workerIdShift = sequenceBits + lowPaddingBits;
-        timestampShift = sequenceBits + lowPaddingBits + workerIdBits + highPaddingBits;
-
-        if (workerId > maxWorkerId || workerId < 0) {
-            throw new IllegalArgumentException("worker Id can't be greater than maxWorkerId or less than 0, maxWorkerId=" + maxWorkerId);
-        }
-
-        this.random = random;
-        this.epoch = epoch;
-        this.sequenceStartRange = sequenceStartRange;
-
-        this.workerId = workerId;
     }
 
+    @SuppressWarnings("unused")
     public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits) {
         this(workerId,
             timestampBits,
@@ -66,8 +43,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             workerIdBits,
             lowPaddingBits,
             EPOCH,
-            null,
             SequenceStartRange,
+            null,
             TickAccuracy);
     }
 
@@ -78,8 +55,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             WorkerIdBits,
             LowPaddingBits,
             EPOCH,
-            random,
             sequenceStartRange,
+            random,
             TickAccuracy);
     }
 
@@ -90,8 +67,8 @@ public class SnowflakeIdGenerator implements IdGenerator {
             WorkerIdBits,
             LowPaddingBits,
             epoch,
-            null,
             SequenceStartRange,
+            null,
             TickAccuracy);
     }
 
@@ -102,71 +79,28 @@ public class SnowflakeIdGenerator implements IdGenerator {
             WorkerIdBits,
             LowPaddingBits,
             EPOCH,
-            null,
             SequenceStartRange,
+            null,
             TickAccuracy);
-    }
-
-    private int maxSequenceValue;
-
-    private int workerIdShift;
-
-    private int timestampShift;
-
-    private int sequence = 0;
-
-    private long lastTimestamp = -1L;
-
-    public synchronized long generate() {
-        long timestamp = timeGen();
-
-        if (timestamp < lastTimestamp) {
-            throw new RuntimeException("Clock moved backwards.  Refusing to generate id for ${lastTimestamp - timestamp} seconds");
-        }
-
-        if (lastTimestamp == timestamp) {
-            sequence = (sequence + 1) & maxSequenceValue;
-
-            if (0 == sequence) {
-                timestamp = nextTick(lastTimestamp);
-            }
-        }
-        else if (null != random) {
-            sequence = random.nextInt(sequenceStartRange);
-        }
-        else {
-            sequence = sequenceStartRange;
-        }
-
-        lastTimestamp = timestamp;
-
-        return ((timestamp - epoch) << timestampShift) | (workerId << workerIdShift) | sequence;
     }
 
     @Override
     public long getTimestampFromId(long id) {
-        return (id >>> timestampShift) + EPOCH;
+        return (id >>> getTimestampShift()) + EPOCH;
     }
 
     @Override
     public long getWorkerFromId(long id) {
-        return (id << 1 + currentTimestampBits + currentHighPaddingBits) >>> (1 + currentTimestampBits + currentHighPaddingBits + workerIdShift);
+        return (id << 1 + getTimestampBits() + getHighPaddingBits()) >>> (1 + getTimestampBits() + getHighPaddingBits() + getWorkerIdShift());
     }
 
     @Override
     public long getSequenceFromId(long id) {
-        return (id << 64 - sequenceBits) >>> (64 - sequenceBits);
+        return (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
     }
 
-    private long nextTick(long lastTimestamp) {
-        long timestamp = timeGen();
-        while (timestamp <= lastTimestamp) {
-            timestamp = timeGen();
-        }
-        return timestamp;
-    }
-
-    private long timeGen() {
+    @Override
+    protected long timeGen() {
         return System.currentTimeMillis() / currentTimeAccuracy;
     }
 }

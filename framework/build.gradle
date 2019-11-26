@@ -7,5 +7,7 @@ dependencies {
         exclude group: 'org.objenesis', module: 'objenesis'
     }
 
+    implementation "me.insidezhou.instep:instep-core:${instepVersion}"
+
     testImplementation "org.springframework.boot:spring-boot-starter-json"
 }

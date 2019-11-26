@@ -1,10 +1,6 @@
 package test.job;
 
-import instep.dao.sql.InstepSQL;
-import instep.springboot.CoreAutoConfiguration;
-import instep.springboot.SQLAutoConfiguration;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.job.FailedJobTable;
 import me.insidezhou.southernquiet.job.JdbcJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobEngine;
 import me.insidezhou.southernquiet.job.JobProcessor;
@@ -21,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@ImportAutoConfiguration({FrameworkAutoConfiguration.class, DataSourceAutoConfiguration.class, CoreAutoConfiguration.class, SQLAutoConfiguration.class})
+@ImportAutoConfiguration({FrameworkAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @SpringBootTest(classes = {JdbcJobAutoConfiguration.class, JdbcJobTest.Config.class})
 public class JdbcJobTest {
     @Configuration
@@ -77,12 +73,6 @@ public class JdbcJobTest {
 
     @Autowired
     private JobEngine jobEngine;
-
-    @Autowired
-    private FailedJobTable failedJobTable;
-
-    @Autowired
-    private InstepSQL instepSQL;
 
     @SuppressWarnings("unchecked")
     @Test
