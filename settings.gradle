@@ -21,4 +21,5 @@ include 'filesystem-spring-boot-starter-mongodb',
         'session-spring-boot-starter-spring-filesystem',
         'file-spring-boot-starter-webflux',
         'framework-amqp-rabbit',
+        'instep-spring-boot-starter',
         'framework'

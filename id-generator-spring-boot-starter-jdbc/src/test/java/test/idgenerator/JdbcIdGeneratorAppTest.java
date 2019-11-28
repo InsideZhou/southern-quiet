@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ImportAutoConfiguration(JdbcIdGeneratorAutoConfiguration.class)
 @RestController
 public class JdbcIdGeneratorAppTest {
-    private final static Logger log = LoggerFactory.getLogger(JdbcIdGeneratorAppTest.class);
-
     public static void main(String[] args) {
         SpringApplication.run(JdbcIdGeneratorAppTest.class, args);
     }

@@ -1,11 +1,9 @@
 package me.insidezhou.southernquiet.job;
 
-import instep.Instep;
 import instep.dao.DaoException;
-import instep.dao.sql.*;
-import instep.servicecontainer.ServiceNotFoundException;
+import instep.dao.sql.InstepSQL;
+import instep.dao.sql.SQLPlan;
 import me.insidezhou.southernquiet.job.driver.JdbcJobEngine;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
@@ -24,42 +21,18 @@ import java.time.temporal.ChronoUnit;
 public class JdbcJobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public Dialect dialect(@Value("${spring.datasource.url}") String url, Instep instep) {
-        Dialect dialect = Dialect.Companion.of(url);
-
-        try {
-            instep.make(Dialect.class);
-        }
-        catch (ServiceNotFoundException e) {
-            instep.bind(Dialect.class, dialect);
-        }
-
-        return dialect;
-    }
-
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    @Bean
-    @ConditionalOnMissingBean
-    public InstepSQL instepSQL(DataSource dataSource, Dialect dialect, Instep instep) {
-        instep.bind(ConnectionProvider.class, new TransactionContext.ConnectionProvider(dataSource, dialect), "");
-
-        return InstepSQL.INSTANCE;
+    public JdbcJobEngine jdbcJobQueue(FailedJobTable failedJobTable, InstepSQL instepSQL, Properties properties) {
+        return new JdbcJobEngine(failedJobTable, instepSQL, properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public JdbcJobEngine jdbcJobQueue(FailedJobTable failedJobTable, Properties properties) {
-        return new JdbcJobEngine(failedJobTable, InstepSQL.INSTANCE, properties);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public FailedJobTable failedJobTable(Properties properties) {
+    public FailedJobTable failedJobTable(InstepSQL instepSQL, Properties properties) {
         FailedJobTable table = new FailedJobTable(properties.getFailedTable());
 
         SQLPlan plan = table.create().debug();
         try {
-            InstepSQL.INSTANCE.executor().execute(plan);
+            instepSQL.executor().execute(plan);
         }
         catch (DaoException e) {
             throw new RuntimeException(e);

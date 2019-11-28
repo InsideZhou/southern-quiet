@@ -10,5 +10,4 @@ public class JdbcJobAppTest {
     public static void main(String[] args) {
         SpringApplication.run(JdbcJobAppTest.class);
     }
-
 }
