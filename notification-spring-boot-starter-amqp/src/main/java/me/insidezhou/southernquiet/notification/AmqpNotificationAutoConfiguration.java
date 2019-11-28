@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties
-@AutoConfigureAfter(RabbitAutoConfiguration.class)
+@AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
 public class AmqpNotificationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

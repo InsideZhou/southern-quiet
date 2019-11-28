@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -91,9 +92,10 @@ public class AmqpAutoConfiguration {
         return factory;
     }
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @ConditionalOnMissingBean
-    public MessageConverter messageConverter(ObjectMapper objectMapper) {
+    public SmartMessageConverter messageConverter(ObjectMapper objectMapper) {
         return new Jackson2JsonMessageConverter(objectMapper);
     }
 
