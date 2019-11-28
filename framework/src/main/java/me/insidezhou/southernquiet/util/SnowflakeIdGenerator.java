@@ -44,32 +44,20 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
             lowPaddingBits,
             EPOCH,
             SequenceStartRange,
-            null,
+            new Random(),
             TickAccuracy);
     }
 
-    public SnowflakeIdGenerator(int workerId, Random random, int sequenceStartRange) {
-        this(workerId,
-            TimestampBits,
-            HighPaddingBits,
-            WorkerIdBits,
-            LowPaddingBits,
-            EPOCH,
-            sequenceStartRange,
-            random,
-            TickAccuracy);
-    }
-
-    public SnowflakeIdGenerator(int workerId, long epoch) {
+    public SnowflakeIdGenerator(int workerId, long epoch, int sequenceStartRange, int tickAccuracy) {
         this(workerId,
             TimestampBits,
             HighPaddingBits,
             WorkerIdBits,
             LowPaddingBits,
             epoch,
-            SequenceStartRange,
-            null,
-            TickAccuracy);
+            sequenceStartRange,
+            new Random(),
+            tickAccuracy);
     }
 
     public SnowflakeIdGenerator(int workerId) {
@@ -80,18 +68,23 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
             LowPaddingBits,
             EPOCH,
             SequenceStartRange,
-            null,
+            new Random(),
             TickAccuracy);
     }
 
     @Override
-    public long getTimestampFromId(long id) {
-        return (id >>> getTimestampShift()) + EPOCH;
+    public long getTicksFromId(long id) {
+        return id >>> getTimestampShift();
     }
 
     @Override
-    public long getWorkerFromId(long id) {
-        return (id << 1 + getTimestampBits() + getHighPaddingBits()) >>> (1 + getTimestampBits() + getHighPaddingBits() + getWorkerIdShift());
+    public long getTimestampFromId(long id) {
+        return (id >>> getTimestampShift()) + (getEpoch() * 1000);
+    }
+
+    @Override
+    public int getWorkerFromId(long id) {
+        return (int) ((id << 1 + getTimestampBits() + getHighPaddingBits()) >>> (1 + getTimestampBits() + getHighPaddingBits() + getWorkerIdShift()));
     }
 
     @Override

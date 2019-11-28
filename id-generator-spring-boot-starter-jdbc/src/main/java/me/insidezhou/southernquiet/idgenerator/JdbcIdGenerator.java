@@ -151,12 +151,17 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     @Override
+    public long getTicksFromId(long id) {
+        return idGenerator.getTicksFromId(id);
+    }
+
+    @Override
     public long getTimestampFromId(long id) {
         return idGenerator.getTimestampFromId(id);
     }
 
     @Override
-    public long getWorkerFromId(long id) {
+    public int getWorkerFromId(long id) {
         return idGenerator.getWorkerFromId(id);
     }
 
