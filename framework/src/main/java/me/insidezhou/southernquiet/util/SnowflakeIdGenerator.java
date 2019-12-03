@@ -79,7 +79,7 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
 
     @Override
     public long getTimestampFromId(long id) {
-        return (id >>> getTimestampShift()) + (getEpoch() * 1000);
+        return (getTicksFromId(id) * currentTimeAccuracy) + (getEpoch() * 1000); //epoch的精度是固定的秒，所以这里会有乘1000。
     }
 
     @Override

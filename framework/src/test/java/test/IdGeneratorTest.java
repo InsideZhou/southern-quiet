@@ -8,6 +8,11 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class IdGeneratorTest {
@@ -29,10 +34,15 @@ public class IdGeneratorTest {
         long sequence = idGenerator.getSequenceFromId(id);
         int worker = idGenerator.getWorkerFromId(id);
 
+        Assert.assertEquals(
+            Duration.between(LocalDateTime.ofInstant(Instant.ofEpochSecond(EPOCH), ZoneOffset.UTC.normalized()), LocalDateTime.now()).toDays(),
+            Duration.between(Instant.ofEpochSecond(EPOCH), Instant.ofEpochMilli(timestamp)).toDays()
+        );
+
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks);
+        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
     }
 
     @Test
@@ -49,7 +59,7 @@ public class IdGeneratorTest {
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks);
+        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
     }
 
     @Test
@@ -66,6 +76,6 @@ public class IdGeneratorTest {
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks);
+        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
     }
 }
