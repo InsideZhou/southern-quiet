@@ -1,20 +1,10 @@
 plugins {
-    id 'idea'
-    id 'eclipse'
     id 'java'
     id 'java-library'
     id 'maven-publish'
     id 'signing'
 
-    id 'org.springframework.boot' version '2.1.6.RELEASE'
-    id "io.spring.dependency-management" version "1.0.8.RELEASE"
-}
-
-idea {
-    project {
-        jdkName = JavaVersion.VERSION_1_8.toString()
-        languageLevel = JavaVersion.VERSION_1_8.toString()
-    }
+    id 'org.springframework.boot' version '2.1.11.RELEASE'
 }
 
 allprojects {
@@ -38,8 +28,6 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'idea'
-    apply plugin: 'eclipse'
     apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
