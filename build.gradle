@@ -4,7 +4,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
 
-    id 'org.springframework.boot' version '2.1.11.RELEASE'
+    id 'org.springframework.boot' version '2.1.8.RELEASE'
 }
 
 allprojects {
