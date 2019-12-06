@@ -2,7 +2,7 @@ package me.insidezhou.southernquiet.util;
 
 import org.nustaq.serialization.FSTConfiguration;
 
-public abstract class SerializationUtils {
+public final class SerializationUtils {
     private final static FSTConfiguration fstConf = FSTConfiguration.createDefaultConfiguration();
 
     /**
