@@ -13,6 +13,7 @@ allprojects {
 
     ext {
         instepVersion = '2.0.0'
+        jsonpathVersion = '2.4.0'
     }
 
     repositories {
