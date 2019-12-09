@@ -18,5 +18,4 @@ include 'filesystem-spring-boot-starter-mongodb',
         'file-spring-boot-starter-webflux',
         'framework-amqp-rabbit',
         'instep-spring-boot-starter',
-        'framework-json',
         'framework'
