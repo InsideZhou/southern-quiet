@@ -2,6 +2,7 @@ package me.insidezhou.southernquiet.amqp.rabbit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.util.StringUtils;
@@ -33,6 +34,11 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
     @Override
     public void recover(Message message, Throwable cause) {
         MessageProperties messageProperties = message.getMessageProperties();
+
+        if (!messageProperties.isRedelivered()) {
+            throw new ImmediateRequeueAmqpException(cause);
+        }
+
         Map<String, Object> headers = messageProperties.getHeaders();
         headers.putIfAbsent("x-recover-count", 0);
         headers.putIfAbsent("x-expiration", properties.getInitialExpiration().toMillis());
