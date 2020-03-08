@@ -2,6 +2,7 @@ package me.insidezhou.southernquiet.idgenerator;
 
 import instep.dao.DaoException;
 import instep.dao.sql.*;
+import instep.util.LongIdGenerator;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
@@ -34,7 +35,7 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        maxWorkerId = SnowflakeIdGenerator.maxIntegerAtBits(properties.getWorkerIdBits());
+        maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
         workerIdInUse = getWorkerId();
 
         idGenerator = new SnowflakeIdGenerator(
@@ -53,7 +54,7 @@ public class JdbcIdGenerator implements IdGenerator {
     private int getWorkerId() {
         String appId = metadata.getRuntimeId();
 
-        SQLPlan plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, appId));
+        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, appId));
         List<TableRow> rows;
         try {
             rows = instepSQL.executor().execute(plan, TableRow.class);
@@ -80,7 +81,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     private int newWorkerId() {
-        SQLPlan plan = workerTable.select(ColumnExtensionKt.min(workerTable.workerId))
+        SQLPlan<TableSelectPlan> plan = workerTable.select(ColumnExtensionKt.min(workerTable.workerId))
             .where(ColumnExtensionKt.isNull(workerTable.appId).and(ColumnExtensionKt.isNull(workerTable.workerTime)));
 
         Integer workerId;
@@ -99,12 +100,12 @@ public class JdbcIdGenerator implements IdGenerator {
 
             try {
                 if (StringUtils.isEmpty(instepSQL.executor().executeScalar(plan))) {
-                    plan = workerTable.insert()
+                    SQLPlan<TableInsertPlan> insertPlan = workerTable.insert()
                         .addValue(workerTable.appId, metadata.getRuntimeId())
                         .addValue(workerTable.workerTime, Instant.now())
                         .addValue(workerTable.workerId, workerId);
 
-                    int rowAffected = instepSQL.executor().executeUpdate(plan);
+                    int rowAffected = instepSQL.executor().executeUpdate(insertPlan);
                     Assert.isTrue(1 == rowAffected, "workerId插入异常。rowAffected=" + rowAffected);
 
                     return workerId;
@@ -127,7 +128,7 @@ public class JdbcIdGenerator implements IdGenerator {
         String runtimeId = metadata.getRuntimeId();
 
         try {
-            SQLPlan plan = workerTable.update()
+            SQLPlan<TableUpdatePlan> plan = workerTable.update()
                 .set(workerTable.workerTime, now)
                 .where(
                     ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
