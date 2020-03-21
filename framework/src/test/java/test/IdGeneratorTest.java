@@ -42,7 +42,7 @@ public class IdGeneratorTest {
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
+        Assert.assertEquals(ticks * tickAccuracy + EPOCH * 1000, timestamp);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class IdGeneratorTest {
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
+        Assert.assertEquals(ticks * tickAccuracy + EPOCH * 1000, timestamp);
     }
 
     @Test
@@ -76,6 +76,6 @@ public class IdGeneratorTest {
         Assert.assertEquals(WORKER, worker);
         Assert.assertTrue(timestamp > EPOCH * 1000);
         Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(timestamp - (EPOCH * 1000), ticks * tickAccuracy);
+        Assert.assertEquals(ticks * tickAccuracy + EPOCH * 1000, timestamp);
     }
 }

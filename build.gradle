@@ -12,7 +12,7 @@ allprojects {
     version = '5.0.0-SNAPSHOT'
 
     ext {
-        instepVersion = '2.0.0'
+        instepVersion = '2.0.2'
         jsonpathVersion = '2.4.0'
     }
 

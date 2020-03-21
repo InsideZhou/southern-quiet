@@ -23,16 +23,8 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
 
     public final static int TickAccuracy = 1000;
 
-    public static int maxIntegerAtBits(int bits) {
-        return ~(-1 << bits);
-    }
-
-    private int currentTimeAccuracy;
-
     public SnowflakeIdGenerator(int workerId, int timestampBits, int highPaddingBits, int workerIdBits, int lowPaddingBits, long epoch, int sequenceStartRange, @Nullable Random random, int tickAccuracy) {
-        super(workerId, timestampBits, highPaddingBits, workerIdBits, lowPaddingBits, epoch, sequenceStartRange, random);
-
-        currentTimeAccuracy = tickAccuracy;
+        super(workerId, timestampBits, highPaddingBits, workerIdBits, lowPaddingBits, epoch, sequenceStartRange, tickAccuracy, random);
     }
 
     @SuppressWarnings("unused")
@@ -60,6 +52,7 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
             tickAccuracy);
     }
 
+    @SuppressWarnings("unused")
     public SnowflakeIdGenerator(int workerId) {
         this(workerId,
             TimestampBits,
@@ -79,7 +72,7 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
 
     @Override
     public long getTimestampFromId(long id) {
-        return (getTicksFromId(id) * currentTimeAccuracy) + (getEpoch() * 1000); //epoch的精度是固定的秒，所以这里会有乘1000。
+        return getTicksFromId(id) * getTickAccuracy() + getEpochInMilliSeconds();
     }
 
     @Override
@@ -90,10 +83,5 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
     @Override
     public long getSequenceFromId(long id) {
         return (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
-    }
-
-    @Override
-    protected long timeGen() {
-        return System.currentTimeMillis() / currentTimeAccuracy;
     }
 }
