@@ -1,64 +1,45 @@
-buildscript {
-    def path = 'buildscript.gradle'
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
 
-    if (this.name != 'southern-quiet') {
-        path = "deps/southern-quiet/buildscript.gradle"
-    }
-
-    buildscript { scriptHandler ->
-        apply from: path, to: scriptHandler
-    }
+    id 'org.springframework.boot' version '2.1.8.RELEASE'
 }
 
-apply plugin: 'idea'
-apply plugin: 'eclipse'
+allprojects {
+    group = 'me.insidezhou.southernquiet'
+    version = '5.0.0-SNAPSHOT'
 
-idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
+    ext {
+        instepVersion = '2.0.2'
+        jsonpathVersion = '2.4.0'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    task showVersion {
+        doLast {
+            println 'Version: ' + project.version
+        }
     }
 }
 
 subprojects {
-    group = 'me.insidezhou.southernquiet'
-    version = '2.1.0-SNAPSHOT'
-
-    ext {
-        instepVersion = '1.0.0'
-    }
-
-    apply plugin: 'idea'
-    apply plugin: 'eclipse'
-
     apply plugin: 'java'
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
 
-    apply plugin: 'propdeps'
-    apply plugin: 'propdeps-maven'
-    apply plugin: 'propdeps-idea'
-    apply plugin: 'propdeps-eclipse'
-
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-
-    repositories {
-        mavenLocal()
-        maven { url "https://maven.aliyun.com/nexus/content/groups/public/" }
-        maven { url "https://maven.aliyun.com/repository/spring" }
-        maven { url "https://maven.aliyun.com/repository/spring-plugin" }
-    }
-
     dependencies {
+        compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
         compileClasspath "org.springframework.boot:spring-boot-configuration-processor"
-
         testImplementation "org.springframework.boot:spring-boot-starter-test"
-    }
-
-    configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 0, 'minutes'
     }
 
     compileJava.dependsOn(processResources)
@@ -72,7 +53,6 @@ subprojects {
 
     jar {
         enabled = true
-        baseName = "$rootProject.name-$project.name"
 
         manifest {
             attributes 'Implementation-Version': version
@@ -85,7 +65,7 @@ subprojects {
     }
 
     bootJar {
-        classifier = 'boot'
+        archiveClassifier.set('boot')
 
         manifest {
             attributes 'Implementation-Version': version
@@ -93,12 +73,12 @@ subprojects {
     }
 
     task sourceJar(type: Jar) {
-        classifier = 'sources'
+        archiveClassifier.set('sources')
         from sourceSets.main.allSource
     }
 
     task docJar(type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
+        archiveClassifier.set('javadoc')
         from javadoc.destinationDir
     }
 
@@ -158,14 +138,15 @@ subprojects {
                 url isSnapshot ? snapshotsRepoUrl : releasesRepoUrl
                 name 'sonatype'
                 credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                    username = project.hasProperty('ossrhUsername') ? ossrhUsername : ''
+                    password = project.hasProperty('ossrhPassword') ? ossrhPassword : ''
                 }
             }
         }
     }
 
     signing {
+        useGpgCmd()
         sign publishing.publications.full
     }
 }

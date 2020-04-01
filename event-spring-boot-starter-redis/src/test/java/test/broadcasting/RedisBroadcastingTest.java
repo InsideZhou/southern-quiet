@@ -1,8 +1,8 @@
 package test.broadcasting;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.event.EventPublisher;
-import com.ai.southernquiet.event.RedisEventAutoConfiguration;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.event.EventPublisher;
+import me.insidezhou.southernquiet.event.RedisEventAutoConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

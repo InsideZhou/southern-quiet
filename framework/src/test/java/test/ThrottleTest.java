@@ -1,6 +1,6 @@
 package test;
 
-import com.ai.southernquiet.throttle.DefaultThrottle;
+import me.insidezhou.southernquiet.throttle.DefaultThrottle;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;

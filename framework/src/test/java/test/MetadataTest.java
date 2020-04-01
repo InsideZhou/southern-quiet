@@ -1,7 +1,7 @@
 package test;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.util.Metadata;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.util.Metadata;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

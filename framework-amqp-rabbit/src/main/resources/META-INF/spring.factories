@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.ai.southernquiet.amqp.rabbit.AmqpAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration

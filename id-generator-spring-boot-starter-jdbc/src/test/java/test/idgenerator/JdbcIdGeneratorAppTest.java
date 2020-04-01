@@ -1,8 +1,8 @@
 package test.idgenerator;
 
-import com.ai.southernquiet.idgenerator.IdGeneratorWorkerTable;
-import com.ai.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration;
-import com.ai.southernquiet.util.IdGenerator;
+import me.insidezhou.southernquiet.idgenerator.IdGeneratorWorkerTable;
+import me.insidezhou.southernquiet.idgenerator.JdbcIdGeneratorAutoConfiguration;
+import me.insidezhou.southernquiet.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ImportAutoConfiguration(JdbcIdGeneratorAutoConfiguration.class)
 @RestController
 public class JdbcIdGeneratorAppTest {
-    private final static Logger log = LoggerFactory.getLogger(JdbcIdGeneratorAppTest.class);
-
     public static void main(String[] args) {
         SpringApplication.run(JdbcIdGeneratorAppTest.class, args);
     }

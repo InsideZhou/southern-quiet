@@ -1,0 +1,19 @@
+image: inside/publish-to-sonatype
+
+pipelines:
+  tags:
+    '*':
+      - step:
+          script:
+            - openssl aes-256-cbc -pass pass:$opensslPassword -in private-key.gpg.enc -out private-key.gpg -d
+            - mkdir -p $BITBUCKET_CLONE_DIR/.gnupg
+            - gpg --homedir $BITBUCKET_CLONE_DIR/.gnupg --batch --import private-key.gpg
+            - rm $BITBUCKET_CLONE_DIR/private-key.gpg
+            - >
+              gradle publishFullPToSR
+              -Psigning.gnupg.executable=gpg
+              -Psigning.gnupg.keyName=A5E6CDB4
+              -Psigning.gnupg.homeDir=$BITBUCKET_CLONE_DIR/.gnupg
+              -Psigning.gnupg.passphrase=$signPassword
+              -PossrhUsername=$ossrhUsername
+              -PossrhPassword=$ossrhPassword

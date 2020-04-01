@@ -1,4 +1,0 @@
-dependencies {
-    api project(':logging-spring-boot-starter-logback-filesystem')
-    implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
-}

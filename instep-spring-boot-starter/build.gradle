@@ -1,0 +1,11 @@
+dependencies {
+    api "me.insidezhou.instep:instep-dao:${instepVersion}"
+
+    implementation "org.springframework.boot:spring-boot-starter-jdbc"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-web"
+
+    testRuntimeOnly 'org.postgresql:postgresql:42.2.2'
+    testRuntimeOnly 'mysql:mysql-connector-java:8.0.11'
+    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:7.4.1.jre8'
+}

@@ -1,8 +1,8 @@
 package test.job;
 
-import com.ai.southernquiet.FrameworkAutoConfiguration;
-import com.ai.southernquiet.job.AmqpJobAutoConfiguration;
-import com.ai.southernquiet.job.JobProcessor;
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
+import me.insidezhou.southernquiet.job.JobProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
@@ -22,6 +23,7 @@ public class AmqpJobTestApp {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public static RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
         RabbitTransactionManager manager = new RabbitTransactionManager();
         manager.setConnectionFactory(connectionFactory);

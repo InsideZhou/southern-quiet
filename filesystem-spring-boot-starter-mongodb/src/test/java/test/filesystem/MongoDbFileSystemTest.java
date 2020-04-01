@@ -12,6 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class MongoDbFileSystemTest extends FileSystemTest {
     @Configuration
     @EnableAutoConfiguration
-    @ComponentScan({"com.ai.southernquiet.filesystem"})
+    @ComponentScan({"me.insidezhou.southernquiet.filesystem"})
     public static class Config {}
 }

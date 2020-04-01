@@ -2,4 +2,6 @@ dependencies {
     api project(':framework')
 
     api "org.springframework.boot:spring-boot-starter-amqp"
+
+    implementation "org.springframework.boot:spring-boot-starter-json"
 }

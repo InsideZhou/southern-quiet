@@ -1,12 +1,14 @@
 dependencies {
     api project(':framework')
 
+    implementation project(':instep-spring-boot-starter')
+
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
-    implementation "me.insidezhou.instep:instep-spring-boot-starter:${instepVersion}"
 
     testImplementation project(':framework').sourceSets.test.output
     testImplementation "org.springframework.boot:spring-boot-starter-web"
 
     testRuntimeOnly 'org.postgresql:postgresql:42.2.2'
     testRuntimeOnly 'mysql:mysql-connector-java:8.0.11'
+    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:7.4.1.jre8'
 }
