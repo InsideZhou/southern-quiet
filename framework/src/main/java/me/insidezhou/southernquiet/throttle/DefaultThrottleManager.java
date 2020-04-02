@@ -14,12 +14,12 @@ public class DefaultThrottleManager implements ThrottleManager {
     public DefaultThrottle getThrottle(String name) {
         DefaultThrottle throttle = throttleMap.get(name);
         if (throttle == null) {
-            throttle = createOrThrottle(name);
+            throttle = createThrottle(name);
         }
         return throttle;
     }
 
-    private synchronized DefaultThrottle createOrThrottle(String name) {
+    private synchronized DefaultThrottle createThrottle(String name) {
         DefaultThrottle throttle = throttleMap.get(name);
         if (throttle != null) {
             return throttle;

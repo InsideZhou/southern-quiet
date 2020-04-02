@@ -1,0 +1,7 @@
+dependencies {
+    api project(':framework')
+
+    implementation "org.springframework.boot:spring-boot-starter-data-redis"
+
+    testImplementation project(':framework').sourceSets.test.output
+}
