@@ -4,6 +4,9 @@ import me.insidezhou.southernquiet.throttle.lock.RedisDistributedLock;
 
 import java.time.Duration;
 
+/**
+ * 使用redis实现的基于时间的节流器
+ */
 public class RedisTimeBaseThrottle implements Throttle {
 
     private RedisDistributedLock redisDistributedLock;

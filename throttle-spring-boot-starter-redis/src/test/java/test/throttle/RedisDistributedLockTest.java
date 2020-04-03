@@ -65,9 +65,8 @@ public class RedisDistributedLockTest {
         }
         for (Thread thread : threads) {
             thread.start();
+            thread.join();
         }
-
-        Thread.sleep(1500);
 
         Assert.assertEquals(1, getLockNumber);
 
@@ -82,9 +81,9 @@ public class RedisDistributedLockTest {
         }
         for (Thread thread : threads) {
             thread.start();
+            thread.join();
         }
 
-        Thread.sleep(1500);
         Assert.assertEquals(2, getLockNumber);
     }
 

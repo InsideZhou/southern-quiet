@@ -53,6 +53,50 @@
 
 - job-spring-boot-starter-*
 
+##### Throttle 节流器  
+
+> 对某个数据进行截流一段时间或截流一定次数后，再重新打开
+
+- framework自带默认的基于本地内存的时间节流器，只能用于单实例的应用。强烈不建议用于分布式应用。
+
+- throttle-spring-boot-starter-redis 是使用redis实现的用于分布式应用的节流器。
+
+###### throttle-spring-boot-starter-redis如何使用：
+有两种节流器
+
+1、基于时间的节流器RedisTimeBaseThrottle：open(String key,long threshold)，threshold为节流时间（毫秒）
+
+2、基于计数器的节流器RedisCounterBaseThrottle：open(String key,long threshold)，threshold为节流次数（开闸后节流多少次）
+
+如何获取节流器：
+
+项目中引入throttle-spring-boot-starter-redis模块后，使用注入或ThrottleManager获取节流器，样例代码如下：
+```java
+    
+@Controller
+public class DemoController {
+
+    @Autowired
+    private ThrottleManager throttleManager;
+
+    //注入redisTimeBaseThrottle
+    @Resource(name = RedisThrottleBeanName.redisTimeBaseThrottle)
+    private Throttle redisTimeBaseThrottle;
+
+    //注入redisCounterBaseThrottle
+    @Resource(name = RedisThrottleBeanName.redisCounterBaseThrottle)
+    private Throttle redisCounterBaseThrottle;
+
+    public void getThrottleExample() {
+        //获取RedisTimeBaseThrottle
+        Throttle redisTimeBaseThrottle = throttleManager.getThrottle();
+
+        //获取RedisCounterBaseThrottle
+        Throttle redisCounterBaseThrottle = throttleManager.getThrottle(RedisThrottleBeanName.redisCounterBaseThrottle);
+    }
+}
+
+```
 
 ### 如何使用
 1. 在应用入口类上使用SpringBootApplication或者EnableAutoConfiguration注解。

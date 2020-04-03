@@ -1,11 +1,10 @@
 package test.throttle;
 
-import me.insidezhou.southernquiet.throttle.RedisTimeBaseThrottle;
 import me.insidezhou.southernquiet.throttle.Throttle;
+import me.insidezhou.southernquiet.throttle.constants.RedisThrottleBeanName;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
+import java.util.UUID;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
@@ -23,17 +23,16 @@ public class RedisTimeBaseThrottleTest {
     @ComponentScan({"me.insidezhou.southernquiet.throttle"})
     public static class Config {}
 
-    @Resource(name="redisTimeBaseThrottle")
+    @Resource(name= RedisThrottleBeanName.redisTimeBaseThrottle)
     private Throttle throttle;
 
     @Test
     public void testBySameKey() throws InterruptedException {
 
-        String orderId = "" + System.currentTimeMillis();
+        String orderId = UUID.randomUUID().toString();
 
         int count = 0;
         for (int i = 0; i < 3; i++) {
-            System.out.println(i);
             count++;
         }
         Assert.assertEquals(3, count);
@@ -45,7 +44,6 @@ public class RedisTimeBaseThrottleTest {
             if (!open) {
                 continue;
             }
-            System.out.println(i);
             count++;
         }
         Assert.assertEquals(2, count);
@@ -55,18 +53,16 @@ public class RedisTimeBaseThrottleTest {
     public void testByDifferentKeys() throws InterruptedException {
         int count1 = 0;
         int count2 = 0;
-        String orderId1 = "orderId1";
-        String orderId2 = "orderId2";
+        String orderId1 = UUID.randomUUID().toString();
+        String orderId2 = UUID.randomUUID().toString();
         for (int i = 0; i < 3; i++) {
             boolean open1 = throttle.open(orderId1, 100);
             if (open1) {
                 count1++;
-                System.out.println(orderId1 + "  " + i);
             }
             boolean open2 = throttle.open(orderId2, 100);
             if (open2) {
                 count2++;
-                System.out.println(orderId2 + "  " + i);
             }
             Thread.sleep(60);
         }
