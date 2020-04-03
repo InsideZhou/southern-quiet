@@ -1,7 +1,7 @@
 package me.insidezhou.southernquiet.throttle;
 
 @SuppressWarnings("WeakerAccess")
-public class DefaultThrottle implements Throttle {
+public class DefaultThrottle {
     private Long lastOpenedAt;
     private long counter;
 
@@ -21,7 +21,6 @@ public class DefaultThrottle implements Throttle {
         return counter;
     }
 
-    @Override
     public boolean openByTime(long threshold) {
         long counter = getCounter();
         Long elapsed = getElapsed();
@@ -39,7 +38,6 @@ public class DefaultThrottle implements Throttle {
         }
     }
 
-    @Override
     public boolean openByCount(long threshold) {
         long counter = getCounter();
 
