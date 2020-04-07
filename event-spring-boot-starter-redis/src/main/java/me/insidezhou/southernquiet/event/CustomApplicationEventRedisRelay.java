@@ -2,16 +2,24 @@ package me.insidezhou.southernquiet.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
 
 import static me.insidezhou.southernquiet.event.EventPublisher.CustomApplicationEventChannel;
 
@@ -25,18 +33,82 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
     private ApplicationEventPublisher applicationEventPublisher;
     private RedisMessageListenerContainer container;
 
-    public CustomApplicationEventRedisRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory) {
+    private ApplicationContext applicationContext;
+
+    public CustomApplicationEventRedisRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory,ApplicationContext applicationContext) {
         this.redisTemplate = builder.getRedisTemplate();
         this.eventSerializer = builder.getEventSerializer();
         this.channelSerializer = builder.getChannelSerializer();
 
         this.container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
+
+        this.applicationContext = applicationContext;
     }
 
     @PostConstruct
     public void postConstruct() {
-        container.addMessageListener(this::onMessage, new ChannelTopic(CustomApplicationEventChannel));
+        Arrays.stream(applicationContext.getBeanDefinitionNames())
+                .map(name -> {
+                    try {
+                        return applicationContext.getBean(name);
+                    }
+                    catch (BeansException e) {
+                        log.info("查找EventListener时，bean未能初始化: {}", name);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .forEach(bean -> {
+                    Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
+                            .forEach(method -> {
+                                AnnotationUtils.getRepeatableAnnotations(method, EventListener.class)
+                                        .forEach(listener -> {
+                                            if (log.isDebugEnabled()) {
+                                                log.debug(
+                                                        "找到EventListener：{}，{}",
+                                                        bean.getClass().getSimpleName(),
+                                                        method.getName()
+                                                );
+                                            }
+
+                                            initListener(method);
+                                        });
+                            });
+                });;
+    }
+
+
+    private void initListener(Method method) {
+        //获取method的参数
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        if (parameterTypes.length <= 0) {
+            return;
+        }
+
+        for (Class<?> parameterType : parameterTypes) {
+            ShouldBroadcast annotation = AnnotationUtils.getAnnotation(parameterType, ShouldBroadcast.class);
+            if (annotation == null) {
+                continue;
+            }
+
+            String[] channels = annotation.channels();
+            if (0 == channels.length) {
+                addMessageListener(CustomApplicationEventChannel);
+            }else{
+                for (String channel : channels) {
+                    addMessageListener(channel);
+                }
+            }
+        }
+    }
+
+    private void addMessageListener(String channel) {
+        if (log.isDebugEnabled()) {
+            log.debug("创建RedisMessageListener：{}",channel);
+        }
+
+        container.addMessageListener(this::onMessage, new ChannelTopic(channel));
     }
 
     protected void onMessage(Message message, byte[] pattern) {
