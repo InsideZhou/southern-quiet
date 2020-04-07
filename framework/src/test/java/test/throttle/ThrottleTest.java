@@ -1,33 +1,29 @@
 package test.throttle;
 
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.throttle.Throttle;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.UUID;
 
-@SpringBootTest
+@SpringBootTest(classes = FrameworkAutoConfiguration.class)
 @RunWith(SpringRunner.class)
-public class RedisTimeBaseThrottleTest {
-
-    @SpringBootConfiguration
-    @EnableAutoConfiguration
-    @ComponentScan({"me.insidezhou.southernquiet.throttle"})
-    public static class Config {}
-
+public class ThrottleTest {
     @Autowired
     private ThrottleManager throttleManager;
 
+    @Before
+    public void before() {}
+
     @Test
-    public void testBySameKey() throws InterruptedException {
+    public void timeBasedSameKeys() throws InterruptedException {
 
         String throttleName = UUID.randomUUID().toString();
 
@@ -46,7 +42,7 @@ public class RedisTimeBaseThrottleTest {
     }
 
     @Test
-    public void testByDifferentKeys() throws InterruptedException {
+    public void timeBasedDifferentKeys() throws InterruptedException {
         int count1 = 0;
         int count2 = 0;
         String throttleName1 = UUID.randomUUID().toString();
@@ -70,5 +66,4 @@ public class RedisTimeBaseThrottleTest {
         Assert.assertEquals(2, count1);
         Assert.assertEquals(2, count2);
     }
-
 }
