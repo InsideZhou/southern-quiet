@@ -5,6 +5,8 @@ import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
+import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -91,6 +93,12 @@ public class FrameworkAutoConfiguration {
     @ConfigurationProperties("southern-quiet.framework.key-value")
     public KeyValueStoreProperties keyValueStoreProperties() {
         return new KeyValueStoreProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ThrottleManager throttleManager() {
+        return new DefaultThrottleManager();
     }
 
     @SuppressWarnings("WeakerAccess")
