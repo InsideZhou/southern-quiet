@@ -14,10 +14,31 @@ import java.util.UUID;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
-public class RedisThrottleTest extends ThrottleTest {
+public class DefaultThrottleTest extends ThrottleTest {
+
     @Configuration
     @EnableAutoConfiguration
     @ComponentScan({"me.insidezhou.southernquiet.throttle"})
     public static class Config {}
+
+    @Test
+    public void timeBaseDifferentThreshold() throws InterruptedException {
+        String throttleName = UUID.randomUUID().toString();
+
+        Throttle throttle = throttleManager.getTimeBased(throttleName);
+
+        boolean open = throttle.open(1000);
+        Assert.assertTrue(open);
+
+        open = throttle.open(500);
+        Assert.assertFalse(open);
+
+        Thread.sleep(200);
+
+        open = throttle.open(200);
+        Assert.assertTrue(open);
+
+
+    }
 
 }
