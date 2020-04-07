@@ -1,7 +1,7 @@
 package test.throttle;
 
-import me.insidezhou.southernquiet.throttle.RedisCounterBaseThrottle;
 import me.insidezhou.southernquiet.throttle.Throttle;
+import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,13 +13,12 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.annotation.Resource;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
-public class RedisCounterBaseThrottleTest {
+public class RedisCountBaseThrottleTest {
 
 
     @SpringBootConfiguration
@@ -28,11 +27,11 @@ public class RedisCounterBaseThrottleTest {
     public static class Config {
     }
 
-    @Resource(name = "redisCounterBaseThrottle")
-    private Throttle throttle;
-
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private ThrottleManager throttleManager;
 
     @Test
     public void testIncrementFunction() throws InterruptedException {
@@ -66,15 +65,16 @@ public class RedisCounterBaseThrottleTest {
 
     @Test
     public void testBySameKey() {
-        Assert.assertTrue(throttle instanceof RedisCounterBaseThrottle);
 
-        String key = "" + System.currentTimeMillis();
+        String throttleName = UUID.randomUUID().toString();
+
+        Throttle throttle = throttleManager.getCountBased(throttleName);
 
         int threshold = 1;
 
         int openTimes = 0;
         for (int i = 0; i < 10; i++) {
-            boolean open = throttle.open(key, threshold);
+            boolean open = throttle.open(threshold);
             if (open) {
                 openTimes++;
             }
@@ -84,7 +84,7 @@ public class RedisCounterBaseThrottleTest {
         threshold = 19;
         openTimes = 0;
         for (int i = 0; i < 100; i++) {
-            boolean open = throttle.open(key, threshold);
+            boolean open = throttle.open(threshold);
             if (open) {
                 openTimes++;
             }
@@ -100,14 +100,16 @@ public class RedisCounterBaseThrottleTest {
 
     @Test
     public void testBySameKeyMultipleThread() throws InterruptedException {
-        String key = "" + System.currentTimeMillis();
+        String throttleName = UUID.randomUUID().toString();
+
+        Throttle throttle = throttleManager.getCountBased(throttleName);
 
         int threshold = 1;
 
         int threadNumber = 10;
         Thread[] threads = new Thread[threadNumber];
         for (int i = 0; i < threadNumber; i++) {
-            Thread thread = new Thread(new TestBySameKeyMultipleThreadRunnable(throttle, key, threshold));
+            Thread thread = new Thread(new TestBySameKeyMultipleThreadRunnable(throttle, threshold));
             threads[i] = thread;
         }
         for (Thread thread : threads) {
@@ -119,19 +121,17 @@ public class RedisCounterBaseThrottleTest {
     }
 
     private static class TestBySameKeyMultipleThreadRunnable implements Runnable {
-        String key;
         Throttle throttle;
         long threshold;
 
-        public TestBySameKeyMultipleThreadRunnable(Throttle throttle, String key, long threshold) {
+        public TestBySameKeyMultipleThreadRunnable(Throttle throttle, long threshold) {
             this.throttle = throttle;
-            this.key = key;
             this.threshold = threshold;
         }
 
         @Override
         public void run() {
-            boolean open = throttle.open(key, threshold);
+            boolean open = throttle.open(threshold);
             if (open) {
                 openTimesTestBySameKeyMultipleThreadAddOne();
             }
@@ -144,14 +144,18 @@ public class RedisCounterBaseThrottleTest {
     public void testByDifferentKeys(){
         int count1 = 0;
         int count2 = 0;
-        String orderId1 = UUID.randomUUID().toString();
-        String orderId2 = UUID.randomUUID().toString();
+        String throttleName1 = UUID.randomUUID().toString();
+        String throttleName2 = UUID.randomUUID().toString();
+
+        Throttle throttle1 = throttleManager.getCountBased(throttleName1);
+        Throttle throttle2 = throttleManager.getCountBased(throttleName2);
+
         for (int i = 0; i < 10; i++) {
-            boolean open1 = throttle.open(orderId1, 2);
+            boolean open1 = throttle1.open(2);
             if (open1) {
                 count1++;
             }
-            boolean open2 = throttle.open(orderId2, 3);
+            boolean open2 = throttle2.open(3);
             if (open2) {
                 count2++;
             }

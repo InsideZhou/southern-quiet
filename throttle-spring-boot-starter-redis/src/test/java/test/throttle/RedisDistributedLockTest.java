@@ -110,4 +110,21 @@ public class RedisDistributedLockTest {
 
     }
 
+    @Test
+    public void testUnLock() {
+        String key = UUID.randomUUID().toString();
+
+        boolean getLock=redisDistributedLock.lock(key, Duration.ofSeconds(10));
+
+        Assert.assertTrue(getLock);
+
+        getLock=redisDistributedLock.lock(key, Duration.ofSeconds(10));
+        Assert.assertFalse(getLock);
+
+        redisDistributedLock.unlock(key);
+
+        getLock=redisDistributedLock.lock(key, Duration.ofSeconds(10));
+        Assert.assertTrue(getLock);
+    }
+
 }

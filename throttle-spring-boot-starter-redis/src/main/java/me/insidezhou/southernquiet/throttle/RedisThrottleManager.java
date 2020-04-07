@@ -1,26 +1,26 @@
 package me.insidezhou.southernquiet.throttle;
 
-import org.springframework.context.ApplicationContext;
+import me.insidezhou.southernquiet.throttle.lock.RedisDistributedLock;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
-public class RedisThrottleManager implements ThrottleManager {
+public class RedisThrottleManager extends BaseThrottleManager {
 
-    private Throttle redisTimeBaseThrottle;
+    private StringRedisTemplate stringRedisTemplate;
 
-    private ApplicationContext applicationContext;
+    private RedisDistributedLock redisDistributedLock;
 
-    public RedisThrottleManager(Throttle redisTimeBaseThrottle,ApplicationContext applicationContext) {
-        this.redisTimeBaseThrottle = redisTimeBaseThrottle;
-        this.applicationContext = applicationContext;
+    public RedisThrottleManager(StringRedisTemplate stringRedisTemplate, RedisDistributedLock redisDistributedLock) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.redisDistributedLock = redisDistributedLock;
     }
 
     @Override
-    public Throttle getThrottle() {
-        return redisTimeBaseThrottle;
+    public Throttle getTimeBasedInternal(String throttleName) {
+        return new RedisTimeBaseThrottle(redisDistributedLock,throttleName);
     }
 
     @Override
-    public Throttle getThrottle(String name) {
-        return applicationContext.getBean(name, Throttle.class);
+    public Throttle getCountBasedInternal(String throttleName) {
+        return new RedisCountBaseThrottle(stringRedisTemplate,throttleName);
     }
-
 }

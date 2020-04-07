@@ -12,21 +12,13 @@ public class RedisDistributedLock {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    private static final String LOCK_KEY_PRE = "LOCK_";
-
-    private String getLockKey(String key) {
-        return LOCK_KEY_PRE + key;
-    }
-
     public boolean lock(String key, Duration timeout) {
-        String lockKey = getLockKey(key);
-        Boolean getLock = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, LOCK_KEY_PRE, timeout);
+        Boolean getLock = stringRedisTemplate.opsForValue().setIfAbsent(key, key, timeout);
         return getLock == null ? false : getLock;
     }
 
     public void unlock(String key) {
-        String lockKey = getLockKey(key);
-        stringRedisTemplate.delete(lockKey);
+        stringRedisTemplate.delete(key);
     }
 
 }

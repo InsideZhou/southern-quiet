@@ -4,13 +4,14 @@ import me.insidezhou.southernquiet.throttle.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.UUID;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
@@ -25,24 +26,51 @@ public class RedisThrottleManagerTest {
     private ThrottleManager throttleManager;
 
     @Test
-    public void testGetThrottle() {
+    public void testThrottleManagerForTimeBased() {
         Assert.assertTrue(throttleManager instanceof RedisThrottleManager);
 
-        Throttle throttle = throttleManager.getThrottle();
-        Assert.assertTrue(throttle instanceof RedisTimeBaseThrottle);
+        Throttle timeBased = throttleManager.getTimeBased();
+        Throttle timeBasedNull = throttleManager.getTimeBased(null);
 
-        try {
-            throttleManager.getThrottle("whatever");
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof NoSuchBeanDefinitionException);
-        }
+        Assert.assertTrue(timeBased instanceof RedisTimeBaseThrottle);
+        Assert.assertTrue(timeBasedNull instanceof RedisTimeBaseThrottle);
 
-        throttle = throttleManager.getThrottle("redisTimeBaseThrottle");
-        Assert.assertTrue(throttle instanceof RedisTimeBaseThrottle);
+        Assert.assertSame(timeBased, timeBasedNull);
 
-        throttle = throttleManager.getThrottle("redisCounterBaseThrottle");
-        Assert.assertTrue(throttle instanceof RedisCounterBaseThrottle);
+        String name1 = UUID.randomUUID().toString();
+        String name2 = UUID.randomUUID().toString();
 
+        Throttle t1 = throttleManager.getTimeBased(name1);
+        Throttle t1Copy = throttleManager.getTimeBased(name1);
+
+        Assert.assertSame(t1, t1Copy);
+
+        Throttle t2 = throttleManager.getTimeBased(name2);
+        Assert.assertNotSame(t1, t2);
+    }
+
+    @Test
+    public void testThrottleManagerForCountBased() {
+        Assert.assertTrue(throttleManager instanceof RedisThrottleManager);
+
+        Throttle countBased = throttleManager.getCountBased();
+        Throttle countBasedNull = throttleManager.getCountBased(null);
+
+        Assert.assertTrue(countBased instanceof RedisCountBaseThrottle);
+        Assert.assertTrue(countBasedNull instanceof RedisCountBaseThrottle);
+
+        Assert.assertSame(countBased, countBasedNull);
+
+        String name1 = UUID.randomUUID().toString();
+        String name2 = UUID.randomUUID().toString();
+
+        Throttle t1 = throttleManager.getCountBased(name1);
+        Throttle t1Copy = throttleManager.getCountBased(name1);
+
+        Assert.assertSame(t1, t1Copy);
+
+        Throttle t2 = throttleManager.getCountBased(name2);
+        Assert.assertNotSame(t1, t2);
     }
 
 }
