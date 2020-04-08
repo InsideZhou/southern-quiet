@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.event;
 
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -9,6 +10,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -19,12 +21,11 @@ import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
-
-import static me.insidezhou.southernquiet.event.EventPublisher.CustomApplicationEventChannel;
+import java.util.stream.Stream;
 
 @SuppressWarnings("rawtypes")
-public class CustomApplicationEventRedisRelay implements ApplicationEventPublisherAware {
-    private final static Logger log = LoggerFactory.getLogger(CustomApplicationEventRedisRelay.class);
+public class EventBroadcastingRedisRelay implements ApplicationEventPublisherAware {
+    private final static Logger log = LoggerFactory.getLogger(EventBroadcastingRedisRelay.class);
 
     private RedisTemplate redisTemplate;
     private RedisSerializer eventSerializer;
@@ -32,16 +33,19 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
 
     private ApplicationEventPublisher applicationEventPublisher;
     private RedisMessageListenerContainer container;
+    private FrameworkAutoConfiguration.EventProperties eventProperties;
 
     private ApplicationContext applicationContext;
 
-    public CustomApplicationEventRedisRelay(RedisTemplateBuilder builder, RedisMessageListenerContainer container, ApplicationContext applicationContext) {
+    public EventBroadcastingRedisRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory, FrameworkAutoConfiguration.EventProperties eventProperties, ApplicationContext applicationContext) {
         this.redisTemplate = builder.getRedisTemplate();
         this.eventSerializer = builder.getEventSerializer();
         this.channelSerializer = builder.getChannelSerializer();
-
-        this.container = container;
+        this.eventProperties = eventProperties;
         this.applicationContext = applicationContext;
+
+        this.container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
     }
 
     @PostConstruct
@@ -74,37 +78,26 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
                             });
                     })
             );
+
+        container.afterPropertiesSet();
+        container.start();
     }
 
-
     private void initListener(Method method) {
-        //获取method的参数
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        if (parameterTypes.length <= 0) {
-            return;
-        }
+        Arrays.stream(method.getParameterTypes())
+            .flatMap(parameterType -> {
+                ShouldBroadcast annotation = AnnotationUtils.getAnnotation(parameterType, ShouldBroadcast.class);
+                if (null == annotation) return Stream.empty();
 
-        for (Class<?> parameterType : parameterTypes) {
-            ShouldBroadcast annotation = AnnotationUtils.getAnnotation(parameterType, ShouldBroadcast.class);
-            if (annotation == null) {
-                continue;
-            }
-
-            String[] channels = annotation.channels();
-            if (0 == channels.length) {
-                addMessageListener(CustomApplicationEventChannel);
-            }
-            else {
-                for (String channel : channels) {
-                    addMessageListener(channel);
-                }
-            }
-        }
+                return Arrays.stream(0 == annotation.channels().length ? eventProperties.getDefaultChannels() : annotation.channels());
+            })
+            .distinct()
+            .forEach(this::addMessageListener);
     }
 
     private void addMessageListener(String channel) {
         if (log.isDebugEnabled()) {
-            log.debug("创建RedisMessageListener：{}", channel);
+            log.debug("创建RedisMessageListener: channel={}", channel);
         }
 
         container.addMessageListener(this::onMessage, new ChannelTopic(channel));
