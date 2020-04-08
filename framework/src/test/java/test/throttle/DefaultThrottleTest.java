@@ -22,7 +22,7 @@ public class DefaultThrottleTest extends ThrottleTest {
     public static class Config {}
 
     @Test
-    public void timeBaseDifferentThreshold() throws InterruptedException {
+    public void timeBaseDifferentThresholds() throws InterruptedException {
         String throttleName = UUID.randomUUID().toString();
 
         Throttle throttle = throttleManager.getTimeBased(throttleName);
@@ -37,8 +37,32 @@ public class DefaultThrottleTest extends ThrottleTest {
 
         open = throttle.open(200);
         Assert.assertTrue(open);
+    }
+
+    @Test
+    public void countBaseDifferentThresholds() {
+        String throttleName1 = UUID.randomUUID().toString();
+        Throttle throttle1 = throttleManager.getCountBased(throttleName1);
+        boolean open = throttle1.open(3);
+        Assert.assertTrue(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
 
 
+        String throttleName2 = UUID.randomUUID().toString();
+        Throttle throttle2 = throttleManager.getCountBased(throttleName2);
+        open = throttle2.open(3);
+        Assert.assertTrue(open);
+        open = throttle2.open(3);
+        Assert.assertFalse(open);
+        open = throttle2.open(3);
+        Assert.assertFalse(open);
+        open = throttle2.open(2);
+        Assert.assertTrue(open);
     }
 
 }

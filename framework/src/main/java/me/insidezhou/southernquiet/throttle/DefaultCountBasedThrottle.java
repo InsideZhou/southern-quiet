@@ -20,12 +20,22 @@ public class DefaultCountBasedThrottle implements Throttle {
 //        1     4     7     10    threshold=2
 //        1       5       9       threshold=3
 
+        if (counter <= 0) {
+            counter = 1;
+            return true;
+        }
+
         counter++;
 
         //注意，这里要加 1 （看上面的示例可以更方便理解算法）
         threshold += 1;
 
-        return counter % threshold == 1;
+        if (counter - threshold >= 1) {
+            counter = 1;
+            return true;
+        }else {
+            return false;
+        }
     }
 
 }
