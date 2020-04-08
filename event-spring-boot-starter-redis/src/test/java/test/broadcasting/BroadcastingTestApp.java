@@ -9,6 +9,9 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.event.EventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @SpringBootApplication
 @ImportAutoConfiguration({FrameworkAutoConfiguration.class, RedisEventAutoConfiguration.class})
 public class BroadcastingTestApp {
@@ -23,8 +26,10 @@ public class BroadcastingTestApp {
         log.debug("{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
     }
 
+    public static Map<String, Integer> testCustomChannelListenerMap = new HashMap<>();
     @EventListener
-    public void testCustomChannel(BroadcastingCustomChannel broadcastingCustomChannel) {
-        log.info("{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
+    public void testCustomChannelListener(BroadcastingCustomChannel broadcastingCustomChannel) {
+        log.debug("{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
+        testCustomChannelListenerMap.merge(broadcastingCustomChannel.getId().toString(), 1, Integer::sum);
     }
 }

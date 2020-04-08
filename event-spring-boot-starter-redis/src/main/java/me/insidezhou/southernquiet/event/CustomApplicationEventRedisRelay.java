@@ -42,6 +42,8 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
 
         this.container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
+        container.afterPropertiesSet();
+        container.start();
 
         this.applicationContext = applicationContext;
     }
@@ -59,7 +61,7 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
                     }
                 })
                 .filter(Objects::nonNull)
-                .forEach(bean -> {
+                .forEach(bean ->
                     Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                             .forEach(method -> {
                                 AnnotationUtils.getRepeatableAnnotations(method, EventListener.class)
@@ -74,8 +76,8 @@ public class CustomApplicationEventRedisRelay implements ApplicationEventPublish
 
                                             initListener(method);
                                         });
-                            });
-                });;
+                            })
+                );
     }
 
 

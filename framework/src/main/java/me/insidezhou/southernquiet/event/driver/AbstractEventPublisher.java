@@ -29,8 +29,6 @@ public abstract class AbstractEventPublisher<E> implements EventPublisher<E>, Ap
     @SuppressWarnings({"ConstantConditions"})
     @Override
     public void publish(E event) {
-        publishToLocalOnly(event);
-
         ShouldBroadcast annotation = AnnotationUtils.getAnnotation(event.getClass(), ShouldBroadcast.class);
         if (null != annotation) {
             String[] channels = annotation.channels();
@@ -39,6 +37,8 @@ public abstract class AbstractEventPublisher<E> implements EventPublisher<E>, Ap
             }
 
             broadcast(event, channels);
+        } else {
+            publishToLocalOnly(event);
         }
     }
 
