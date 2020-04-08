@@ -10,8 +10,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "rawtypes"})
 @Configuration
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 public class RedisEventAutoConfiguration {
@@ -37,8 +38,15 @@ public class RedisEventAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory, ApplicationContext applicationContext) {
-        return new CustomApplicationEventRedisRelay(builder, redisConnectionFactory, applicationContext);
+    public CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisMessageListenerContainer redisMessageListenerContainer, ApplicationContext applicationContext) {
+        return new CustomApplicationEventRedisRelay(builder, redisMessageListenerContainer, applicationContext);
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
+        return container;
+    }
 }
