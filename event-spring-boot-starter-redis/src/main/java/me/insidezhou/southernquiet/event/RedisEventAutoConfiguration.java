@@ -36,7 +36,8 @@ public class RedisEventAutoConfiguration {
     }
 
     @Bean
-    public static CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory, ApplicationContext applicationContext) {
+    @ConditionalOnMissingBean
+    public CustomApplicationEventRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder, RedisConnectionFactory redisConnectionFactory, ApplicationContext applicationContext) {
         return new CustomApplicationEventRedisRelay(builder, redisConnectionFactory, applicationContext);
     }
 
