@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Random;
 
 /**
- * 基于twiiter snowflake算法、64bit、默认秒级精度的发号器
+ * 基于twitter snowflake算法、64bit、默认秒级精度的发号器
  * <p>
  * 0 - timestamp - highPadding - worker - lowPadding - sequence
  */
