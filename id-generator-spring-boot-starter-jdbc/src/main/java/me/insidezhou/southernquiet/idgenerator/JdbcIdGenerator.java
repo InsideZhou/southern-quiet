@@ -35,7 +35,7 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
+        maxWorkerId = LongIdGenerator.Companion.maxIntAtBits(properties.getWorkerIdBits());
         workerIdInUse = getWorkerId();
 
         idGenerator = new SnowflakeIdGenerator(

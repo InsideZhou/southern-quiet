@@ -81,7 +81,7 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
     }
 
     @Override
-    public long getSequenceFromId(long id) {
-        return (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
+    public int getSequenceFromId(long id) {
+        return (int) (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
     }
 }
