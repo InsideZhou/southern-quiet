@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Random;
 
 /**
- * 基于twiiter snowflake算法、64bit、默认秒级精度的发号器
+ * 基于twitter snowflake算法、64bit、默认秒级精度的发号器
  * <p>
  * 0 - timestamp - highPadding - worker - lowPadding - sequence
  */
@@ -81,7 +81,7 @@ public class SnowflakeIdGenerator extends LongIdGenerator implements IdGenerator
     }
 
     @Override
-    public long getSequenceFromId(long id) {
-        return (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
+    public int getSequenceFromId(long id) {
+        return (int) (id << 64 - getSequenceBits()) >>> (64 - getSequenceBits());
     }
 }

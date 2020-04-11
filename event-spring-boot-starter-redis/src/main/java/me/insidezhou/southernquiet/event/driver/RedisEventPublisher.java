@@ -9,6 +9,7 @@ import org.springframework.util.Assert;
 
 import java.io.Serializable;
 
+@SuppressWarnings("rawtypes")
 public class RedisEventPublisher<E extends Serializable> extends AbstractEventPublisher<E> {
     private RedisTemplate redisTemplate;
     private RedisSerializer<E> eventSerializer;

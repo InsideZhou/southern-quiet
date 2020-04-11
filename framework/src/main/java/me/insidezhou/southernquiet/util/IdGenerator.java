@@ -9,5 +9,5 @@ public interface IdGenerator {
 
     int getWorkerFromId(long id);
 
-    long getSequenceFromId(long id);
+    int getSequenceFromId(long id);
 }
