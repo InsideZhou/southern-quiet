@@ -6,11 +6,12 @@ import me.insidezhou.southernquiet.event.driver.RedisEventPublisher;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "rawtypes"})
 @Configuration
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 public class RedisEventAutoConfiguration {
@@ -32,5 +33,14 @@ public class RedisEventAutoConfiguration {
     @ConditionalOnMissingBean
     public RedisTemplateBuilder redisTemplateBuilder(FstSerializationRedisSerializer eventSerializer, RedisConnectionFactory connectionFactory) {
         return new RedisTemplateBuilder<>(eventSerializer, connectionFactory);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public EventBroadcastingRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder,
+                                                                   RedisConnectionFactory redisConnectionFactory,
+                                                                   FrameworkAutoConfiguration.EventProperties eventProperties,
+                                                                   ApplicationContext applicationContext) {
+        return new EventBroadcastingRedisRelay(builder, redisConnectionFactory, eventProperties, applicationContext);
     }
 }

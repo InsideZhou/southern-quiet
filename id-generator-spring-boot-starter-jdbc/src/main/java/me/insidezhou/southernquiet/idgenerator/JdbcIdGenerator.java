@@ -20,12 +20,12 @@ import java.util.Random;
 public class JdbcIdGenerator implements IdGenerator {
     private final static Logger log = LoggerFactory.getLogger(JdbcIdGenerator.class);
 
-    private IdGenerator idGenerator;
-    private Metadata metadata;
-    private IdGeneratorWorkerTable workerTable;
-    private InstepSQL instepSQL;
-    private int workerIdInUse;
-    private int maxWorkerId;
+    private final IdGenerator idGenerator;
+    private final Metadata metadata;
+    private final IdGeneratorWorkerTable workerTable;
+    private final InstepSQL instepSQL;
+    private final int workerIdInUse;
+    private final int maxWorkerId;
 
     @SuppressWarnings("WeakerAccess")
     public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
@@ -35,7 +35,7 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        maxWorkerId = LongIdGenerator.Companion.maxIntegerAtBits(properties.getWorkerIdBits());
+        maxWorkerId = LongIdGenerator.Companion.maxIntAtBits(properties.getWorkerIdBits());
         workerIdInUse = getWorkerId();
 
         idGenerator = new SnowflakeIdGenerator(
@@ -167,7 +167,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     @Override
-    public long getSequenceFromId(long id) {
+    public int getSequenceFromId(long id) {
         return idGenerator.getSequenceFromId(id);
     }
 }

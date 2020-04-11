@@ -3,6 +3,7 @@ package test.broadcasting;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.event.EventPublisher;
 import me.insidezhou.southernquiet.event.RedisEventAutoConfiguration;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,5 +28,16 @@ public class RedisBroadcastingTest {
     @Test(expected = ClassCastException.class)
     public void sendFailure() {
         eventPublisher.publish(new NonSerializableEvent());
+    }
+
+    @Test
+    public void sendCustomChannel() throws InterruptedException {
+        Thread.sleep(1000);
+        BroadcastingCustomChannel broadcastingCustomChannel = new BroadcastingCustomChannel();
+        eventPublisher.publish(broadcastingCustomChannel);
+        Thread.sleep(1000);
+        Integer count = BroadcastingTestApp.testCustomChannelListenerMap.get(broadcastingCustomChannel.getId().toString());
+        Assert.assertNotNull(count);
+        Assert.assertEquals(1, count.intValue());
     }
 }
