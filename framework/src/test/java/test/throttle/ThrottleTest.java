@@ -126,7 +126,7 @@ public class ThrottleTest {
 
     private static int openTimesCountBaseBySameKeyMultipleThread = 0;
 
-    private synchronized static void openTimesCoutBaseBySameKeyMultipleThreadAddOne() {
+    private synchronized static void openTimesCountBaseBySameKeyMultipleThreadAddOne() {
         openTimesCountBaseBySameKeyMultipleThread++;
     }
 
@@ -150,6 +150,8 @@ public class ThrottleTest {
         }
 
         Assert.assertEquals(5, openTimesCountBaseBySameKeyMultipleThread);
+
+        openTimesCountBaseBySameKeyMultipleThread = 0;
     }
 
     private static class CountBaseSameKeyMultipleThreadRunnable implements Runnable {
@@ -165,7 +167,7 @@ public class ThrottleTest {
         public void run() {
             boolean open = throttle.open(threshold);
             if (open) {
-                openTimesCoutBaseBySameKeyMultipleThreadAddOne();
+                openTimesCountBaseBySameKeyMultipleThreadAddOne();
             }
         }
     }
