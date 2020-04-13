@@ -3,9 +3,6 @@ package me.insidezhou.southernquiet.throttle;
 @SuppressWarnings("WeakerAccess")
 public class DefaultCountBasedThrottle implements Throttle {
 
-    DefaultCountBasedThrottle() {
-    }
-
     private long counter = 0;
 
     @Override

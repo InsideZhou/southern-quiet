@@ -3,9 +3,6 @@ package me.insidezhou.southernquiet.throttle;
 @SuppressWarnings("WeakerAccess")
 public class DefaultTimeBasedThrottle implements Throttle {
 
-    DefaultTimeBasedThrottle() {
-    }
-
     /**
      * 上次开闸时间
      */
@@ -24,7 +21,8 @@ public class DefaultTimeBasedThrottle implements Throttle {
         if (now >= lastOpenedAt + threshold) {
             lastOpenedAt = now;
             return true;
-        } else {
+        }
+        else {
             return false;
         }
     }
