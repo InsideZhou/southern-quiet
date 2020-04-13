@@ -11,7 +11,7 @@ public interface ThrottleManager {
     }
 
     /**
-     * 获取基于时间的节流器
+     * 获取基于时间的节流器，单位：毫秒。
      */
     Throttle getTimeBased(String throttleName);
 
