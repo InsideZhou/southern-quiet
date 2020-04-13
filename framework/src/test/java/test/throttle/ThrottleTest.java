@@ -3,6 +3,7 @@ package test.throttle;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.throttle.Throttle;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
+import org.assertj.core.internal.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,27 @@ public class ThrottleTest {
 
     @Before
     public void before() {
+    }
+
+    @Test
+    public void countBased() {
+        Throttle throttle = throttleManager.getCountBased(RandomString.make());
+
+        Assert.assertFalse(throttle.open(1));
+        Assert.assertTrue(throttle.open(1));
+        Assert.assertFalse(throttle.open(2));
+        Assert.assertFalse(throttle.open(2));
+        Assert.assertTrue(throttle.open(2));
+    }
+
+    @Test
+    public void countBasedForZero() {
+        Throttle throttle = throttleManager.getCountBased(RandomString.make());
+
+        Assert.assertFalse(throttle.open(3));
+        Assert.assertTrue(throttle.open(0));
+        Assert.assertFalse(throttle.open(1));
+        Assert.assertTrue(throttle.open(1));
     }
 
     @Test
@@ -172,5 +194,47 @@ public class ThrottleTest {
         }
     }
 
+    @Test
+    public void timeBaseDifferentThresholds() throws InterruptedException {
+        String throttleName = UUID.randomUUID().toString();
 
+        Throttle throttle = throttleManager.getTimeBased(throttleName);
+
+        boolean open = throttle.open(1000);
+        Assert.assertTrue(open);
+
+        open = throttle.open(500);
+        Assert.assertFalse(open);
+
+        Thread.sleep(200);
+
+        open = throttle.open(200);
+        Assert.assertTrue(open);
+    }
+
+    @Test
+    public void countBaseDifferentThresholds() {
+        String throttleName1 = UUID.randomUUID().toString();
+        Throttle throttle1 = throttleManager.getCountBased(throttleName1);
+        boolean open = throttle1.open(3);
+        Assert.assertTrue(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+
+
+        String throttleName2 = UUID.randomUUID().toString();
+        Throttle throttle2 = throttleManager.getCountBased(throttleName2);
+        open = throttle2.open(3);
+        Assert.assertTrue(open);
+        open = throttle2.open(3);
+        Assert.assertFalse(open);
+        open = throttle2.open(3);
+        Assert.assertFalse(open);
+        open = throttle2.open(2);
+        Assert.assertTrue(open);
+    }
 }
