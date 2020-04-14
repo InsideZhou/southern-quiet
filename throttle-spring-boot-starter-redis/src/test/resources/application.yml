@@ -1,7 +1,4 @@
 spring:
   redis:
     cluster:
-      nodes: atai-testing-0:6379,atai-testing-1:6379,atai-testing-2:6379
-#    host: 112.74.38.19
-#    port: 6379
-#    password: 444444
+      nodes:
