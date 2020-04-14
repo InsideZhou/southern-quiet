@@ -18,11 +18,11 @@ public abstract class BaseThrottleManager implements ThrottleManager {
         if (throttle != null) {
             return throttle;
         }
-        timeBaseThrottleMap.putIfAbsent(throttleName, getTimeBasedInternal(throttleName));
+        timeBaseThrottleMap.putIfAbsent(throttleName, createTimeBased(throttleName));
         return timeBaseThrottleMap.get(throttleName);
     }
 
-    public abstract Throttle getTimeBasedInternal(String throttleName);
+    public abstract Throttle createTimeBased(String throttleName);
 
     @Override
     public Throttle getCountBased(String throttleName) {
@@ -33,11 +33,11 @@ public abstract class BaseThrottleManager implements ThrottleManager {
         if (throttle != null) {
             return throttle;
         }
-        countBaseThrottleMap.putIfAbsent(throttleName, getCountBasedInternal(throttleName));
+        countBaseThrottleMap.putIfAbsent(throttleName, createCountBased(throttleName));
         return countBaseThrottleMap.get(throttleName);
     }
 
-    public abstract Throttle getCountBasedInternal(String throttleName);
+    public abstract Throttle createCountBased(String throttleName);
 
 
 

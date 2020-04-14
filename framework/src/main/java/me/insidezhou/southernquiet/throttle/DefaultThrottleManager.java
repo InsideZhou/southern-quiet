@@ -3,12 +3,12 @@ package me.insidezhou.southernquiet.throttle;
 public class DefaultThrottleManager extends BaseThrottleManager {
 
     @Override
-    public Throttle getTimeBasedInternal(String throttleName) {
+    public Throttle createTimeBased(String throttleName) {
         return new DefaultTimeBasedThrottle();
     }
 
     @Override
-    public Throttle getCountBasedInternal(String throttleName) {
+    public Throttle createCountBased(String throttleName) {
         return new DefaultCountBasedThrottle();
     }
 

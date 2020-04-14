@@ -1,6 +1,10 @@
 package test.throttle;
 
-import me.insidezhou.southernquiet.throttle.*;
+import me.insidezhou.southernquiet.throttle.Throttle;
+import me.insidezhou.southernquiet.throttle.ThrottleManager;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaCountBaseThrottle;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaThrottleManager;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaTimeBaseThrottle;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +19,7 @@ import java.util.UUID;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
-public class RedisThrottleManagerTest {
+public class RedisLuaThrottleManagerTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
@@ -27,13 +31,13 @@ public class RedisThrottleManagerTest {
 
     @Test
     public void testThrottleManagerForTimeBased() {
-        Assert.assertTrue(throttleManager instanceof RedisThrottleManager);
+        Assert.assertTrue(throttleManager instanceof RedisLuaThrottleManager);
 
         Throttle timeBased = throttleManager.getTimeBased();
         Throttle timeBasedNull = throttleManager.getTimeBased(null);
 
-        Assert.assertTrue(timeBased instanceof RedisTimeBaseThrottle);
-        Assert.assertTrue(timeBasedNull instanceof RedisTimeBaseThrottle);
+        Assert.assertTrue(timeBased instanceof RedisLuaTimeBaseThrottle);
+        Assert.assertTrue(timeBasedNull instanceof RedisLuaTimeBaseThrottle);
 
         Assert.assertSame(timeBased, timeBasedNull);
 
@@ -51,13 +55,13 @@ public class RedisThrottleManagerTest {
 
     @Test
     public void testThrottleManagerForCountBased() {
-        Assert.assertTrue(throttleManager instanceof RedisThrottleManager);
+        Assert.assertTrue(throttleManager instanceof RedisLuaThrottleManager);
 
         Throttle countBased = throttleManager.getCountBased();
         Throttle countBasedNull = throttleManager.getCountBased(null);
 
-        Assert.assertTrue(countBased instanceof RedisCountBaseThrottle);
-        Assert.assertTrue(countBasedNull instanceof RedisCountBaseThrottle);
+        Assert.assertTrue(countBased instanceof RedisLuaCountBaseThrottle);
+        Assert.assertTrue(countBasedNull instanceof RedisLuaCountBaseThrottle);
 
         Assert.assertSame(countBased, countBasedNull);
 

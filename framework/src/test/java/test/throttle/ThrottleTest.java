@@ -47,7 +47,7 @@ public class ThrottleTest {
     }
 
     @Test
-    public void timeBasedSameKeys() throws InterruptedException {
+    public void timeBased() throws InterruptedException {
 
         String throttleName = UUID.randomUUID().toString();
 
@@ -55,14 +55,71 @@ public class ThrottleTest {
 
         int count = 0;
         for (int i = 0; i < 3; i++) {
-            Thread.sleep(60);
-            boolean open = throttle.open(100);
-            if (!open) {
-                continue;
+            boolean open = throttle.open(1000);
+            if (open) {
+                count++;
             }
-            count++;
+            Thread.sleep(600);
         }
-        Assert.assertEquals(2, count);
+        Assert.assertEquals(1, count);
+    }
+
+    private static int timeBasedSameKeysMultipleThreadsCount = 0;
+    private static synchronized void timeBasedSameKeysMultipleThreadsCountAdd() {
+        timeBasedSameKeysMultipleThreadsCount++;
+    }
+
+    private static class TimeBasedSameKeysMultipleThreadsRunnable implements Runnable{
+        Throttle throttle;
+        long threshold;
+
+        public TimeBasedSameKeysMultipleThreadsRunnable(Throttle throttle, long threshold) {
+            this.throttle = throttle;
+            this.threshold = threshold;
+        }
+
+        @Override
+        public void run() {
+            boolean open = throttle.open(threshold);
+            if (open) {
+                timeBasedSameKeysMultipleThreadsCountAdd();
+            }
+        }
+    }
+
+    @Test
+    public void timeBasedMultipleThreads() throws InterruptedException {
+
+        String throttleName = UUID.randomUUID().toString();
+
+        Throttle throttle = throttleManager.getTimeBased(throttleName);
+
+        int threadNumber = 10;
+        long threshold = 1000;
+        Thread[] threads = new Thread[threadNumber];
+        for (int i = 0; i < threadNumber; i++) {
+            Thread thread = new Thread(new TimeBasedSameKeysMultipleThreadsRunnable(throttle, threshold));
+            threads[i] = thread;
+        }
+        for (Thread thread : threads) {
+            thread.start();
+            thread.join();
+        }
+        Assert.assertEquals(0, timeBasedSameKeysMultipleThreadsCount);
+        timeBasedSameKeysMultipleThreadsCount = 0;
+
+        Thread.sleep(1000);
+
+        for (int i = 0; i < threadNumber; i++) {
+            Thread thread = new Thread(new TimeBasedSameKeysMultipleThreadsRunnable(throttle, threshold));
+            threads[i] = thread;
+        }
+        for (Thread thread : threads) {
+            thread.start();
+            thread.join();
+        }
+        Assert.assertEquals(1, timeBasedSameKeysMultipleThreadsCount);
+        timeBasedSameKeysMultipleThreadsCount = 0;
     }
 
     @Test
@@ -76,18 +133,18 @@ public class ThrottleTest {
         Throttle throttle2 = throttleManager.getTimeBased(throttleName2);
 
         for (int i = 0; i < 3; i++) {
-            boolean open1 = throttle1.open(100);
+            boolean open1 = throttle1.open(1000);
             if (open1) {
                 count1++;
             }
-            boolean open2 = throttle2.open(100);
+            boolean open2 = throttle2.open(1000);
             if (open2) {
                 count2++;
             }
-            Thread.sleep(60);
+            Thread.sleep(600);
         }
-        Assert.assertEquals(2, count1);
-        Assert.assertEquals(2, count2);
+        Assert.assertEquals(1, count1);
+        Assert.assertEquals(1, count2);
     }
 
     @Test
@@ -142,8 +199,8 @@ public class ThrottleTest {
                 count2++;
             }
         }
-        Assert.assertEquals(4, count1);
-        Assert.assertEquals(3, count2);
+        Assert.assertEquals(3, count1);
+        Assert.assertEquals(2, count2);
     }
 
     private static int openTimesCountBaseBySameKeyMultipleThread = 0;
@@ -153,7 +210,7 @@ public class ThrottleTest {
     }
 
     @Test
-    public void countBaseSameKeyMultipleThreads() throws InterruptedException {
+    public void countBaseMultipleThreads() throws InterruptedException {
         String throttleName = UUID.randomUUID().toString();
 
         Throttle throttle = throttleManager.getCountBased(throttleName);
@@ -200,8 +257,13 @@ public class ThrottleTest {
 
         Throttle throttle = throttleManager.getTimeBased(throttleName);
 
-        boolean open = throttle.open(1000);
+        Assert.assertFalse(throttle.open(1000));
+
+        boolean open= throttle.open(0);
         Assert.assertTrue(open);
+
+        open = throttle.open(1000);
+        Assert.assertFalse(open);
 
         open = throttle.open(500);
         Assert.assertFalse(open);
@@ -217,24 +279,26 @@ public class ThrottleTest {
         String throttleName1 = UUID.randomUUID().toString();
         Throttle throttle1 = throttleManager.getCountBased(throttleName1);
         boolean open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
+        Assert.assertFalse(open);
+        open = throttle1.open(3);
         Assert.assertTrue(open);
-        open = throttle1.open(3);
-        Assert.assertFalse(open);
-        open = throttle1.open(3);
-        Assert.assertFalse(open);
-        open = throttle1.open(3);
-        Assert.assertFalse(open);
-
 
         String throttleName2 = UUID.randomUUID().toString();
         Throttle throttle2 = throttleManager.getCountBased(throttleName2);
-        open = throttle2.open(3);
-        Assert.assertTrue(open);
         open = throttle2.open(3);
         Assert.assertFalse(open);
         open = throttle2.open(3);
         Assert.assertFalse(open);
         open = throttle2.open(2);
         Assert.assertTrue(open);
+
+        Throttle throttle3 = throttleManager.getCountBased(UUID.randomUUID().toString());
+        Assert.assertFalse(throttle3.open(3));
+        Assert.assertTrue(throttle3.open(0));
+        Assert.assertFalse(throttle3.open(2));
     }
 }

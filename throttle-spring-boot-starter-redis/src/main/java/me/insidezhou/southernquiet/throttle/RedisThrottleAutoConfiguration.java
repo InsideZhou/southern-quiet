@@ -1,6 +1,6 @@
 package me.insidezhou.southernquiet.throttle;
 
-import me.insidezhou.southernquiet.throttle.lock.RedisDistributedLock;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaThrottleManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -10,13 +10,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 public class RedisThrottleAutoConfiguration {
 
     @Bean
-    public RedisDistributedLock redisDistributedLock(StringRedisTemplate stringRedisTemplate) {
-        return new RedisDistributedLock(stringRedisTemplate);
-    }
-
-    @Bean
-    public ThrottleManager redisThrottleManager(RedisDistributedLock redisDistributedLock,StringRedisTemplate stringRedisTemplate) {
-        return new RedisThrottleManager(stringRedisTemplate, redisDistributedLock);
+    public ThrottleManager redisThrottleManager(StringRedisTemplate stringRedisTemplate) {
+        return new RedisLuaThrottleManager(stringRedisTemplate);
     }
 
 }
