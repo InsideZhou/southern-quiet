@@ -1,0 +1,4 @@
+spring:
+  redis:
+    cluster:
+      nodes:
