@@ -1,13 +1,8 @@
 dependencies {
     api("org.springframework.boot:spring-boot-starter")
-
-    api('de.ruedigermoeller:fst:2.50') {
-        //为什么可以exclude这些需要看fst的pom注释
-        exclude group: 'org.javassist', module: 'javassist'
-        exclude group: 'org.objenesis', module: 'objenesis'
-    }
-
     api "me.insidezhou.instep:instep-core:${instepVersion}"
+
+    implementation 'org.reflections:reflections:0.9.12'
 
     testImplementation "org.springframework.boot:spring-boot-starter-json"
 }

@@ -2,7 +2,7 @@ package me.insidezhou.southernquiet.event;
 
 import java.lang.annotation.*;
 
-import static me.insidezhou.southernquiet.event.EventPublisher.CustomApplicationEventChannel;
+import static me.insidezhou.southernquiet.event.EventPubSub.CustomApplicationEventChannel;
 
 
 /**

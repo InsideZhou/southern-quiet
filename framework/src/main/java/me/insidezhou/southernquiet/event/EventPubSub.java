@@ -4,7 +4,7 @@ package me.insidezhou.southernquiet.event;
  * 发布及广播事件。
  * 广播指发布到当前ApplicationContext之外。
  */
-public interface EventPublisher<E> {
+public interface EventPubSub<E> {
     String DefaultEventChannel = "EVENT.PUBLIC";
     String CustomApplicationEventChannel = "EVENT.CUSTOM_APPLICATION";
 

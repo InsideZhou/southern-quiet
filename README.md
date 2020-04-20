@@ -40,6 +40,7 @@
 ##### EventBroadcasting 事件广播 (At Most Once Message)
 
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
+> 为了支持跨语言事件，每个事件都有其唯一标识。
 
 - event-spring-boot-starter-*
 - me.insidezhou.southernquiet.event.ShouldBroadcast
@@ -57,40 +58,9 @@
 
 > 对某个数据进行截流一段时间或截流一定次数后，再重新打开
 
-有两种节流器（通过ThrottleManager生成）
-
-1、基于时间的节流器TimeBaseThrottle：open(long threshold)，threshold为节流时间（毫秒）
-
-2、基于计数器的节流器CounterBaseThrottle：open(long threshold)，threshold为节流次数（开闸后节流多少次）
-
-- framework自带默认的节流器，只能用于单实例的应用。强烈不建议用于分布式应用。
-
-- throttle-spring-boot-starter-redis 是使用redis实现的用于分布式应用的节流器。
-
-###### throttle-spring-boot-starter-redis如何使用：
-如何获取节流器：
-
-项目中引入throttle-spring-boot-starter-redis模块后，使用注入或ThrottleManager获取节流器，样例代码如下：
-```java
-@Controller
-public class DemoController {
-
-    @Autowired
-    private ThrottleManager throttleManager;
-
-    public void getThrottleExample() {
-        //获取RedisTimeBaseThrottle
-        String throttleName="redisTimeBaseThrottleExample";
-        Throttle redisTimeBaseThrottle = throttleManager.getTimeBased(throttleName);
-
-        //获取RedisCounterBaseThrottle
-        throttleName="redisCounterBaseThrottleExample";
-        Throttle redisCounterBaseThrottle = throttleManager.getCountBased(throttleName);
-    }
-}
-```
-
-若不引入throttle-spring-boot-starter-redis模块模块，获取方式与上面的样例相同，但是取到的是默认本地实现的节流器。
+- throttle-spring-boot-starter-*
+- me.insidezhou.southernquiet.throttle.Throttle
+- me.insidezhou.southernquiet.throttle.ThrottleManager
 
 
 ### 如何使用

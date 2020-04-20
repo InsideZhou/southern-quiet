@@ -1,6 +1,6 @@
 package me.insidezhou.southernquiet;
 
-import me.insidezhou.southernquiet.event.EventPublisher;
+import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
@@ -118,7 +118,7 @@ public class FrameworkAutoConfiguration {
     }
 
     public static class EventProperties {
-        private String[] defaultChannels = new String[]{EventPublisher.DefaultEventChannel};
+        private String[] defaultChannels = new String[]{EventPubSub.DefaultEventChannel};
 
         public String[] getDefaultChannels() {
             return defaultChannels;

@@ -20,4 +20,6 @@ public @interface ShouldBroadcast {
      */
     @AliasFor("value")
     String[] channels() default {};
+
+    String eventId() default "";
 }

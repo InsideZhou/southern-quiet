@@ -3,7 +3,7 @@ package me.insidezhou.southernquiet.keyvalue.driver;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.filesystem.*;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
-import me.insidezhou.southernquiet.util.SerializationUtils;
+import org.springframework.util.SerializationUtils;
 import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayInputStream;
@@ -17,9 +17,9 @@ import java.util.stream.Stream;
  * 基于 {@link FileSystem} 的键值对驱动.
  */
 public class FileSystemKeyValueStore implements KeyValueStore {
-    private FileSystem fileSystem;
-    private String workingRoot; //Store在FileSystem中的路径
-    private String nameSeparator; //文件名中不同部分的分隔
+    private final FileSystem fileSystem;
+    private final String workingRoot; //Store在FileSystem中的路径
+    private final String nameSeparator; //文件名中不同部分的分隔
 
     public FileSystemKeyValueStore(FrameworkAutoConfiguration.KeyValueStoreProperties.FileSystem properties, FileSystem fileSystem) {
         this.workingRoot = properties.getWorkingRoot();
@@ -118,7 +118,7 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     }
 
     protected String getFileName(String key, int ttl) {
-        return key + nameSeparator + (ttl < 0 ? 0 : ttl);
+        return key + nameSeparator + (Math.max(ttl, 0));
     }
 
     private String getKeyPrefix(String key) {
@@ -133,10 +133,6 @@ public class FileSystemKeyValueStore implements KeyValueStore {
         return Integer.parseInt(name.substring(name.indexOf(nameSeparator) + nameSeparator.length()));
     }
 
-    private String getKeyFromFileName(String name) {
-        return name.substring(0, name.indexOf(nameSeparator));
-    }
-
     private Stream<? extends PathMeta> getMetaStream() {
         try {
             return fileSystem.files(workingRoot);
@@ -147,7 +143,8 @@ public class FileSystemKeyValueStore implements KeyValueStore {
     }
 
     private InputStream serialize(Object data) {
-        return new ByteArrayInputStream(SerializationUtils.serialize(data));
+        byte[] bytes = SerializationUtils.serialize(data);
+        return null == bytes ? null : new ByteArrayInputStream(bytes);
     }
 
     private Object deserialize(InputStream stream) {
