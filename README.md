@@ -40,6 +40,7 @@
 ##### EventBroadcasting 事件广播 (At Most Once Message)
 
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
+> 为了支持跨语言事件，每个事件都有其唯一类型标识。
 
 - event-spring-boot-starter-*
 - me.insidezhou.southernquiet.event.ShouldBroadcast
@@ -52,6 +53,14 @@
 ##### JobEngine 任务引擎 (Exactly Once Message)
 
 - job-spring-boot-starter-*
+
+##### Throttle 节流器  
+
+> 对某个数据进行截流一段时间或截流一定次数后，再重新打开
+
+- throttle-spring-boot-starter-*
+- me.insidezhou.southernquiet.throttle.Throttle
+- me.insidezhou.southernquiet.throttle.ThrottleManager
 
 
 ### 如何使用

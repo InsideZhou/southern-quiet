@@ -1,10 +1,13 @@
 package me.insidezhou.southernquiet;
 
-import me.insidezhou.southernquiet.event.EventPublisher;
+import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
+import me.insidezhou.southernquiet.throttle.ThrottleManager;
+import me.insidezhou.southernquiet.throttle.annotation.ThrottleAnnotationBeanPostProcessor;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -93,6 +96,17 @@ public class FrameworkAutoConfiguration {
         return new KeyValueStoreProperties();
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public ThrottleManager throttleManager() {
+        return new DefaultThrottleManager();
+    }
+
+    @Bean
+    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleManager throttleManager) {
+        return new ThrottleAnnotationBeanPostProcessor(throttleManager);
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static class Properties {
         /**
@@ -110,7 +124,7 @@ public class FrameworkAutoConfiguration {
     }
 
     public static class EventProperties {
-        private String[] defaultChannels = new String[]{EventPublisher.DefaultEventChannel};
+        private String[] defaultChannels = new String[]{EventPubSub.DefaultEventChannel};
 
         public String[] getDefaultChannels() {
             return defaultChannels;

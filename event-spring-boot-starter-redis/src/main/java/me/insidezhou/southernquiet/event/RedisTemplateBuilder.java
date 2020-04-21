@@ -6,10 +6,12 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.io.Serializable;
 
+@SuppressWarnings("rawtypes")
 public class RedisTemplateBuilder<T extends Serializable> {
     private RedisTemplate redisTemplate;
     private RedisSerializer<T> eventSerializer;
     private RedisSerializer channelSerializer;
+    private RedisConnectionFactory connectionFactory;
 
     public RedisTemplateBuilder(RedisSerializer<T> eventSerializer, RedisConnectionFactory connectionFactory) {
         this(eventSerializer, null, connectionFactory);
@@ -17,6 +19,8 @@ public class RedisTemplateBuilder<T extends Serializable> {
 
     @SuppressWarnings("unchecked")
     public RedisTemplateBuilder(RedisSerializer<T> eventSerializer, RedisSerializer channelSerializer, RedisConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
+
         this.redisTemplate = new RedisTemplate();
         redisTemplate.setDefaultSerializer(eventSerializer);
         redisTemplate.setConnectionFactory(connectionFactory);
@@ -29,7 +33,6 @@ public class RedisTemplateBuilder<T extends Serializable> {
         else {
             this.channelSerializer = channelSerializer;
         }
-
     }
 
     public RedisTemplate getRedisTemplate() {
@@ -54,5 +57,13 @@ public class RedisTemplateBuilder<T extends Serializable> {
 
     public void setChannelSerializer(RedisSerializer channelSerializer) {
         this.channelSerializer = channelSerializer;
+    }
+
+    public RedisConnectionFactory getConnectionFactory() {
+        return connectionFactory;
+    }
+
+    public void setConnectionFactory(RedisConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
     }
 }

@@ -20,4 +20,9 @@ public @interface ShouldBroadcast {
      */
     @AliasFor("value")
     String[] channels() default {};
+
+    /**
+     * 事件类型标识符。
+     */
+    String typeId() default "";
 }

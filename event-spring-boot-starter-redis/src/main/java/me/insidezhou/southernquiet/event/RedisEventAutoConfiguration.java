@@ -1,8 +1,9 @@
 package me.insidezhou.southernquiet.event;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.event.driver.FstSerializationRedisSerializer;
-import me.insidezhou.southernquiet.event.driver.RedisEventPublisher;
+import me.insidezhou.southernquiet.event.driver.JsonSerializationRedisSerializer;
+import me.insidezhou.southernquiet.event.driver.RedisEventPubSub;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
@@ -18,29 +19,20 @@ public class RedisEventAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public RedisEventPublisher redisEventPublisher(RedisTemplateBuilder builder, FrameworkAutoConfiguration.EventProperties properties) {
-        return new RedisEventPublisher<>(builder, properties);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public FstSerializationRedisSerializer fstSerializationRedisSerializer() {
-        return new FstSerializationRedisSerializer<>();
+    public RedisEventPubSub redisEventPublisher(RedisTemplateBuilder builder, ObjectMapper objectMapper, FrameworkAutoConfiguration.EventProperties properties, ApplicationContext applicationContext) {
+        return new RedisEventPubSub<>(builder, objectMapper, properties, applicationContext);
     }
 
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public RedisTemplateBuilder redisTemplateBuilder(FstSerializationRedisSerializer eventSerializer, RedisConnectionFactory connectionFactory) {
+    public RedisTemplateBuilder redisTemplateBuilder(JsonSerializationRedisSerializer eventSerializer, RedisConnectionFactory connectionFactory) {
         return new RedisTemplateBuilder<>(eventSerializer, connectionFactory);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public EventBroadcastingRedisRelay customApplicationEventRelay(RedisTemplateBuilder builder,
-                                                                   RedisConnectionFactory redisConnectionFactory,
-                                                                   FrameworkAutoConfiguration.EventProperties eventProperties,
-                                                                   ApplicationContext applicationContext) {
-        return new EventBroadcastingRedisRelay(builder, redisConnectionFactory, eventProperties, applicationContext);
+    public JsonSerializationRedisSerializer jsonSerializationRedisSerializer(ObjectMapper objectMapper) {
+        return new JsonSerializationRedisSerializer(objectMapper);
     }
 }
