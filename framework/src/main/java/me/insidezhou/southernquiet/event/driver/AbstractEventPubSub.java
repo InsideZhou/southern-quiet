@@ -29,7 +29,10 @@ import java.util.stream.Stream;
 public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, InitializingBean, ApplicationEventPublisherAware {
     private final static Logger log = LoggerFactory.getLogger(AbstractEventPubSub.class);
 
-    public final static ConcurrentMap<String, Class<?>> EventIdTypeMap = new ConcurrentHashMap<>();
+    /**
+     * 事件类型标识与实际运行时类型的映射，用于跨语言事件支持。
+     */
+    public final static ConcurrentMap<String, Class<?>> EventTypeMap = new ConcurrentHashMap<>();
 
     private ApplicationEventPublisher applicationEventPublisher;
 
@@ -62,7 +65,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
         Class<?> eventClass = event.getClass();
         ShouldBroadcast annotation = AnnotationUtils.getAnnotation(eventClass, ShouldBroadcast.class);
         if (null != annotation) {
-            broadcast(event, getEventChannel(annotation), getEventId(eventClass, annotation));
+            broadcast(event, getEventChannel(annotation), getEventTypeId(eventClass, annotation));
         }
         else {
             publishToLocalOnly(event);
@@ -73,8 +76,8 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
         return annotation.channels().length > 0 ? annotation.channels() : defaultChannel;
     }
 
-    public String getEventId(Class<?> eventClass, ShouldBroadcast annotation) {
-        if (null != annotation && !StringUtils.isEmpty(annotation.eventId())) return annotation.eventId();
+    public String getEventTypeId(Class<?> eventClass, ShouldBroadcast annotation) {
+        if (null != annotation && !StringUtils.isEmpty(annotation.typeId())) return annotation.typeId();
 
         return eventClass.getSimpleName();
     }
@@ -87,7 +90,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                     return applicationContext.getBean(name);
                 }
                 catch (BeansException e) {
-                    log.info("查找EventListener时，bean未能初始化: name={}", name);
+                    log.info("查找EventListener时，bean未能初始化\tname={}", name);
                     return null;
                 }
             })
@@ -99,7 +102,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                             .forEach(listener -> {
                                 if (log.isDebugEnabled()) {
                                     log.debug(
-                                        "找到EventListener：{}#{}",
+                                        "找到EventListener\t{}#{}",
                                         bean.getClass().getSimpleName(),
                                         method.getName()
                                     );
@@ -117,7 +120,9 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
      * @param event    事件
      * @param channels 频道
      */
-    abstract protected void broadcast(E event, String[] channels, String eventId);
+    abstract protected void broadcast(E event, String[] channels, String eventType);
+
+    protected void initChannel(String channel) {}
 
     protected void initListener(Method method) {
         Arrays.stream(method.getParameterTypes())
@@ -125,18 +130,24 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
             .filter(parameterType -> !BeanUtils.isSimpleValueType(parameterType))
             .flatMap(parameterType -> {
                 ShouldBroadcast annotation = AnnotationUtils.getAnnotation(parameterType, ShouldBroadcast.class);
-                EventIdTypeMap.put(getEventId(parameterType, annotation), parameterType);
-
-                Reflections reflections = new Reflections(parameterType);
-                reflections.getSubTypesOf(parameterType).forEach(subType -> EventIdTypeMap.putIfAbsent(getEventId(subType, annotation), subType));
-
                 if (null == annotation) return Stream.empty();
 
-                return Arrays.stream(0 == annotation.channels().length ? eventProperties.getDefaultChannels() : annotation.channels());
+                String[] channels = 0 == annotation.channels().length ? eventProperties.getDefaultChannels() : annotation.channels();
+
+                String typeId = getEventTypeId(parameterType, annotation);
+                EventTypeMap.put(typeId, parameterType);
+                log.info("已订阅事件\ttypeId={}, channels={}, event={}", typeId, channels, parameterType.getName());
+
+                Reflections reflections = new Reflections(parameterType);
+                reflections.getSubTypesOf(parameterType).forEach(subType -> {
+                    String subTypeId = getEventTypeId(subType, annotation);
+                    EventTypeMap.putIfAbsent(subTypeId, subType);
+                    log.info("已订阅子事件\ttypeId={}, channels={}, event={}", subTypeId, channels, parameterType.getName());
+                });
+
+                return Arrays.stream(channels);
             })
             .distinct()
             .forEach(this::initChannel);
     }
-
-    protected void initChannel(String channel) {}
 }

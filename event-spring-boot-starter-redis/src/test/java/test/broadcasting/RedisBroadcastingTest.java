@@ -57,5 +57,10 @@ public class RedisBroadcastingTest {
             log.debug("{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
             testCustomChannelListenerMap.merge(broadcastingCustomChannel.getId().toString(), 1, Integer::sum);
         }
+
+        @EventListener
+        public void hahaListener(HahaEvent hahaEvent) {
+            log.debug("haha\tguid={}", hahaEvent.getGuid());
+        }
     }
 }

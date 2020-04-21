@@ -39,10 +39,10 @@ public class JsonSerializationRedisSerializer<T extends Serializable> implements
             throw new SerializationException("将JSON数据反序列化为对象时异常", e);
         }
 
-        String eventId = (String) map.get(RedisEventPubSub.EventIdKeyName);
-        if (StringUtils.isEmpty(eventId)) return null;
+        String typeId = (String) map.get(RedisEventPubSub.EventTypeIdName);
+        if (StringUtils.isEmpty(typeId)) return null;
 
-        Class<T> eventClass = (Class<T>) AbstractEventPubSub.EventIdTypeMap.get(eventId);
+        Class<T> eventClass = (Class<T>) AbstractEventPubSub.EventTypeMap.get(typeId);
         if (null == eventClass) return null;
 
         return objectMapper.convertValue(map, eventClass);

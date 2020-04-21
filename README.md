@@ -40,7 +40,7 @@
 ##### EventBroadcasting 事件广播 (At Most Once Message)
 
 > 把基于Spring Event的自定义事件广播到当前ApplicationContext之外
-> 为了支持跨语言事件，每个事件都有其唯一标识。
+> 为了支持跨语言事件，每个事件都有其唯一类型标识。
 
 - event-spring-boot-starter-*
 - me.insidezhou.southernquiet.event.ShouldBroadcast

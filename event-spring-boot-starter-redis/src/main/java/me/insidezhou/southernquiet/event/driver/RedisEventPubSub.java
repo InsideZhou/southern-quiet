@@ -21,7 +21,7 @@ import java.util.Map;
 public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSub<E> {
     private final static Logger log = LoggerFactory.getLogger(RedisEventPubSub.class);
 
-    public final static String EventIdKeyName = "EventId";
+    public final static String EventTypeIdName = "TypeId";
 
     private final RedisTemplate redisTemplate;
     private final RedisSerializer<E> eventSerializer;
@@ -48,11 +48,11 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Override
-    protected void broadcast(E event, String[] channels, String eventId) {
+    protected void broadcast(E event, String[] channels, String eventType) {
         Assert.notNull(event, "null事件无法发布");
 
         Map map = objectMapper.convertValue(event, Map.class);
-        map.put(EventIdKeyName, eventId);
+        map.put(EventTypeIdName, eventType);
 
         byte[] message = eventSerializer.serialize((E) map);
 
