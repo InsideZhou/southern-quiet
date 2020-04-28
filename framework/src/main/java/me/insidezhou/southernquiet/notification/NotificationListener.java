@@ -23,6 +23,7 @@ public @interface NotificationListener {
      */
     String name() default "";
 
+    @SuppressWarnings("unused")
     @Target({ElementType.METHOD})
     @Retention(RUNTIME)
     @Inherited

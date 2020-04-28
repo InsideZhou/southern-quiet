@@ -16,8 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.Serializable;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class NotificationTest {
@@ -36,7 +34,7 @@ public class NotificationTest {
     }
 
     @Autowired
-    private NotificationPublisher<Serializable> notificationPublisher;
+    private NotificationPublisher<Object> notificationPublisher;
 
     @Test
     public void dummy() {
@@ -46,6 +44,7 @@ public class NotificationTest {
     public static class Listener {
         @NotificationListener(notification = StandardNotification.class, name = "a")
         @NotificationListener(notification = StandardNotification.class, name = "b")
+        @NotificationListener(notification = StandardNotification.class, name = "e")
         public void standard(StandardNotification notification, NotificationListener listener) {
             log.info("使用监听器{}接到通知：{}", listener.name(), notification.getId());
         }

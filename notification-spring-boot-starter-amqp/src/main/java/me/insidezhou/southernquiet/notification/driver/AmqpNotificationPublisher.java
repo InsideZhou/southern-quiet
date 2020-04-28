@@ -9,27 +9,23 @@ import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 
-import java.io.Serializable;
-
 @SuppressWarnings("WeakerAccess")
-public class AmqpNotificationPublisher<N extends Serializable> implements NotificationPublisher<N> {
+public class AmqpNotificationPublisher<N> implements NotificationPublisher<N> {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
-    private RabbitTemplate rabbitTemplate;
-    private SmartMessageConverter messageConverter;
-    private AmqpNotificationAutoConfiguration.Properties notificationProperties;
-    private AmqpAutoConfiguration.Properties properties;
+    private final RabbitTemplate rabbitTemplate;
+    private final SmartMessageConverter messageConverter;
+    private final AmqpNotificationAutoConfiguration.Properties notificationProperties;
+    private final AmqpAutoConfiguration.Properties properties;
 
-    private boolean enablePublisherConfirm;
+    private final boolean enablePublisherConfirm;
 
     public AmqpNotificationPublisher(
         SmartMessageConverter messageConverter,

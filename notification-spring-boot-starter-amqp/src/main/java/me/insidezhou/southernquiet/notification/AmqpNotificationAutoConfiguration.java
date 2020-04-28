@@ -34,7 +34,7 @@ public class AmqpNotificationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpNotificationPublisher amqpNotificationPublisher(
+    public AmqpNotificationPublisher<Object> amqpNotificationPublisher(
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
@@ -42,7 +42,7 @@ public class AmqpNotificationAutoConfiguration {
         RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
-        return new AmqpNotificationPublisher(
+        return new AmqpNotificationPublisher<>(
             messageConverter,
             notificationProperties,
             properties,
@@ -57,7 +57,7 @@ public class AmqpNotificationAutoConfiguration {
     @ConditionalOnMissingBean
     public AmqpNotificationListenerManager amqpNotificationListenerManager(
         RabbitAdmin rabbitAdmin,
-        AmqpNotificationPublisher publisher,
+        AmqpNotificationPublisher<?> publisher,
         AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
         AmqpAutoConfiguration.Properties amqpProperties,
         RabbitProperties rabbitProperties,

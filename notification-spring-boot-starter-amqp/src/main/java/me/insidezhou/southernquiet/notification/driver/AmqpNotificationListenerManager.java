@@ -36,20 +36,20 @@ import java.util.*;
 public class AmqpNotificationListenerManager extends AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
-    private SmartMessageConverter messageConverter;
-    private CachingConnectionFactory cachingConnectionFactory;
+    private final SmartMessageConverter messageConverter;
+    private final CachingConnectionFactory cachingConnectionFactory;
 
-    private List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
-    private RabbitAdmin rabbitAdmin;
-    private AmqpNotificationPublisher publisher;
-    private AmqpAutoConfiguration.Properties amqpProperties;
-    private AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
+    private final List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
+    private final RabbitAdmin rabbitAdmin;
+    private final AmqpNotificationPublisher<?> publisher;
+    private final AmqpAutoConfiguration.Properties amqpProperties;
+    private final AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
 
-    private RabbitProperties rabbitProperties;
-    private ApplicationContext applicationContext;
+    private final RabbitProperties rabbitProperties;
+    private final ApplicationContext applicationContext;
 
     public AmqpNotificationListenerManager(RabbitAdmin rabbitAdmin,
-                                           AmqpNotificationPublisher publisher,
+                                           AmqpNotificationPublisher<?> publisher,
                                            AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
@@ -77,7 +77,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             NotificationListener listenerAnnotation = tuple.getSecond();
-            String listenerDefaultName = tuple.getThird();
+            String listenerName = tuple.getThird();
 
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
                 rabbitProperties,
@@ -85,7 +85,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                     rabbitTemplate,
                     rabbitAdmin,
                     Constants.AMQP_DEFAULT,
-                    getDeadRouting(listenerAnnotation, listenerDefaultName),
+                    getDeadRouting(listenerAnnotation, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -102,12 +102,24 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
     @Override
     protected void initListener(NotificationListener listener, Object bean, Method method) {
-        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-
         String listenerDefaultName = method.getName();
+        String listenerName = getListenerName(listener, listenerDefaultName);
+        String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
+        listenerEndpoints.stream()
+            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
+            .findAny()
+            .ifPresent(listenerEndpoint -> log.warn(
+                "监听器重复: queue={}, listener={}#{}, notification={}",
+                listenerRouting,
+                bean.getClass().getName(),
+                listenerDefaultName,
+                listener.notification().getSimpleName()
+            ));
+
+        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
         endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setQueueNames(getListenerRouting(listener, listenerDefaultName));
+        endpoint.setQueueNames(listenerRouting);
         endpoint.setAdmin(rabbitAdmin);
 
         declareExchangeAndQueue(listener, listenerDefaultName);
@@ -122,7 +134,7 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
                 log.debug(
                     "监听器收到通知: queue={}, listener={}#{}({}), notification={}, message={}",
                     endpoint.getQueueNames(),
-                    bean.getClass().getSimpleName(),
+                    bean.getClass().getName(),
                     listenerDefaultName,
                     endpoint.getId(),
                     notification.getClass().getSimpleName(),
@@ -158,10 +170,9 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
             }
         });
 
-        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerDefaultName));
+        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
     }
 
-    @SuppressWarnings("unchecked")
     private String getDeadSource(NotificationListener listener, String listenerDefaultName) {
         return suffix("DEAD." + publisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
     }
@@ -170,23 +181,24 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         return publisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
     }
 
-    @SuppressWarnings("unchecked")
     private String getListenerRouting(NotificationListener listener, String listenerDefaultName) {
-        return suffix(publisher.getRouting(amqpNotificationProperties.getNamePrefix(), publisher.getNotificationSource(listener.notification())), listener, listenerDefaultName);
+        return suffix(publisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listener, listenerDefaultName);
     }
 
-    private String suffix(String routing, NotificationListener listener, String listenerDefaultName) {
+    private String getListenerName(NotificationListener listener, String listenerDefaultName) {
         String listenerName = listener.name();
         if (StringUtils.isEmpty(listenerName)) {
             listenerName = listenerDefaultName;
         }
 
         Assert.hasText(listenerName, "监听器的名称不能为空");
-
-        return routing + "#" + listenerName;
+        return listenerName;
     }
 
-    @SuppressWarnings("unchecked")
+    private String suffix(String routing, NotificationListener listener, String listenerDefaultName) {
+        return routing + "#" + getListenerName(listener, listenerDefaultName);
+    }
+
     private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
         String routing = getListenerRouting(listener, listenerDefaultName);
 
@@ -196,7 +208,6 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         rabbitAdmin.declareExchange(exchange);
         rabbitAdmin.declareQueue(queue);
         rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routing).noargs());
-
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);

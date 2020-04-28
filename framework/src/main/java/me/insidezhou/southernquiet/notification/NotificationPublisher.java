@@ -10,9 +10,8 @@ public interface NotificationPublisher<N> {
     /**
      * 发布通知。被{@link NotificationSource}标注的通知将通过其指定的源发送。
      */
-    @SuppressWarnings("unchecked")
     default void publish(N notification) {
-        publish(notification, getNotificationSource((Class<N>) notification.getClass()));
+        publish(notification, getNotificationSource(notification.getClass()));
     }
 
     /**
@@ -20,12 +19,12 @@ public interface NotificationPublisher<N> {
      */
     void publish(N notification, String source);
 
-    default String getNotificationSource(Class<N> cls) {
+    default String getNotificationSource(Class<?> cls) {
         NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 
-    default String getExchange(String prefix, Class<N> cls) {
+    default String getExchange(String prefix, Class<?> cls) {
         return getExchange(prefix, getNotificationSource(cls));
     }
 
@@ -33,7 +32,7 @@ public interface NotificationPublisher<N> {
         return prefix + "EXCHANGE." + source;
     }
 
-    default String getRouting(String prefix, Class<N> cls) {
+    default String getRouting(String prefix, Class<?> cls) {
         return getRouting(prefix, getNotificationSource(cls));
     }
 

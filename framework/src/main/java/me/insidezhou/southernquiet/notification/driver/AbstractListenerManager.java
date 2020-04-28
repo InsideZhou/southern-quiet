@@ -12,12 +12,13 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Objects;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractListenerManager {
     private final static Logger log = LoggerFactory.getLogger(AbstractListenerManager.class);
 
-    private boolean inited = false;
+    private boolean initialized = false;
 
     @EventListener(ContextRefreshedEvent.class)
     public void initListener(ContextRefreshedEvent event) {
@@ -25,7 +26,7 @@ public abstract class AbstractListenerManager {
     }
 
     public void initListener(ApplicationContext applicationContext) {
-        if (inited) return;
+        if (initialized) return;
 
         Arrays.stream(applicationContext.getBeanDefinitionNames())
             .map(name -> {
@@ -37,7 +38,7 @@ public abstract class AbstractListenerManager {
                     return null;
                 }
             })
-            .filter(bean -> null != bean)
+            .filter(Objects::nonNull)
             .forEach(bean -> {
                 Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                     .forEach(method -> {
@@ -58,7 +59,7 @@ public abstract class AbstractListenerManager {
                     });
             });
 
-        inited = true;
+        initialized = true;
     }
 
     protected abstract void initListener(NotificationListener listener, Object bean, Method method);
