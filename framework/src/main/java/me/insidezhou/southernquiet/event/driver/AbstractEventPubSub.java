@@ -4,7 +4,6 @@ import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.event.ShouldBroadcast;
 import org.jetbrains.annotations.NotNull;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -18,7 +17,6 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,23 +93,41 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                 }
             })
             .filter(Objects::nonNull)
-            .forEach(bean ->
-                Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
-                    .forEach(method -> {
-                        AnnotationUtils.getRepeatableAnnotations(method, EventListener.class)
-                            .forEach(listener -> {
-                                if (log.isDebugEnabled()) {
-                                    log.debug(
-                                        "找到EventListener\t{}#{}",
-                                        bean.getClass().getSimpleName(),
-                                        method.getName()
-                                    );
-                                }
+            .forEach(bean -> {
+                Stream<String> channelsFromBeanMethods = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
+                    .flatMap(method -> AnnotationUtils.getRepeatableAnnotations(method, EventListener.class).stream()
+                        .flatMap(listener -> {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                    "找到EventListener\t{}#{}",
+                                    bean.getClass().getSimpleName(),
+                                    method.getName()
+                                );
+                            }
 
-                                initListener(method);
-                            });
-                    })
-            );
+                            return Arrays.stream(method.getParameterTypes());
+                        }))
+                    .filter(parameterType -> !BeanUtils.isSimpleValueType(parameterType))
+                    .flatMap(this::generateChannels);
+
+                Stream<String> channelsFromBean = generateChannels(bean.getClass());
+
+                Stream.concat(channelsFromBeanMethods, channelsFromBean).distinct().forEach(this::initChannel);
+            });
+    }
+
+    private Stream<String> generateChannels(Class<?> type) {
+        ShouldBroadcast annotation = AnnotationUtils.getAnnotation(type, ShouldBroadcast.class);
+        if (null == annotation) return Stream.empty();
+
+        String[] channels = 0 == annotation.channels().length ? eventProperties.getDefaultChannels() : annotation.channels();
+
+        String typeId = getEventTypeId(type, annotation);
+        EventTypeMap.put(typeId, type);
+
+        log.info("已订阅事件\ttypeId={}, channels={}, event={}", typeId, channels, type.getName());
+
+        return Arrays.stream(channels);
     }
 
     /**
@@ -123,31 +139,4 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
     abstract protected void broadcast(E event, String[] channels, String eventType);
 
     protected void initChannel(String channel) {}
-
-    protected void initListener(Method method) {
-        Arrays.stream(method.getParameterTypes())
-            .flatMap(Stream::of)
-            .filter(parameterType -> !BeanUtils.isSimpleValueType(parameterType))
-            .flatMap(parameterType -> {
-                ShouldBroadcast annotation = AnnotationUtils.getAnnotation(parameterType, ShouldBroadcast.class);
-                if (null == annotation) return Stream.empty();
-
-                String[] channels = 0 == annotation.channels().length ? eventProperties.getDefaultChannels() : annotation.channels();
-
-                String typeId = getEventTypeId(parameterType, annotation);
-                EventTypeMap.put(typeId, parameterType);
-                log.info("已订阅事件\ttypeId={}, channels={}, event={}", typeId, channels, parameterType.getName());
-
-                Reflections reflections = new Reflections(parameterType);
-                reflections.getSubTypesOf(parameterType).forEach(subType -> {
-                    String subTypeId = getEventTypeId(subType, annotation);
-                    EventTypeMap.putIfAbsent(subTypeId, subType);
-                    log.info("已订阅子事件\ttypeId={}, channels={}, event={}", subTypeId, channels, parameterType.getName());
-                });
-
-                return Arrays.stream(channels);
-            })
-            .distinct()
-            .forEach(this::initChannel);
-    }
 }

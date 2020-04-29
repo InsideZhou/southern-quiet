@@ -2,7 +2,5 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter")
     api "me.insidezhou.instep:instep-core:${instepVersion}"
 
-    implementation 'org.reflections:reflections:0.9.12'
-
     testImplementation "org.springframework.boot:spring-boot-starter-json"
 }
