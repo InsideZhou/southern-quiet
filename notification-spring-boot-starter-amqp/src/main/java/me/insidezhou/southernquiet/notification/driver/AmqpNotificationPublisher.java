@@ -15,9 +15,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.context.Lifecycle;
 
 @SuppressWarnings("WeakerAccess")
-public class AmqpNotificationPublisher<N> implements NotificationPublisher<N> {
+public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, Lifecycle {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
@@ -97,5 +98,20 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N> {
                 messagePostProcessor
             );
         }
+    }
+
+    @Override
+    public void start() {
+        rabbitTemplate.start();
+    }
+
+    @Override
+    public void stop() {
+        rabbitTemplate.stop();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return rabbitTemplate.isRunning();
     }
 }

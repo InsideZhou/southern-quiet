@@ -5,6 +5,7 @@ import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.event.RedisTemplateBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -18,7 +19,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 @SuppressWarnings("rawtypes")
-public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSub<E> {
+public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSub<E> implements DisposableBean {
     private final static Logger log = LoggerFactory.getLogger(RedisEventPubSub.class);
 
     public final static String EventTypeIdName = "TypeId";
@@ -107,5 +108,10 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
         }
 
         getApplicationEventPublisher().publishEvent(event);
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        container.destroy();
     }
 }

@@ -26,6 +26,7 @@ import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.Lifecycle;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -33,7 +34,7 @@ import org.springframework.util.StringUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class AmqpNotificationListenerManager extends AbstractListenerManager {
+public class AmqpNotificationListenerManager extends AbstractListenerManager implements Lifecycle {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
     private final SmartMessageConverter messageConverter;
@@ -47,6 +48,8 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
     private final RabbitProperties rabbitProperties;
     private final ApplicationContext applicationContext;
+
+    private final RabbitTemplate rabbitTemplate;
 
     public AmqpNotificationListenerManager(RabbitAdmin rabbitAdmin,
                                            AmqpNotificationPublisher<?> publisher,
@@ -67,12 +70,11 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
         this.messageConverter = publisher.getMessageConverter();
 
         this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
+        this.rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
     }
 
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
         initListener(applicationContext);
-
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
 
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
@@ -215,5 +217,20 @@ public class AmqpNotificationListenerManager extends AbstractListenerManager {
 
         Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
         rabbitAdmin.declareQueue(deadRouting);
+    }
+
+    @Override
+    public void start() {
+        rabbitTemplate.start();
+    }
+
+    @Override
+    public void stop() {
+        rabbitTemplate.stop();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return rabbitTemplate.isRunning();
     }
 }
