@@ -9,14 +9,15 @@ pluginManagement {
 }
 
 rootProject.name = 'southern-quiet'
-include 'filesystem-spring-boot-starter-mongodb',
-        'logging-spring-boot-starter-logback-filesystem',
-        'job-spring-boot-starter-amqp',
-        'id-generator-spring-boot-starter-jdbc',
-        'event-spring-boot-starter-redis',
-        'notification-spring-boot-starter-amqp',
-        'file-spring-boot-starter-webflux',
-        'framework-amqp-rabbit',
-        'instep-spring-boot-starter',
-        'framework',
-        'throttle-spring-boot-starter-redis'
+include 'auth-spring-boot-starter-web',
+    'event-spring-boot-starter-redis',
+    'filesystem-spring-boot-starter-mongodb',
+    'file-spring-boot-starter-webflux',
+    'framework',
+    'framework-amqp-rabbit',
+    'id-generator-spring-boot-starter-jdbc',
+    'instep-spring-boot-starter',
+    'job-spring-boot-starter-amqp',
+    'logging-spring-boot-starter-logback-filesystem',
+    'notification-spring-boot-starter-amqp',
+    'throttle-spring-boot-starter-redis'

@@ -1,5 +1,7 @@
 package me.insidezhou.southernquiet;
 
+import me.insidezhou.southernquiet.auth.AuthAdvice;
+import me.insidezhou.southernquiet.auth.AuthBeanPostProcessor;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -10,6 +12,7 @@ import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import me.insidezhou.southernquiet.throttle.annotation.ThrottleAnnotationBeanPostProcessor;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,18 +20,28 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
+
 @Configuration
 @EnableAsync
 @EnableConfigurationProperties
 public class FrameworkAutoConfiguration {
+    public final static String ConfigRoot = "southern-quiet.framework";
+    public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
+    public final static String ConfigRoot_Event = ConfigRoot + ".event";
+    public final static String ConfigRoot_FileSystem = ConfigRoot + ".file-system";
+    public final static String ConfigRoot_KeyValue = ConfigRoot + ".key-value";
+
     @Bean
-    @ConditionalOnProperty(value = "enable", prefix = "framework.key-value")
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_KeyValue)
     @ConditionalOnMissingBean(KeyValueStore.class)
     public FileSystemKeyValueStore keyValueStore(KeyValueStoreProperties properties, FileSystem fileSystem) {
         return new FileSystemKeyValueStore(properties.getFileSystem(), fileSystem);
@@ -38,6 +51,28 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean(FileSystem.class)
     public LocalFileSystem fileSystem(LocalFileSystemProperties properties) {
         return new LocalFileSystem(properties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public AuthBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
+        return new AuthBeanPostProcessor(advice);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
+        return new AuthAdvice(pathMatcher);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @Qualifier(AuthorizationMatcherQualifier)
+    @ConditionalOnMissingBean
+    public PathMatcher pathMatcher() {
+        return new AntPathMatcher();
     }
 
     @Bean
@@ -70,28 +105,35 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties("southern-quiet.framework")
+    @ConfigurationProperties(ConfigRoot)
     public Properties frameworkProperties() {
         return new Properties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties("southern-quiet.framework.event")
+    @ConfigurationProperties(ConfigRoot_Auth)
+    public AuthProperties authProperties() {
+        return new AuthProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConfigurationProperties(ConfigRoot_Event)
     public EventProperties eventProperties() {
         return new EventProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties("southern-quiet.framework.file-system.local")
+    @ConfigurationProperties(ConfigRoot_FileSystem + ".local")
     public LocalFileSystemProperties localFileSystemProperties() {
         return new LocalFileSystemProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties("southern-quiet.framework.key-value")
+    @ConfigurationProperties(ConfigRoot_KeyValue)
     public KeyValueStoreProperties keyValueStoreProperties() {
         return new KeyValueStoreProperties();
     }
@@ -122,6 +164,8 @@ public class FrameworkAutoConfiguration {
             this.runtimeId = runtimeId;
         }
     }
+
+    public static class AuthProperties {}
 
     public static class EventProperties {
         private String[] defaultChannels = new String[]{EventPubSub.DefaultEventChannel};
