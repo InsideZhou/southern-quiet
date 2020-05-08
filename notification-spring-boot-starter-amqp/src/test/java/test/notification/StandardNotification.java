@@ -1,8 +1,9 @@
 package test.notification;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class StandardNotification {
+public class StandardNotification implements Serializable {
     private UUID id = UUID.randomUUID();
 
     public UUID getId() {

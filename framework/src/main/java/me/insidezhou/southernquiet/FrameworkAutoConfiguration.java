@@ -2,6 +2,7 @@ package me.insidezhou.southernquiet;
 
 import me.insidezhou.southernquiet.auth.AuthAdvice;
 import me.insidezhou.southernquiet.auth.AuthBeanPostProcessor;
+import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBean;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -13,6 +14,7 @@ import me.insidezhou.southernquiet.throttle.annotation.ThrottleAnnotationBeanPos
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -55,6 +57,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnBean(AuthAdvice.class)
     @ConditionalOnMissingBean
     public AuthBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
         return new AuthBeanPostProcessor(advice);
@@ -62,6 +65,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnQualifiedBean(qualifier = AuthorizationMatcherQualifier, type = PathMatcher.class)
     @ConditionalOnMissingBean
     public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
         return new AuthAdvice(pathMatcher);
@@ -112,13 +116,6 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConfigurationProperties(ConfigRoot_Auth)
-    public AuthProperties authProperties() {
-        return new AuthProperties();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     @ConfigurationProperties(ConfigRoot_Event)
     public EventProperties eventProperties() {
         return new EventProperties();
@@ -164,8 +161,6 @@ public class FrameworkAutoConfiguration {
             this.runtimeId = runtimeId;
         }
     }
-
-    public static class AuthProperties {}
 
     public static class EventProperties {
         private String[] defaultChannels = new String[]{EventPubSub.DefaultEventChannel};

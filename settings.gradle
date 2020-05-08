@@ -9,8 +9,7 @@ pluginManagement {
 }
 
 rootProject.name = 'southern-quiet'
-include 'auth-spring-boot-starter-web',
-    'event-spring-boot-starter-redis',
+include 'event-spring-boot-starter-redis',
     'filesystem-spring-boot-starter-mongodb',
     'file-spring-boot-starter-webflux',
     'framework',

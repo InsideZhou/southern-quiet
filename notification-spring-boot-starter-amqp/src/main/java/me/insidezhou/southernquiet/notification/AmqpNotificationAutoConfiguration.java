@@ -20,6 +20,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.Serializable;
+
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
 @Configuration
@@ -32,9 +34,10 @@ public class AmqpNotificationAutoConfiguration {
         return listenerManager::registerListeners;
     }
 
+    @SuppressWarnings("rawtypes")
     @Bean
     @ConditionalOnMissingBean
-    public AmqpNotificationPublisher<Object> amqpNotificationPublisher(
+    public AmqpNotificationPublisher amqpNotificationPublisher(
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
@@ -42,7 +45,7 @@ public class AmqpNotificationAutoConfiguration {
         RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
     ) {
-        return new AmqpNotificationPublisher<>(
+        return new AmqpNotificationPublisher(
             messageConverter,
             notificationProperties,
             properties,

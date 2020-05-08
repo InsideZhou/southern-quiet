@@ -26,10 +26,10 @@ public class AuthAdvice implements MethodBeforeAdvice {
     }
 
     @Override
-    public void before(Method method, @NotNull Object[] args, Object target) throws AuthException {
+    public void before(@NotNull Method method, @NotNull Object[] args, Object target) throws AuthException {
         Assert.notNull(target, "身份及权限验证时目标对象不该为null");
 
-        Auth methodAuthorization = method.getAnnotation(Auth.class);
+        Auth methodAuthorization = AnnotationUtils.getAnnotation(method, Auth.class);
         Auth classAuthorization = AnnotationUtils.getAnnotation(target.getClass(), Auth.class);
 
         Map<Auth.MatchMode, List<Auth>> groupedAuth = Stream.of(methodAuthorization, classAuthorization).filter(Objects::nonNull)
@@ -52,8 +52,8 @@ public class AuthAdvice implements MethodBeforeAdvice {
         Authentication authentication = authProvider.getAuthentication(new AuthContext(method, args, target));
         final Set<String> patterns = authentication.getPermissionPatterns();
 
-        boolean permissionCheckPassed = allPermissions.stream().allMatch(pattern ->
-            patterns.stream().anyMatch(permission -> pathMatcher.match(pattern, permission))
+        boolean permissionCheckPassed = allPermissions.stream().allMatch(permission ->
+            patterns.stream().anyMatch(pattern -> pathMatcher.match(pattern, permission))
         );
 
         permissionCheckPassed = permissionCheckPassed && (anyPermissions.isEmpty() ||

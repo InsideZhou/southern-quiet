@@ -3,9 +3,11 @@ package me.insidezhou.southernquiet.throttle.annotation;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class ThrottleInterceptor implements MethodInterceptor {
@@ -18,9 +20,9 @@ public class ThrottleInterceptor implements MethodInterceptor {
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
-        Throttle annotation = invocation.getMethod().getAnnotation(Throttle.class);
+        Throttle annotation = AnnotationUtils.getAnnotation(invocation.getMethod(), Throttle.class);
 
-        String throttleName = annotation.throttleName();
+        String throttleName = Objects.requireNonNull(annotation).throttleName();
         long threshold = annotation.threshold();
         TimeUnit[] timeUnits = annotation.timeUnit();
 
@@ -36,7 +38,8 @@ public class ThrottleInterceptor implements MethodInterceptor {
 
             TimeUnit timeUnit = timeUnits[0];
             threshold = timeUnit.toMillis(threshold);
-        }else{
+        }
+        else {
             //count based
             throttle = throttleManager.getCountBased(throttleName);
         }
