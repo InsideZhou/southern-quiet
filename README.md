@@ -28,6 +28,7 @@
 
 - 提供Auth注解来验证身份及权限，使用在spring容器管理的bean及其方法上。
 - 通过实现AuthProvider接口来自定义验证逻辑。
+- 权限匹配使用org.springframework.util.PathMatcher（默认AntPathMatcher）进行。
 
 ##### KeyValueStore 键值对存储（默认framework.key-value.enable=false）
 
