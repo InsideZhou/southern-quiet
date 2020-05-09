@@ -19,8 +19,10 @@ import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("WeakerAccess")
@@ -37,6 +39,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
     private final FrameworkAutoConfiguration.EventProperties eventProperties;
     private final ApplicationContext applicationContext;
     private final String[] defaultChannel;
+    private Set<String> listeningChannels;
 
     public AbstractEventPubSub(FrameworkAutoConfiguration.EventProperties eventProperties, ApplicationContext applicationContext) {
         this.defaultChannel = eventProperties.getDefaultChannels();
@@ -70,6 +73,11 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
         }
     }
 
+    @Override
+    public Set<String> getListeningChannels() {
+        return listeningChannels;
+    }
+
     protected String[] getEventChannel(ShouldBroadcast annotation) {
         return annotation.channels().length > 0 ? annotation.channels() : defaultChannel;
     }
@@ -82,7 +90,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Arrays.stream(applicationContext.getBeanDefinitionNames())
+        listeningChannels = Arrays.stream(applicationContext.getBeanDefinitionNames())
             .map(name -> {
                 try {
                     return applicationContext.getBean(name);
@@ -93,7 +101,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                 }
             })
             .filter(Objects::nonNull)
-            .forEach(bean -> {
+            .flatMap(bean -> {
                 Stream<String> channelsFromBeanMethods = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                     .flatMap(method -> AnnotationUtils.getRepeatableAnnotations(method, EventListener.class).stream()
                         .flatMap(listener -> {
@@ -112,8 +120,12 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
 
                 Stream<String> channelsFromBean = generateChannels(bean.getClass());
 
-                Stream.concat(channelsFromBeanMethods, channelsFromBean).distinct().forEach(this::initChannel);
-            });
+                return Stream.concat(channelsFromBeanMethods, channelsFromBean);
+            })
+            .distinct()
+            .collect(Collectors.toSet());
+
+        listeningChannels.forEach(this::initChannel);
     }
 
     private Stream<String> generateChannels(Class<?> type) {

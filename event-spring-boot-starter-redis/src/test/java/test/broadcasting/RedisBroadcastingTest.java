@@ -11,8 +11,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.event.EventListener;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static me.insidezhou.southernquiet.event.EventPubSub.CustomApplicationEventChannel;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(SpringRunner.class)
@@ -37,6 +41,13 @@ public class RedisBroadcastingTest {
     }
 
     @Test
+    public void channels() {
+        Set<String> channels = eventPubSub.getListeningChannels();
+
+        Assert.assertTrue(channels.containsAll(Arrays.asList(CustomApplicationEventChannel, "haha", "TEST.CHANNEL")));
+    }
+
+    @Test
     public void sendCustomChannel() throws InterruptedException {
         BroadcastingCustomChannel broadcastingCustomChannel = new BroadcastingCustomChannel();
         eventPubSub.publish(broadcastingCustomChannel);
@@ -49,12 +60,17 @@ public class RedisBroadcastingTest {
     public static class Listener {
         @EventListener
         public void testListener(BroadcastingDone broadcastingDone) {
-            log.debug("{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
+            log.debug("testListener\t{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
+        }
+
+        @EventListener
+        public void duplicate(BroadcastingDone broadcastingDone) {
+            log.debug("duplicate\t{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
         }
 
         @EventListener
         public void testCustomChannelListener(BroadcastingCustomChannel broadcastingCustomChannel) {
-            log.debug("{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
+            log.debug("testCustomChannelListener\t{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
             testCustomChannelListenerMap.merge(broadcastingCustomChannel.getId().toString(), 1, Integer::sum);
         }
 

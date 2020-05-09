@@ -95,7 +95,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
             );
         }
 
-        Object event = eventSerializer.deserialize(data);
+        E event = eventSerializer.deserialize(data);
         if (null == event) {
             log.warn(
                 "收到空事件\tchannel={}, pattern={}, data={}",
@@ -107,7 +107,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
             return;
         }
 
-        getApplicationEventPublisher().publishEvent(event);
+        publishToLocalOnly(event);
     }
 
     @Override
