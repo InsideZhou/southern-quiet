@@ -26,9 +26,9 @@
     
 ##### Auth 身份及权限验证
 
-- 提供Auth注解来验证身份及权限，使用在Controller及Action上。  
-- 要打开这个特性，需要提供AuthService类型的Bean。
-    
+- 提供Auth注解来验证身份及权限，使用在spring容器管理的bean及其方法上。
+- 通过实现AuthProvider接口来自定义验证逻辑。
+
 ##### KeyValueStore 键值对存储（默认framework.key-value.enable=false）
 
 - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
