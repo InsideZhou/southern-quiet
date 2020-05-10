@@ -15,8 +15,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 @SuppressWarnings("WeakerAccess")
-public abstract class AbstractListenerManager {
-    private final static Logger log = LoggerFactory.getLogger(AbstractListenerManager.class);
+public abstract class AbstractNotificationListenerManager {
+    private final static Logger log = LoggerFactory.getLogger(AbstractNotificationListenerManager.class);
 
     private boolean initialized = false;
 
@@ -39,25 +39,23 @@ public abstract class AbstractListenerManager {
                 }
             })
             .filter(Objects::nonNull)
-            .forEach(bean -> {
-                Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
-                    .forEach(method -> {
-                        AnnotationUtils.getRepeatableAnnotations(method, NotificationListener.class)
-                            .forEach(listener -> {
-                                if (log.isDebugEnabled()) {
-                                    log.debug(
-                                        "找到NotificationListener：{}(id={}) {}#{}",
-                                        listener.notification().getSimpleName(),
-                                        listener.name(),
-                                        bean.getClass().getSimpleName(),
-                                        method.getName()
-                                    );
-                                }
+            .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
+                .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, NotificationListener.class)
+                    .forEach(listener -> {
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                "找到NotificationListener：{}(id={}) {}#{}",
+                                listener.notification().getSimpleName(),
+                                listener.name(),
+                                bean.getClass().getSimpleName(),
+                                method.getName()
+                            );
+                        }
 
-                                initListener(listener, bean, method);
-                            });
-                    });
-            });
+                        initListener(listener, bean, method);
+                    })
+                )
+            );
 
         initialized = true;
     }

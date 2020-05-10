@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet;
 import me.insidezhou.southernquiet.auth.AuthAdvice;
 import me.insidezhou.southernquiet.auth.AuthBeanPostProcessor;
 import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBean;
+import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBeanMissing;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -38,6 +39,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
+    public final static String ConfigRoot_Throttle = ConfigRoot + ".throttle";
     public final static String ConfigRoot_Event = ConfigRoot + ".event";
     public final static String ConfigRoot_FileSystem = ConfigRoot + ".file-system";
     public final static String ConfigRoot_KeyValue = ConfigRoot + ".key-value";
@@ -74,9 +76,23 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @Qualifier(AuthorizationMatcherQualifier)
-    @ConditionalOnMissingBean
+    @ConditionalOnQualifiedBeanMissing
     public PathMatcher pathMatcher() {
         return new AntPathMatcher();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public ThrottleManager throttleManager() {
+        return new DefaultThrottleManager();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleManager throttleManager) {
+        return new ThrottleAnnotationBeanPostProcessor(throttleManager);
     }
 
     @Bean
@@ -133,17 +149,6 @@ public class FrameworkAutoConfiguration {
     @ConfigurationProperties(ConfigRoot_KeyValue)
     public KeyValueStoreProperties keyValueStoreProperties() {
         return new KeyValueStoreProperties();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ThrottleManager throttleManager() {
-        return new DefaultThrottleManager();
-    }
-
-    @Bean
-    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleManager throttleManager) {
-        return new ThrottleAnnotationBeanPostProcessor(throttleManager);
     }
 
     @SuppressWarnings("WeakerAccess")

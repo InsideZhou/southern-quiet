@@ -47,10 +47,6 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
         this.applicationContext = applicationContext;
     }
 
-    public ApplicationEventPublisher getApplicationEventPublisher() {
-        return applicationEventPublisher;
-    }
-
     @Override
     public void setApplicationEventPublisher(@NotNull ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
@@ -122,7 +118,6 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
 
                 return Stream.concat(channelsFromBeanMethods, channelsFromBean);
             })
-            .distinct()
             .collect(Collectors.toSet());
 
         listeningChannels.forEach(this::initChannel);

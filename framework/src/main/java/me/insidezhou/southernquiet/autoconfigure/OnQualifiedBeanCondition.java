@@ -21,7 +21,7 @@ public class OnQualifiedBeanCondition extends SpringBootCondition {
             BeanFactoryAnnotationUtils.qualifiedBeanOfType(Objects.requireNonNull(context.getBeanFactory()), beanType, qualifier);
         }
         catch (BeansException e) {
-            return ConditionOutcome.noMatch("没有找到类型为: " + beanType.getName() + "，修饰符为" + qualifier + "的bean。");
+            return ConditionOutcome.noMatch("没有找到类型为: " + beanType.getName() + "，限定符为" + qualifier + "的bean。");
         }
 
         return ConditionOutcome.match();

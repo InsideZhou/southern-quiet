@@ -34,7 +34,7 @@ import org.springframework.util.StringUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class AmqpNotificationListenerManager extends AbstractListenerManager implements Lifecycle {
+public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
     private final SmartMessageConverter messageConverter;
