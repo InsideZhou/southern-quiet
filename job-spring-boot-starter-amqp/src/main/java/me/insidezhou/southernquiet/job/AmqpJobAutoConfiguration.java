@@ -4,8 +4,8 @@ import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
-import me.insidezhou.southernquiet.job.driver.AmqpJobEngine;
-import me.insidezhou.southernquiet.job.driver.AmqpJobListener;
+import me.insidezhou.southernquiet.job.driver.AmqpJobArranger;
+import me.insidezhou.southernquiet.job.driver.AmqpJobProcessorManager;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.convert.DurationUnit;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -36,20 +37,18 @@ public class AmqpJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpJobEngine amqpJobEngine(MessageConverter messageConverter,
-                                       AmqpAdmin amqpAdmin,
-                                       Properties properties,
-                                       RabbitProperties rabbitProperties,
-                                       RabbitConnectionFactoryBean factoryBean,
-                                       ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    public AmqpJobProcessorManager amqpJobProcessorManager(
+        AmqpAdmin amqpAdmin,
+        AmqpJobArranger<?> jobArranger,
+        AmqpJobAutoConfiguration.Properties amqpJobProperties,
+        AmqpAutoConfiguration.Properties amqpProperties,
+        RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
+        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
+        ApplicationContext applicationContext
     ) {
-        return new AmqpJobEngine(
-            messageConverter,
-            amqpAdmin,
-            properties,
-            rabbitProperties,
-            factoryBean,
-            connectionNameStrategy
+        return new AmqpJobProcessorManager(
+            amqpAdmin, jobArranger, amqpJobProperties, amqpProperties, rabbitProperties, factoryBean, connectionNameStrategy, applicationContext
         );
     }
 
@@ -63,14 +62,14 @@ public class AmqpJobAutoConfiguration {
         RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
         AmqpAdmin amqpAdmin,
-        AmqpJobEngine jobEngine
+        AmqpJobProcessorManager jobProcessorManager
     ) {
         CachingConnectionFactory cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
 
         DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
             rabbitProperties,
             new AmqpMessageRecover(
-                jobEngine.getRabbitTemplate(),
+                jobProcessorManager.getRabbitTemplate(),
                 amqpAdmin,
                 properties.getDeadJobExchange(),
                 properties.getDeadJobQueue(),
@@ -89,18 +88,25 @@ public class AmqpJobAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AmqpJobListener amqpJobListener(AmqpJobEngine jobEngine) {
-        return new AmqpJobEngine.Listener(jobEngine);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     @ConfigurationProperties("southern-quiet.framework.job.amqp")
     public Properties amqpJobProperties() {
         return new Properties();
     }
 
     public static class Properties {
+        /**
+         * 队列的前缀
+         */
+        private String namePrefix = "JOB.";
+
+        public String getNamePrefix() {
+            return namePrefix;
+        }
+
+        public void setNamePrefix(String namePrefix) {
+            this.namePrefix = namePrefix;
+        }
+
         /**
          * 任务队列名。
          */

@@ -42,12 +42,10 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     private final List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
     private final RabbitAdmin rabbitAdmin;
-    private final AmqpNotificationPublisher<?> publisher;
     private final AmqpAutoConfiguration.Properties amqpProperties;
     private final AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
 
     private final RabbitProperties rabbitProperties;
-    private final ApplicationContext applicationContext;
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -60,12 +58,12 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                                            ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
                                            ApplicationContext applicationContext
     ) {
+        super(applicationContext);
+
         this.rabbitAdmin = rabbitAdmin;
-        this.publisher = publisher;
         this.amqpNotificationProperties = amqpNotificationProperties;
         this.amqpProperties = amqpProperties;
         this.rabbitProperties = rabbitProperties;
-        this.applicationContext = applicationContext;
 
         this.messageConverter = publisher.getMessageConverter();
 
@@ -74,8 +72,6 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
-        initListener(applicationContext);
-
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             NotificationListener listenerAnnotation = tuple.getSecond();
@@ -176,15 +172,15 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private String getDeadSource(NotificationListener listener, String listenerDefaultName) {
-        return suffix("DEAD." + publisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
+        return suffix("DEAD." + AmqpNotificationPublisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
     }
 
     private String getDeadRouting(NotificationListener listener, String listenerDefaultName) {
-        return publisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
+        return AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
     }
 
     private String getListenerRouting(NotificationListener listener, String listenerDefaultName) {
-        return suffix(publisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listener, listenerDefaultName);
+        return suffix(AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listener, listenerDefaultName);
     }
 
     private String getListenerName(NotificationListener listener, String listenerDefaultName) {
@@ -204,7 +200,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
         String routing = getListenerRouting(listener, listenerDefaultName);
 
-        Exchange exchange = new FanoutExchange(publisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
+        Exchange exchange = new FanoutExchange(AmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
         Queue queue = new Queue(routing);
 
         rabbitAdmin.declareExchange(exchange);

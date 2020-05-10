@@ -20,8 +20,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.Serializable;
-
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
 @Configuration

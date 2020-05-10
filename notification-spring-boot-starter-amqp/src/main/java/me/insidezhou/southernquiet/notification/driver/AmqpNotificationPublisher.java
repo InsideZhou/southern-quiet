@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.notification.driver;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
+import me.insidezhou.southernquiet.notification.NotificationSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -16,6 +17,8 @@ import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.Lifecycle;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.StringUtils;
 
 @SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, Lifecycle {
@@ -66,8 +69,9 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
     }
 
     @Override
-    public void publish(N notification, String source) {
+    public void publish(N notification) {
         String prefix = notificationProperties.getNamePrefix();
+        String source = getNotificationSource((Class<?>) notification);
         String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
 
@@ -98,6 +102,27 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
                 messagePostProcessor
             );
         }
+    }
+
+    public static String getNotificationSource(Class<?> cls) {
+        NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
+        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
+    }
+
+    public static String getExchange(String prefix, Class<?> cls) {
+        return getExchange(prefix, getNotificationSource(cls));
+    }
+
+    public static String getExchange(String prefix, String source) {
+        return prefix + "EXCHANGE." + source;
+    }
+
+    public static String getRouting(String prefix, Class<?> cls) {
+        return getRouting(prefix, getNotificationSource(cls));
+    }
+
+    public static String getRouting(String prefix, String source) {
+        return prefix + source;
     }
 
     @Override
