@@ -77,7 +77,7 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @Qualifier(AuthorizationMatcherQualifier)
     @ConditionalOnQualifiedBeanMissing
-    public PathMatcher pathMatcher() {
+    public PathMatcher authorizationMatcher() {
         return new AntPathMatcher();
     }
 

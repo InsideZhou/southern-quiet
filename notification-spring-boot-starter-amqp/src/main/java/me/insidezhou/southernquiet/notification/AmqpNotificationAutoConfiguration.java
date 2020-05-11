@@ -3,13 +3,14 @@ package me.insidezhou.southernquiet.notification;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationPublisher;
+import me.insidezhou.southernquiet.util.Amplifier;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
@@ -20,18 +21,14 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.RecoverAmplifierQualifier;
+
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties
 @AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
 public class AmqpNotificationAutoConfiguration {
-    @Bean
-    @ConditionalOnMissingBean
-    public RabbitListenerConfigurer rabbitListenerConfigurer(AmqpNotificationListenerManager listenerManager) {
-        return listenerManager::registerListeners;
-    }
-
     @SuppressWarnings("rawtypes")
     @Bean
     @ConditionalOnMissingBean
@@ -58,6 +55,7 @@ public class AmqpNotificationAutoConfiguration {
     @ConditionalOnMissingBean
     public AmqpNotificationListenerManager amqpNotificationListenerManager(
         RabbitAdmin rabbitAdmin,
+        @Qualifier(RecoverAmplifierQualifier) Amplifier amplifier,
         AmqpNotificationPublisher<?> publisher,
         AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
         AmqpAutoConfiguration.Properties amqpProperties,
@@ -69,6 +67,7 @@ public class AmqpNotificationAutoConfiguration {
         return new AmqpNotificationListenerManager(
             rabbitAdmin,
             publisher,
+            amplifier,
             amqpNotificationProperties,
             amqpProperties,
             rabbitProperties,
@@ -76,12 +75,6 @@ public class AmqpNotificationAutoConfiguration {
             connectionNameStrategy,
             applicationContext
         );
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public AmqpAutoConfiguration.Properties amqpProperties() {
-        return new AmqpAutoConfiguration.Properties();
     }
 
     @Bean

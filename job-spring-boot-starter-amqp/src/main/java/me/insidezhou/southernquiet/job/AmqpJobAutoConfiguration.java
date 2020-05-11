@@ -1,89 +1,73 @@
 package me.insidezhou.southernquiet.job;
 
-import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
-import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import me.insidezhou.southernquiet.job.driver.AmqpJobArranger;
 import me.insidezhou.southernquiet.job.driver.AmqpJobProcessorManager;
-import org.springframework.amqp.core.AmqpAdmin;
+import me.insidezhou.southernquiet.util.Amplifier;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
-import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
+import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
+import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.RecoverAmplifierQualifier;
 
 @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "WeakerAccess"})
 @EnableRabbit
-@EnableTransactionManagement(proxyTargetClass = true)
+@EnableTransactionManagement
 @Configuration
 @EnableConfigurationProperties
+@AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
 public class AmqpJobAutoConfiguration {
-    public final static String AmqpJobListenerContainerFactory = "amqpJobListenerContainerFactory";
+    @ConditionalOnMissingBean
+    @Bean
+    public RabbitTransactionManager rabbitTransactionManager(
+        RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
+        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    ) {
+        return new RabbitTransactionManager(AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy));
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Bean
+    @ConditionalOnMissingBean
+    public AmqpJobArranger amqpJobArranger(
+        SmartMessageConverter messageConverter,
+        AmqpJobAutoConfiguration.Properties jobProperties,
+        RabbitTransactionManager transactionManager
+    ) {
+        return new AmqpJobArranger(messageConverter, jobProperties, transactionManager);
+    }
 
     @Bean
     @ConditionalOnMissingBean
     public AmqpJobProcessorManager amqpJobProcessorManager(
-        AmqpAdmin amqpAdmin,
+        RabbitAdmin rabbitAdmin,
+        @Qualifier(RecoverAmplifierQualifier) Amplifier amplifier,
         AmqpJobArranger<?> jobArranger,
         AmqpJobAutoConfiguration.Properties amqpJobProperties,
         AmqpAutoConfiguration.Properties amqpProperties,
         RabbitProperties rabbitProperties,
-        RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
+        RabbitTransactionManager transactionManager,
         ApplicationContext applicationContext
     ) {
         return new AmqpJobProcessorManager(
-            amqpAdmin, jobArranger, amqpJobProperties, amqpProperties, rabbitProperties, factoryBean, connectionNameStrategy, applicationContext
+            rabbitAdmin, jobArranger, amplifier, amqpJobProperties, amqpProperties, transactionManager, rabbitProperties, applicationContext
         );
-    }
-
-    @Bean(AmqpJobListenerContainerFactory)
-    @ConditionalOnMissingBean
-    public DirectRabbitListenerContainerFactory amqpJobListenerContainerFactory(
-        MessageConverter messageConverter,
-        AmqpAutoConfiguration.Properties amqpProperties,
-        AmqpJobAutoConfiguration.Properties properties,
-        RabbitProperties rabbitProperties,
-        RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
-        AmqpAdmin amqpAdmin,
-        AmqpJobProcessorManager jobProcessorManager
-    ) {
-        CachingConnectionFactory cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
-
-        DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
-            rabbitProperties,
-            new AmqpMessageRecover(
-                jobProcessorManager.getRabbitTemplate(),
-                amqpAdmin,
-                properties.getDeadJobExchange(),
-                properties.getDeadJobQueue(),
-                amqpProperties
-            ),
-            amqpProperties
-        );
-
-        DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
-        factory.setMessageConverter(messageConverter);
-        factory.setAcknowledgeMode(amqpProperties.getAcknowledgeMode());
-        containerFactoryConfigurer.configure(factory, cachingConnectionFactory);
-
-        return factory;
     }
 
     @Bean
@@ -105,72 +89,6 @@ public class AmqpJobAutoConfiguration {
 
         public void setNamePrefix(String namePrefix) {
             this.namePrefix = namePrefix;
-        }
-
-        /**
-         * 任务队列名。
-         */
-        private String workingQueue = "JOB.WORKING-QUEUE";
-
-        /**
-         * 任务监听容器的初始化工厂名。
-         */
-        private String containerFactoryBeanName = AmqpJobListenerContainerFactory;
-
-        /**
-         * 异常任务交换器名。
-         */
-        private String deadJobExchange = Constants.AMQP_DEFAULT;
-
-        /**
-         * 异常任务队列名。
-         */
-        private String deadJobQueue = "JOB.DEAD-QUEUE";
-
-        /**
-         * 任务的生命周期，超时的任务在异常队列中不再重新投递。
-         */
-        @DurationUnit(ChronoUnit.SECONDS)
-        private Duration jobTTL = Duration.ofHours(1);
-
-        public String getWorkingQueue() {
-            return workingQueue;
-        }
-
-        public void setWorkingQueue(String workingQueue) {
-            this.workingQueue = workingQueue;
-        }
-
-        public String getContainerFactoryBeanName() {
-            return containerFactoryBeanName;
-        }
-
-        public void setContainerFactoryBeanName(String containerFactoryBeanName) {
-            this.containerFactoryBeanName = containerFactoryBeanName;
-        }
-
-        public String getDeadJobExchange() {
-            return deadJobExchange;
-        }
-
-        public void setDeadJobExchange(String deadJobExchange) {
-            this.deadJobExchange = deadJobExchange;
-        }
-
-        public String getDeadJobQueue() {
-            return deadJobQueue;
-        }
-
-        public void setDeadJobQueue(String deadJobQueue) {
-            this.deadJobQueue = deadJobQueue;
-        }
-
-        public Duration getJobTTL() {
-            return jobTTL;
-        }
-
-        public void setJobTTL(Duration jobTTL) {
-            this.jobTTL = jobTTL;
         }
     }
 }

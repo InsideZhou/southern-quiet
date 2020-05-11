@@ -1,15 +1,17 @@
 package me.insidezhou.southernquiet.amqp.rabbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBeanMissing;
+import me.insidezhou.southernquiet.util.GoldenRatioAmplifier;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -26,6 +28,14 @@ import java.time.temporal.ChronoUnit;
 @Configuration
 @EnableConfigurationProperties
 public class AmqpAutoConfiguration {
+    public final static String RecoverAmplifierQualifier = "AmqpAutoConfiguration.RecoverAmplifierQualifier";
+
+    @Bean
+    @Qualifier(RecoverAmplifierQualifier)
+    @ConditionalOnQualifiedBeanMissing
+    public GoldenRatioAmplifier amqpRecoverAmplifier(AmqpAutoConfiguration.Properties amqpProperties) {
+        return new GoldenRatioAmplifier(amqpProperties.getInitialExpiration().toMillis());
+    }
 
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
     public static CachingConnectionFactory rabbitConnectionFactory(
@@ -121,11 +131,6 @@ public class AmqpAutoConfiguration {
         private Duration expiration = Duration.ofDays(1);
 
         /**
-         * 消息重试间隔的指数
-         */
-        private double power = 1.1;
-
-        /**
          * 在开启publisher confirm的情况下，等待confirm的超时时间，单位：毫秒。
          */
         private long publisherConfirmTimeout = 5000;
@@ -185,14 +190,6 @@ public class AmqpAutoConfiguration {
 
         public void setExpiration(Duration expiration) {
             this.expiration = expiration;
-        }
-
-        public double getPower() {
-            return power;
-        }
-
-        public void setPower(double power) {
-            this.power = power;
         }
 
         public int getMaxDeliveryAttempts() {

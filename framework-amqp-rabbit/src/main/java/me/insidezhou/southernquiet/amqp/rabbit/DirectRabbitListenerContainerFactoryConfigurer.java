@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
 
 public class DirectRabbitListenerContainerFactoryConfigurer extends AbstractRabbitListenerContainerFactoryConfigurer<DirectRabbitListenerContainerFactory> {
-    private AmqpAutoConfiguration.Properties properties;
+    private final AmqpAutoConfiguration.Properties properties;
 
     public DirectRabbitListenerContainerFactoryConfigurer(RabbitProperties rabbitProperties,
                                                           MessageRecoverer messageRecoverer,
@@ -22,13 +22,33 @@ public class DirectRabbitListenerContainerFactoryConfigurer extends AbstractRabb
 
     @Override
     public void configure(DirectRabbitListenerContainerFactory factory, ConnectionFactory connectionFactory) {
-        PropertyMapper map = PropertyMapper.get();
         RabbitProperties.DirectContainer config = getRabbitProperties().getListener().getDirect();
+
+        DirectContainer localConfig = new DirectContainer();
+
         RabbitProperties.ListenerRetry retry = new RabbitProperties.ListenerRetry();
         BeanUtils.copyProperties(config.getRetry(), retry);
         retry.setEnabled(true); //这里必须强行设置为true，否则recover机制不生效，上游的实现依赖了这个值。
         retry.setMaxAttempts(properties.getMaxDeliveryAttempts() > 0 ? properties.getMaxDeliveryAttempts() : 1);
-        configure(factory, connectionFactory, config);
+
+        BeanUtils.copyProperties(config, localConfig);
+        localConfig.setRetry(retry);
+        configure(factory, connectionFactory, localConfig);
+
+        PropertyMapper map = PropertyMapper.get();
         map.from(config::getConsumersPerQueue).whenNonNull().to(factory::setConsumersPerQueue);
+    }
+
+    public static class DirectContainer extends RabbitProperties.DirectContainer {
+        private RabbitProperties.ListenerRetry retry;
+
+        @Override
+        public RabbitProperties.ListenerRetry getRetry() {
+            return retry;
+        }
+
+        public void setRetry(RabbitProperties.ListenerRetry retry) {
+            this.retry = retry;
+        }
     }
 }

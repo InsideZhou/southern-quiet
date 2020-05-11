@@ -1,24 +1,27 @@
 package me.insidezhou.southernquiet.amqp.rabbit;
 
+import me.insidezhou.southernquiet.util.Amplifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
-import org.springframework.util.StringUtils;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class AmqpMessageRecover extends RepublishMessageRecoverer {
     private final static Logger log = LoggerFactory.getLogger(AmqpMessageRecover.class);
 
-    private AmqpAutoConfiguration.Properties properties;
-
-    private AmqpAdmin amqpAdmin;
+    private final Amplifier amplifier;
+    private final long maxExpiration;
 
     public AmqpMessageRecover(AmqpTemplate amqpTemplate,
-                              AmqpAdmin amqpAdmin,
+                              Amplifier amplifier,
                               String errorExchange,
                               String errorRoutingKey,
                               AmqpAutoConfiguration.Properties properties) {
@@ -26,11 +29,11 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         super(amqpTemplate, errorExchange, errorRoutingKey);
         setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
-        this.properties = properties;
-        this.amqpAdmin = amqpAdmin;
+        this.maxExpiration = properties.getExpiration().toMillis();
+        this.amplifier = amplifier;
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings("unchecked")
     @Override
     public void recover(Message message, Throwable cause) {
         MessageProperties messageProperties = message.getMessageProperties();
@@ -40,34 +43,10 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         }
 
         Map<String, Object> headers = messageProperties.getHeaders();
-        headers.putIfAbsent("x-recover-count", 0);
-        headers.putIfAbsent("x-expiration", properties.getInitialExpiration().toMillis());
+        Map<String, Object> xDeath = ((List<Map<String, Object>>) headers.getOrDefault("x-death", Collections.singletonList(Collections.emptyMap()))).get(0);
 
-        int queuedMessageCount = 0;
-        int recoverCount = (int) headers.get("x-recover-count");
-
-        long expiration;
-        if (StringUtils.isEmpty(messageProperties.getExpiration())) {
-            expiration = (long) headers.get("x-expiration");
-        }
-        else {
-            expiration = Long.parseLong(messageProperties.getExpiration());
-        }
-
-        if (recoverCount > 0) {
-            if (null != messageProperties.getMessageCount()) {
-                queuedMessageCount = messageProperties.getMessageCount();
-            }
-            else {
-                Properties queueProperties = amqpAdmin.getQueueProperties(messageProperties.getConsumerQueue());
-                queuedMessageCount = (int) queueProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0);
-            }
-
-            expiration += (long) Math.pow(expiration + queuedMessageCount * recoverCount, properties.getPower());
-        }
-
-        messageProperties.setHeader("x-recover-count", ++recoverCount);
-        messageProperties.setHeader("x-expiration", expiration);
+        long recoverCount = ((Number) xDeath.getOrDefault("count", 0)).longValue();
+        long expiration = amplifier.amplify(recoverCount);
 
         if (null == messageProperties.getDeliveryMode()) {
             messageProperties.setDeliveryMode(getDeliveryMode());
@@ -75,20 +54,18 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
 
         if (log.isDebugEnabled()) {
             log.debug(
-                "准备把通知送进死信队列: exchange={}, queue={}, expiration={}/{}, recoverCount={}, deliveryMode={}, messageCount={}, message={}",
+                "准备把消息送进死信队列: exchange={}, queue={}, expiration={}, recoverCount={}, deliveryMode={}, message={}, cause={}",
                 errorExchangeName,
                 errorRoutingKey,
                 expiration,
-                properties.getExpiration().toMillis(),
                 recoverCount,
                 messageProperties.getDeliveryMode(),
-                queuedMessageCount,
                 message,
                 cause
             );
         }
 
-        if (expiration < properties.getExpiration().toMillis()) {
+        if (expiration < maxExpiration) {
             messageProperties.setExpiration(String.valueOf(expiration));
             errorTemplate.send(errorExchangeName, errorRoutingKey, message);
         }

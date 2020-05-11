@@ -1,24 +1,16 @@
 package test.notification;
 
-import me.insidezhou.southernquiet.auth.AuthAdvice;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.util.PathMatcher;
 
 import java.io.Serializable;
 
@@ -29,21 +21,7 @@ public class NotificationTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    public static class Config {
-        @ConditionalOnMissingBean
-        @Bean
-        public RabbitTransactionManager rabbitTransactionManager(ConnectionFactory connectionFactory) {
-            RabbitTransactionManager manager = new RabbitTransactionManager();
-            manager.setConnectionFactory(connectionFactory);
-            return manager;
-        }
-
-        @Bean
-        @Qualifier(AuthAdvice.AuthorizationMatcherQualifier)
-        public PathMatcher pathMatcher() {
-            return new AntPathMatcher();
-        }
-    }
+    public static class Config {}
 
     @Autowired
     private NotificationPublisher<Serializable> notificationPublisher;

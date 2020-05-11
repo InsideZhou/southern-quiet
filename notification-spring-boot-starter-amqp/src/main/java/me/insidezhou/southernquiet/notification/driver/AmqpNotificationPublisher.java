@@ -71,7 +71,7 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
     @Override
     public void publish(N notification) {
         String prefix = notificationProperties.getNamePrefix();
-        String source = getNotificationSource((Class<?>) notification);
+        String source = getNotificationSource(notification.getClass());
         String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
 

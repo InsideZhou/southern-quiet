@@ -1,44 +1,55 @@
 package me.insidezhou.southernquiet.job.driver;
 
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobArranger;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
-import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 
 public class AmqpJobArranger<J> implements JobArranger<J> {
+    private final static Logger log = LoggerFactory.getLogger(AmqpJobArranger.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final SmartMessageConverter messageConverter;
     private final AmqpJobAutoConfiguration.Properties jobProperties;
-    private final AmqpAutoConfiguration.Properties properties;
 
     public AmqpJobArranger(SmartMessageConverter messageConverter,
                            AmqpJobAutoConfiguration.Properties jobProperties,
-                           AmqpAutoConfiguration.Properties properties,
-                           RabbitProperties rabbitProperties,
-                           RabbitConnectionFactoryBean factoryBean,
-                           ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+                           RabbitTransactionManager transactionManager
     ) {
-
         this.messageConverter = messageConverter;
         this.jobProperties = jobProperties;
-        this.properties = properties;
 
-        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(transactionManager.getConnectionFactory());
         rabbitTemplate.setMessageConverter(messageConverter);
         rabbitTemplate.setChannelTransacted(true);
         this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
-    public void arrange(J notification) {
+    public void arrange(J job) {
+        String prefix = jobProperties.getNamePrefix();
+        String source = getJobSource(job.getClass());
+        String exchange = getExchange(prefix, source);
+        String routing = getRouting(prefix, source);
+
+        MessagePostProcessor messagePostProcessor = message -> {
+            MessageProperties properties = message.getMessageProperties();
+            properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            return message;
+        };
+
+        rabbitTemplate.convertAndSend(
+            exchange,
+            routing,
+            job,
+            messagePostProcessor
+        );
     }
 
     public SmartMessageConverter getMessageConverter() {

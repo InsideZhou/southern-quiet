@@ -8,6 +8,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Inherited
 @Documented
+@Repeatable(JobProcessor.List.class)
 public @interface JobProcessor {
     /**
      * 要处理的任务类。
@@ -18,4 +19,13 @@ public @interface JobProcessor {
      * 处理器的名称。
      */
     String name() default "";
+
+    @SuppressWarnings("unused")
+    @Target({ElementType.METHOD})
+    @Retention(RUNTIME)
+    @Inherited
+    @Documented
+    @interface List {
+        JobProcessor[] value();
+    }
 }

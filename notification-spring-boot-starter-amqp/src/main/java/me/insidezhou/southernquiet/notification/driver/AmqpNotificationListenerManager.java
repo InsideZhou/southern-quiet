@@ -6,6 +6,7 @@ import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
+import me.insidezhou.southernquiet.util.Amplifier;
 import me.insidezhou.southernquiet.util.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -31,26 +33,28 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle {
+public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle, RabbitListenerConfigurer {
     private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
     private final SmartMessageConverter messageConverter;
     private final CachingConnectionFactory cachingConnectionFactory;
 
     private final List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
-    private final RabbitAdmin rabbitAdmin;
     private final AmqpAutoConfiguration.Properties amqpProperties;
     private final AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
+    private final Amplifier amplifier;
 
     private final RabbitProperties rabbitProperties;
-
+    private final RabbitAdmin rabbitAdmin;
     private final RabbitTemplate rabbitTemplate;
 
     public AmqpNotificationListenerManager(RabbitAdmin rabbitAdmin,
                                            AmqpNotificationPublisher<?> publisher,
+                                           Amplifier amplifier,
                                            AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
@@ -60,6 +64,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     ) {
         super(applicationContext);
 
+        this.amplifier = amplifier;
         this.rabbitAdmin = rabbitAdmin;
         this.amqpNotificationProperties = amqpNotificationProperties;
         this.amqpProperties = amqpProperties;
@@ -71,7 +76,8 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         this.rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
     }
 
-    public void registerListeners(RabbitListenerEndpointRegistrar registrar) {
+    @Override
+    public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             NotificationListener listenerAnnotation = tuple.getSecond();
@@ -81,7 +87,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                 rabbitProperties,
                 new AmqpMessageRecover(
                     rabbitTemplate,
-                    rabbitAdmin,
+                    amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(listenerAnnotation, listenerName),
                     amqpProperties
@@ -160,8 +166,18 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             }
             catch (RuntimeException e) {
                 log.error("通知处理器抛出异常", e);
-
                 throw e;
+            }
+            catch (InvocationTargetException e) {
+                Throwable target = e.getTargetException();
+
+                log.error("通知处理器抛出异常", target);
+
+                if (target instanceof RuntimeException) {
+                    throw (RuntimeException) target;
+                }
+
+                throw new RuntimeException(target);
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
