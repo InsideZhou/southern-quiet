@@ -1,8 +1,8 @@
 package me.insidezhou.southernquiet.throttle.annotation;
 
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.aop.MethodBeforeAdvice;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
@@ -10,24 +10,22 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class ThrottleInterceptor implements MethodInterceptor {
-
+public class ThrottleAdvice implements MethodBeforeAdvice {
     private final ThrottleManager throttleManager;
 
-    ThrottleInterceptor(ThrottleManager throttleManager) {
+    public ThrottleAdvice(ThrottleManager throttleManager) {
         this.throttleManager = throttleManager;
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
-        Throttle annotation = AnnotationUtils.getAnnotation(invocation.getMethod(), Throttle.class);
+    public void before(@NotNull Method method, @NotNull Object[] args, Object target) throws Throwable {
+        Throttle annotation = AnnotationUtils.getAnnotation(method, Throttle.class);
 
         String throttleName = Objects.requireNonNull(annotation).throttleName();
         long threshold = annotation.threshold();
         TimeUnit[] timeUnits = annotation.timeUnit();
 
         if (StringUtils.isEmpty(throttleName)) {
-            Method method = invocation.getMethod();
             throttleName = method.getDeclaringClass().getName() + "#" + method.getName();
         }
 
@@ -44,10 +42,6 @@ public class ThrottleInterceptor implements MethodInterceptor {
             throttle = throttleManager.getCountBased(throttleName);
         }
 
-        boolean open = throttle.open(threshold);
-        if (open) {
-            return invocation.proceed();
-        }
-        return null;
+        if (!throttle.open(threshold)) throw new ThrottleException();
     }
 }

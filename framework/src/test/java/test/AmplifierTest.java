@@ -21,7 +21,7 @@ public class AmplifierTest {
         while (current < Duration.ofDays(1).toMillis()) {
             current = amplifier.amplify(index);
             total += current;
-            log.info("amplified\tindex={}, current={}, total={}", index, current, total);
+            log.info("amplified\tindex={}, current={}, total={}", index, Duration.ofMillis(current), Duration.ofMillis(total));
             ++index;
         }
     }

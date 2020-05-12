@@ -1,7 +1,6 @@
 package me.insidezhou.southernquiet.amqp.rabbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBeanMissing;
 import me.insidezhou.southernquiet.util.GoldenRatioAmplifier;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
@@ -32,7 +31,6 @@ public class AmqpAutoConfiguration {
 
     @Bean
     @Qualifier(RecoverAmplifierQualifier)
-    @ConditionalOnQualifiedBeanMissing
     public GoldenRatioAmplifier amqpRecoverAmplifier(AmqpAutoConfiguration.Properties amqpProperties) {
         return new GoldenRatioAmplifier(amqpProperties.getInitialExpiration().toMillis());
     }

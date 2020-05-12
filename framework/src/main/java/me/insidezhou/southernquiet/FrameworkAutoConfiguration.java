@@ -2,8 +2,6 @@ package me.insidezhou.southernquiet;
 
 import me.insidezhou.southernquiet.auth.AuthAdvice;
 import me.insidezhou.southernquiet.auth.AuthBeanPostProcessor;
-import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBean;
-import me.insidezhou.southernquiet.autoconfigure.ConditionalOnQualifiedBeanMissing;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -11,11 +9,11 @@ import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import me.insidezhou.southernquiet.throttle.annotation.ThrottleAnnotationBeanPostProcessor;
+import me.insidezhou.southernquiet.throttle.annotation.ThrottleAdvice;
+import me.insidezhou.southernquiet.throttle.annotation.ThrottleBeanPostProcessor;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -59,7 +57,6 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnBean(AuthAdvice.class)
     @ConditionalOnMissingBean
     public AuthBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
         return new AuthBeanPostProcessor(advice);
@@ -67,7 +64,6 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnQualifiedBean(qualifier = AuthorizationMatcherQualifier, type = PathMatcher.class)
     @ConditionalOnMissingBean
     public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
         return new AuthAdvice(pathMatcher);
@@ -76,8 +72,7 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @Qualifier(AuthorizationMatcherQualifier)
-    @ConditionalOnQualifiedBeanMissing
-    public PathMatcher authorizationMatcher() {
+    public AntPathMatcher authorizationMatcher() {
         return new AntPathMatcher();
     }
 
@@ -91,8 +86,15 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleManager throttleManager) {
-        return new ThrottleAnnotationBeanPostProcessor(throttleManager);
+    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager) {
+        return new ThrottleAdvice(throttleManager);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public ThrottleBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleAdvice advice) {
+        return new ThrottleBeanPostProcessor(advice);
     }
 
     @Bean

@@ -78,6 +78,11 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             JobProcessor processor = tuple.getSecond();
             String listenerName = tuple.getThird();
+            Amplifier amplifier = this.amplifier;
+
+            if (!StringUtils.isEmpty(processor.amplifierBeanName())) {
+                amplifier = applicationContext.getBean(processor.amplifierBeanName(), Amplifier.class);
+            }
 
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
                 rabbitProperties,
@@ -152,8 +157,16 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                     else if (parameterClass.isInstance(jobProcessor)) {
                         return jobProcessor;
                     }
+                    else {
+                        log.warn("不支持在任务监听器中使用此类型的参数\tparameter={}, job={}", parameter.getClass(), jobClass);
 
-                    throw new UnsupportedOperationException("不支持在任务监听器中使用此类型的参数：parameter=" + parameter.getClass() + ", job=" + jobClass);
+                        try {
+                            return parameterClass.newInstance();
+                        }
+                        catch (Exception e) {
+                            return null;
+                        }
+                    }
                 })
                 .toArray();
 

@@ -57,7 +57,7 @@
 
 ##### Throttle 节流器  
 
-> 对某个数据进行截流一段时间或截流一定次数后，再重新打开
+> 对容器内某个bean的方法按指定时间或次数节流，节流期间方法不会得到执行。
 
 - throttle-spring-boot-starter-*
 - me.insidezhou.southernquiet.throttle.Throttle

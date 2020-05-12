@@ -20,6 +20,11 @@ public @interface JobProcessor {
      */
     String name() default "";
 
+    /**
+     * recover时要使用的amplifier bean在容器内的名字
+     */
+    String amplifierBeanName() default "";
+
     @SuppressWarnings("unused")
     @Target({ElementType.METHOD})
     @Retention(RUNTIME)

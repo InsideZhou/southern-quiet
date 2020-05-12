@@ -82,6 +82,11 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             NotificationListener listenerAnnotation = tuple.getSecond();
             String listenerName = tuple.getThird();
+            Amplifier amplifier = this.amplifier;
+
+            if (!StringUtils.isEmpty(listenerAnnotation.amplifierBeanName())) {
+                amplifier = applicationContext.getBean(listenerAnnotation.amplifierBeanName(), Amplifier.class);
+            }
 
             DirectRabbitListenerContainerFactoryConfigurer containerFactoryConfigurer = new DirectRabbitListenerContainerFactoryConfigurer(
                 rabbitProperties,
@@ -156,8 +161,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     else if (parameterClass.isInstance(listener)) {
                         return listener;
                     }
+                    else {
+                        log.warn("不支持在通知监听器中使用此类型的参数\tparameter={}, notification={}", parameter.getClass(), notificationClass);
 
-                    throw new UnsupportedOperationException("不支持在通知监听器中使用此类型的参数：parameter=" + parameter.getClass() + ", notification=" + notificationClass);
+                        try {
+                            return parameterClass.newInstance();
+                        }
+                        catch (Exception e) {
+                            return null;
+                        }
+                    }
                 })
                 .toArray();
 

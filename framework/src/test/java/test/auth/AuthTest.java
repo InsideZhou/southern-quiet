@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
+
+import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
 
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, AuthTest.Config.class})
 @RunWith(SpringRunner.class)
@@ -40,6 +43,7 @@ public class AuthTest {
     private AuthAdvice authAdvice;
 
     @Autowired
+    @Qualifier(AuthorizationMatcherQualifier)
     private PathMatcher pathMatcher;
 
     @Test
