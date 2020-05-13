@@ -1,16 +1,14 @@
-package me.insidezhou.southernquiet.throttle.annotation;
+package me.insidezhou.southernquiet.throttle;
 
-import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.MethodBeforeAdvice;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class ThrottleAdvice implements MethodBeforeAdvice {
+public class ThrottleAdvice implements MethodInterceptor {
     private final ThrottleManager throttleManager;
 
     public ThrottleAdvice(ThrottleManager throttleManager) {
@@ -18,10 +16,12 @@ public class ThrottleAdvice implements MethodBeforeAdvice {
     }
 
     @Override
-    public void before(@NotNull Method method, @NotNull Object[] args, Object target) throws Throwable {
-        Throttle annotation = AnnotationUtils.getAnnotation(method, Throttle.class);
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        Method method = invocation.getMethod();
+        me.insidezhou.southernquiet.throttle.annotation.Throttle annotation = AnnotatedElementUtils.findMergedAnnotation(method, me.insidezhou.southernquiet.throttle.annotation.Throttle.class);
+        assert annotation != null;
 
-        String throttleName = Objects.requireNonNull(annotation).throttleName();
+        String throttleName = annotation.name();
         long threshold = annotation.threshold();
         TimeUnit[] timeUnits = annotation.timeUnit();
 
@@ -30,11 +30,13 @@ public class ThrottleAdvice implements MethodBeforeAdvice {
         }
 
         me.insidezhou.southernquiet.throttle.Throttle throttle;
+        TimeUnit timeUnit = null;
+
         if (timeUnits.length > 0) {
             //time based
             throttle = throttleManager.getTimeBased(throttleName);
 
-            TimeUnit timeUnit = timeUnits[0];
+            timeUnit = timeUnits[0];
             threshold = timeUnit.toMillis(threshold);
         }
         else {
@@ -42,6 +44,6 @@ public class ThrottleAdvice implements MethodBeforeAdvice {
             throttle = throttleManager.getCountBased(throttleName);
         }
 
-        if (!throttle.open(threshold)) throw new ThrottleException();
+        return throttle.open(threshold) ? invocation.proceed() : null;
     }
 }

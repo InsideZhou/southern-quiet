@@ -1,24 +1,28 @@
 package me.insidezhou.southernquiet.throttle.annotation;
 
+import org.springframework.core.annotation.AliasFor;
+
 import java.lang.annotation.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 节流器注解，在method上使用，对该method进行节流。
- * <p>timeUnit可空，若为空则创建计数器节流器，否则创建时间节流器；
- * <p>throttleName可空，若为空则使用类名#方法名作为节流器名称
- *
- */
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
 public @interface Throttle {
+    @AliasFor("threshold")
+    long value() default -1;
 
-    String throttleName() default "";
+    @AliasFor("value")
+    long threshold() default -1;
 
-    long threshold();
+    /**
+     * 若为空则使用类名#方法名作为节流器名称。
+     */
+    String name() default "";
 
+    /**
+     * 若为空则创建计数器节流器，否则创建时间节流器。
+     */
     TimeUnit[] timeUnit() default {};
-
 }

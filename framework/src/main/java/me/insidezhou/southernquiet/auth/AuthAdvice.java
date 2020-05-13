@@ -4,7 +4,7 @@ package me.insidezhou.southernquiet.auth;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.MethodBeforeAdvice;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
@@ -29,8 +29,8 @@ public class AuthAdvice implements MethodBeforeAdvice {
     public void before(@NotNull Method method, @NotNull Object[] args, Object target) throws AuthException {
         Assert.notNull(target, "身份及权限验证时目标对象不该为null");
 
-        Auth methodAuthorization = AnnotationUtils.getAnnotation(method, Auth.class);
-        Auth classAuthorization = AnnotationUtils.getAnnotation(target.getClass(), Auth.class);
+        Auth methodAuthorization = AnnotatedElementUtils.findMergedAnnotation(method, Auth.class);
+        Auth classAuthorization = AnnotatedElementUtils.findMergedAnnotation(target.getClass(), Auth.class);
 
         Map<Auth.MatchMode, List<Auth>> groupedAuth = Stream.of(methodAuthorization, classAuthorization).filter(Objects::nonNull)
             .collect(Collectors.groupingBy(Auth::mode));

@@ -8,9 +8,9 @@ import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
+import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
+import me.insidezhou.southernquiet.throttle.ThrottleBeanPostProcessor;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import me.insidezhou.southernquiet.throttle.annotation.ThrottleAdvice;
-import me.insidezhou.southernquiet.throttle.annotation.ThrottleBeanPostProcessor;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,6 +21,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
@@ -33,6 +34,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 
 @Configuration
 @EnableAsync
+@EnableScheduling
 @EnableConfigurationProperties
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";

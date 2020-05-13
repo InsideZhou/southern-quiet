@@ -29,22 +29,43 @@ public class ThrottleAnnotationTest {
     public void countBaseReturnObj() {
         reset();
 
-        Integer count = throttleAnnotationTestProcessor.countBaseReturnObj(1);
+        Integer count = null;
+        try {
+            count = throttleAnnotationTestProcessor.countBaseReturnObj(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertNull(count);
 
-        count = throttleAnnotationTestProcessor.countBaseReturnObj(1);
+        try {
+            count = throttleAnnotationTestProcessor.countBaseReturnObj(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertNotNull(count);
-        Assert.assertEquals(1,count.intValue());
+        Assert.assertEquals(1, count.intValue());
     }
 
     @Test
     public void countBaseVoid() {
         reset();
 
-        throttleAnnotationTestProcessor.countBaseVoid(1);
+        try {
+            throttleAnnotationTestProcessor.countBaseVoid(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
 
-        throttleAnnotationTestProcessor.countBaseVoid(1);
+        try {
+            throttleAnnotationTestProcessor.countBaseVoid(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
     }
 
@@ -52,26 +73,47 @@ public class ThrottleAnnotationTest {
     public void timeBaseReturnObj() throws InterruptedException {
         reset();
 
-        Integer count = throttleAnnotationTestProcessor.timeBaseReturnObj(1);
+        Integer count = null;
+        try {
+            count = throttleAnnotationTestProcessor.timeBaseReturnObj(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertNull(count);
 
         Thread.sleep(1100);
 
-        count = throttleAnnotationTestProcessor.timeBaseReturnObj(1);
+        try {
+            count = throttleAnnotationTestProcessor.timeBaseReturnObj(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertNotNull(count);
-        Assert.assertEquals(1,count.intValue());
+        Assert.assertEquals(1, count.intValue());
     }
 
     @Test
     public void timeBaseVoid() throws InterruptedException {
         reset();
 
-        throttleAnnotationTestProcessor.timeBaseVoid(1);
+        try {
+            throttleAnnotationTestProcessor.timeBaseVoid(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
 
         Thread.sleep(1100);
 
-        throttleAnnotationTestProcessor.timeBaseVoid(1);
+        try {
+            throttleAnnotationTestProcessor.timeBaseVoid(1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         Assert.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
     }
 
