@@ -10,11 +10,13 @@ import java.util.concurrent.TimeUnit;
 @Inherited
 @Documented
 public @interface Throttle {
+    long DefaultThreshold = -1;
+
     @AliasFor("threshold")
-    long value() default -1;
+    long value() default DefaultThreshold;
 
     @AliasFor("value")
-    long threshold() default -1;
+    long threshold() default DefaultThreshold;
 
     /**
      * 若为空则使用类名#方法名作为节流器名称。

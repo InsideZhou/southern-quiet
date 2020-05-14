@@ -7,8 +7,8 @@ import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 
-public class ThrottleBeanPostProcessor extends AbstractBeanFactoryAwareAdvisingPostProcessor {
-    public ThrottleBeanPostProcessor(ThrottleAdvice advice) {
+public class ThrottleAnnotationBeanPostProcessor extends AbstractBeanFactoryAwareAdvisingPostProcessor {
+    public ThrottleAnnotationBeanPostProcessor(ThrottleAdvice advice) {
         this.advisor = new DefaultPointcutAdvisor(
             new ComposablePointcut(AnnotationMatchingPointcut.forMethodAnnotation(Throttle.class))
                 .union(AnnotationMatchingPointcut.forMethodAnnotation(ThrottledSchedule.class)),

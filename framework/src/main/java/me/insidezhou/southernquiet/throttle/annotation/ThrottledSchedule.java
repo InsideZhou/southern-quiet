@@ -10,20 +10,11 @@ import java.util.concurrent.TimeUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-@Throttle
+@Throttle(timeUnit = TimeUnit.MILLISECONDS)
 @Scheduled
 public @interface ThrottledSchedule {
     @AliasFor(annotation = Throttle.class)
-    long value() default -1;
-
-    @AliasFor(annotation = Throttle.class)
-    long threshold() default -1;
-
-    @AliasFor(annotation = Throttle.class)
     String name() default "";
-
-    @AliasFor(annotation = Throttle.class)
-    TimeUnit[] timeUnit() default {};
 
     @AliasFor(annotation = Scheduled.class)
     String cron() default "";

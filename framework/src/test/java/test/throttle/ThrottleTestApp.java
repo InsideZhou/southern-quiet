@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @ImportAutoConfiguration({FrameworkAutoConfiguration.class})
@@ -29,9 +28,19 @@ public class ThrottleTestApp {
     public static class ScheduledThrottleBean {
         private final long begin = System.currentTimeMillis();
 
-        @ThrottledSchedule(fixedRate = 10, threshold = 3, timeUnit = TimeUnit.SECONDS)
-        public void scheduledThrottleMethod() {
-            log.info("scheduledThrottleMethod working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
+        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+        public void scheduledThrottleMethod1() {
+            log.info("scheduledThrottleMethod1 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
+        }
+
+        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+        public void scheduledThrottleMethod2() {
+            log.info("scheduledThrottleMethod2 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
+        }
+
+        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+        public void scheduledThrottleMethod3() {
+            log.info("scheduledThrottleMethod3 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
         }
     }
 }

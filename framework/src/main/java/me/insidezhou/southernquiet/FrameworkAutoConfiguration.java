@@ -1,7 +1,7 @@
 package me.insidezhou.southernquiet;
 
 import me.insidezhou.southernquiet.auth.AuthAdvice;
-import me.insidezhou.southernquiet.auth.AuthBeanPostProcessor;
+import me.insidezhou.southernquiet.auth.AuthAnnotationBeanPostProcessor;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -9,11 +9,12 @@ import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
 import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
-import me.insidezhou.southernquiet.throttle.ThrottleBeanPostProcessor;
+import me.insidezhou.southernquiet.throttle.ThrottleAnnotationBeanPostProcessor;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -60,8 +61,8 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public AuthBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
-        return new AuthBeanPostProcessor(advice);
+    public AuthAnnotationBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
+        return new AuthAnnotationBeanPostProcessor(advice);
     }
 
     @Bean
@@ -88,15 +89,15 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager) {
-        return new ThrottleAdvice(throttleManager);
+    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager, ConfigurableBeanFactory configurableBeanFactory) {
+        return new ThrottleAdvice(throttleManager, configurableBeanFactory);
     }
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleAdvice advice) {
-        return new ThrottleBeanPostProcessor(advice);
+    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleAdvice advice) {
+        return new ThrottleAnnotationBeanPostProcessor(advice);
     }
 
     @Bean

@@ -5,8 +5,8 @@ import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 
-public class AuthBeanPostProcessor extends AbstractAdvisingBeanPostProcessor {
-    public AuthBeanPostProcessor(AuthAdvice authAdvice) {
+public class AuthAnnotationBeanPostProcessor extends AbstractAdvisingBeanPostProcessor {
+    public AuthAnnotationBeanPostProcessor(AuthAdvice authAdvice) {
         super();
 
         this.advisor = new DefaultPointcutAdvisor(
