@@ -15,10 +15,6 @@
 - 考虑文件名的规范，在某些驱动上合法的文件名，在其他驱动上未必合法。需要跨驱动的应用，特别需要注意兼容性。查看FileSystemSupport.assertFileNameValid。
 - 考虑文件并发读写的问题。由于某些驱动在读文件时并不会独占文件，所以需要充分考虑事务的级别。
 
-##### Session 会话  
-
-- session-spring-boot-starter-*
-
 ##### Logging 日志
 
 - logging-spring-boot-starter-*
@@ -30,7 +26,7 @@
 - 通过实现AuthProvider接口来自定义验证逻辑。
 - 权限匹配使用org.springframework.util.PathMatcher（默认AntPathMatcher）进行。
 
-##### KeyValueStore 键值对存储（默认framework.key-value.enable=false）
+##### KeyValueStore 键值对存储（默认southern-quiet.framework.key-value.enable=false）
 
 - 默认驱动基于FileSystem，会有KEY规范的问题需要考虑。
     
