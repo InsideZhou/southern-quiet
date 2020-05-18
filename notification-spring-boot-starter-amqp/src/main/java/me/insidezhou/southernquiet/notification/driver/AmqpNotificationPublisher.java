@@ -3,7 +3,7 @@ package me.insidezhou.southernquiet.notification.driver;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
-import me.insidezhou.southernquiet.notification.NotificationSource;
+import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -105,7 +105,7 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
     }
 
     public static String getNotificationSource(Class<?> cls) {
-        NotificationSource annotation = AnnotationUtils.getAnnotation(cls, NotificationSource.class);
+        MessageSource annotation = AnnotationUtils.getAnnotation(cls, MessageSource.class);
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 

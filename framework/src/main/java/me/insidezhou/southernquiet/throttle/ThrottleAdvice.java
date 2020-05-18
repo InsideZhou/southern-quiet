@@ -32,7 +32,7 @@ public class ThrottleAdvice implements MethodInterceptor {
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         Tuple<String, Boolean, Long> throttleValues = getThrottleValues(invocation);
-        Throttle throttle = Objects.requireNonNull(throttleValues).getSecond() ? throttleManager.getTimeBased(throttleValues.getFirst()) : throttleManager.getCountBased(throttleValues.getFirst());
+        Throttle throttle = throttleValues.getSecond() ? throttleManager.getTimeBased(throttleValues.getFirst()) : throttleManager.getCountBased(throttleValues.getFirst());
         long threshold = throttleValues.getThird();
 
         return throttle.open(threshold) ? invocation.proceed() : null;

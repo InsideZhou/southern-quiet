@@ -187,7 +187,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private String getDeadSource(JobProcessor listener, String listenerDefaultName) {
-        return suffix("DEAD." + AmqpJobArranger.getJobSource(listener.job()), listener, listenerDefaultName);
+        return suffix("DEAD." + AmqpJobArranger.getQueueSource(listener.job()), listener, listenerDefaultName);
     }
 
     private String getDeadRouting(JobProcessor listener, String listenerDefaultName) {

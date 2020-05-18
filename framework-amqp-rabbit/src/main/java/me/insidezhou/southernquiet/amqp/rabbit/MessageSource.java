@@ -1,17 +1,19 @@
-package me.insidezhou.southernquiet.notification;
+package me.insidezhou.southernquiet.amqp.rabbit;
 
 import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.*;
 
 /**
- * 声明通知的来源。
+ * 声明消息的来源，用于构造Exchange、Queue的名字。
+ *
+ * <p>组成格式"$prefix.[EXCHANGE].$messageSource"</p>
  */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface NotificationSource {
+public @interface MessageSource {
     @AliasFor("source")
     String value();
 
