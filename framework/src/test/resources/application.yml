@@ -6,3 +6,4 @@ southern-quiet:
     key-value:
       file-system:
         working-root: TMP_KEY_VALUE
+        name-separator: _|_

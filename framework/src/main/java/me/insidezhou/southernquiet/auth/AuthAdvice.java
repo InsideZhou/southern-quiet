@@ -2,19 +2,27 @@ package me.insidezhou.southernquiet.auth;
 
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.MethodBeforeAdvice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AuthAdvice implements MethodBeforeAdvice {
+    private final static Logger log = LoggerFactory.getLogger(AuthAdvice.class);
+
     public final static String AuthorizationMatcherQualifier = "AuthAdvice.AuthorizationMatcherQualifier";
 
     private final PathMatcher pathMatcher;
@@ -32,23 +40,38 @@ public class AuthAdvice implements MethodBeforeAdvice {
         Auth methodAuthorization = AnnotatedElementUtils.findMergedAnnotation(method, Auth.class);
         Auth classAuthorization = AnnotatedElementUtils.findMergedAnnotation(target.getClass(), Auth.class);
 
-        Map<Auth.MatchMode, List<Auth>> groupedAuth = Stream.of(methodAuthorization, classAuthorization).filter(Objects::nonNull)
-            .collect(Collectors.groupingBy(Auth::mode));
+        Map<Auth.MatchMode, Set<String>> groupedPermissions = Stream.of(methodAuthorization, classAuthorization).filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(Auth::mode))
+            .entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().stream().flatMap(auth -> Arrays.stream(auth.permissions())).collect(Collectors.toSet())
+            ));
 
-        if (groupedAuth.isEmpty()) return;
+        if (groupedPermissions.isEmpty()) return;
         if (null == authProvider) throw new NoAuthProviderExistsException();
 
-        Set<String> allPermissions = groupedAuth.getOrDefault(Auth.MatchMode.All, Collections.emptyList()).stream()
-            .flatMap(auth -> Arrays.stream(auth.permissions()))
+        groupedPermissions = groupedPermissions.entrySet().stream()
+            .filter(entry -> !CollectionUtils.isEmpty(entry.getValue()))
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue
+            ));
+
+        Set<String> allPermissions = groupedPermissions.getOrDefault(Auth.MatchMode.All, authProvider.getDefaultPermissionsForAllMode()).stream()
             .filter(permission -> !StringUtils.isEmpty(permission))
             .collect(Collectors.toSet());
 
-        Set<String> anyPermissions = groupedAuth.getOrDefault(Auth.MatchMode.Any, Collections.emptyList()).stream()
-            .flatMap(auth -> Arrays.stream(auth.permissions()))
+        Set<String> anyPermissions = groupedPermissions.getOrDefault(Auth.MatchMode.Any, authProvider.getDefaultPermissionsForAnyMode()).stream()
             .filter(permission -> !StringUtils.isEmpty(permission))
             .collect(Collectors.toSet());
 
         if (allPermissions.isEmpty() && anyPermissions.isEmpty()) return;
+
+        if (log.isDebugEnabled()) {
+            log.debug("permission required\tall={}, any={}", allPermissions, anyPermissions);
+        }
+
         Authentication authentication = authProvider.getAuthentication(new AuthContext(method, args, target));
         final Set<String> patterns = authentication.getPermissionPatterns();
 

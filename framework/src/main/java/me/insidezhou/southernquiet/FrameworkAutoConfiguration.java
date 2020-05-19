@@ -1,7 +1,7 @@
 package me.insidezhou.southernquiet;
 
 import me.insidezhou.southernquiet.auth.AuthAdvice;
-import me.insidezhou.southernquiet.auth.AuthAnnotationBeanPostProcessor;
+import me.insidezhou.southernquiet.auth.AuthPointcut;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -9,12 +9,14 @@ import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
 import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
-import me.insidezhou.southernquiet.throttle.ThrottleAnnotationBeanPostProcessor;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
+import me.insidezhou.southernquiet.throttle.ThrottlePointcut;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -61,15 +63,15 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public AuthAnnotationBeanPostProcessor authBeanPostProcessor(AuthAdvice advice) {
-        return new AuthAnnotationBeanPostProcessor(advice);
+    public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
+        return new AuthAdvice(pathMatcher);
     }
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
-        return new AuthAdvice(pathMatcher);
+    public AuthPointcut authPointcut() {
+        return new AuthPointcut();
     }
 
     @Bean
@@ -80,10 +82,17 @@ public class FrameworkAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnBean({AuthAdvice.class, AuthPointcut.class})
+    public AnnotationAdvisingBeanPostProcessor authAnnotationAdvisingBeanPostProcessor(AuthAdvice authAdvice, AuthPointcut authPointcut) {
+        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(authPointcut, authAdvice)) {};
+    }
+
+    @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleManager throttleManager() {
-        return new DefaultThrottleManager();
+    public ThrottlePointcut throttlePointcut() {
+        return new ThrottlePointcut();
     }
 
     @Bean
@@ -96,8 +105,15 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleAnnotationBeanPostProcessor throttleAnnotationBeanPostProcessor(ThrottleAdvice advice) {
-        return new ThrottleAnnotationBeanPostProcessor(advice);
+    public ThrottleManager throttleManager() {
+        return new DefaultThrottleManager();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
+    @ConditionalOnBean({ThrottleAdvice.class, ThrottlePointcut.class})
+    public AnnotationAdvisingBeanPostProcessor throttleAnnotationAdvisingBeanPostProcessor(ThrottleAdvice advice, ThrottlePointcut pointcut) {
+        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(pointcut, advice)) {};
     }
 
     @Bean

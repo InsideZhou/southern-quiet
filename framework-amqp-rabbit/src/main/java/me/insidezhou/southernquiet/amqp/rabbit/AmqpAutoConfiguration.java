@@ -136,7 +136,7 @@ public class AmqpAutoConfiguration {
         /**
          * 是否打开publisher confirm
          */
-        private boolean enablePublisherConfirm = false;
+        private boolean enablePublisherConfirm = true;
 
         /**
          * 消费者应答模式。
