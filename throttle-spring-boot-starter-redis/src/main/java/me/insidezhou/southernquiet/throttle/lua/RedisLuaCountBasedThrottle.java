@@ -10,20 +10,19 @@ import java.util.List;
 /**
  * 使用redis lua脚本实现的计数器节流器
  */
-public class RedisLuaCountBaseThrottle implements Throttle {
+public class RedisLuaCountBasedThrottle implements Throttle {
 
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    private static DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>(
-        LocalResourceUtil.getSource("/lua/RedisLuaCountBaseThrottle.lua"),
+    private static final DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>(
+        LocalResourceUtil.getSource("/lua/RedisLuaCountBasedThrottle.lua"),
         Boolean.class);
 
-    private List<String> keys;
+    private final List<String> keys;
 
-    public RedisLuaCountBaseThrottle(StringRedisTemplate stringRedisTemplate, String throttleName) {
+    public RedisLuaCountBasedThrottle(StringRedisTemplate stringRedisTemplate, String throttleName) {
         this.stringRedisTemplate = stringRedisTemplate;
-
-        this.keys = Collections.singletonList("Throttle_Count_" + throttleName);
+        this.keys = Collections.singletonList(throttleName);
     }
 
     /**
@@ -34,5 +33,4 @@ public class RedisLuaCountBaseThrottle implements Throttle {
         Boolean execute = stringRedisTemplate.execute(redisScript, keys, String.valueOf(threshold));
         return execute == null ? false : execute;
     }
-
 }

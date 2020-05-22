@@ -2,9 +2,9 @@ package test.throttle;
 
 import me.insidezhou.southernquiet.throttle.Throttle;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import me.insidezhou.southernquiet.throttle.lua.RedisLuaCountBaseThrottle;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaCountBasedThrottle;
 import me.insidezhou.southernquiet.throttle.lua.RedisLuaThrottleManager;
-import me.insidezhou.southernquiet.throttle.lua.RedisLuaTimeBaseThrottle;
+import me.insidezhou.southernquiet.throttle.lua.RedisLuaTimeBasedThrottle;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,8 +36,8 @@ public class RedisLuaThrottleManagerTest {
         Throttle timeBased = throttleManager.getTimeBased();
         Throttle timeBasedNull = throttleManager.getTimeBased(null);
 
-        Assert.assertTrue(timeBased instanceof RedisLuaTimeBaseThrottle);
-        Assert.assertTrue(timeBasedNull instanceof RedisLuaTimeBaseThrottle);
+        Assert.assertTrue(timeBased instanceof RedisLuaTimeBasedThrottle);
+        Assert.assertTrue(timeBasedNull instanceof RedisLuaTimeBasedThrottle);
 
         Assert.assertSame(timeBased, timeBasedNull);
 
@@ -60,8 +60,8 @@ public class RedisLuaThrottleManagerTest {
         Throttle countBased = throttleManager.getCountBased();
         Throttle countBasedNull = throttleManager.getCountBased(null);
 
-        Assert.assertTrue(countBased instanceof RedisLuaCountBaseThrottle);
-        Assert.assertTrue(countBasedNull instanceof RedisLuaCountBaseThrottle);
+        Assert.assertTrue(countBased instanceof RedisLuaCountBasedThrottle);
+        Assert.assertTrue(countBasedNull instanceof RedisLuaCountBasedThrottle);
 
         Assert.assertSame(countBased, countBasedNull);
 

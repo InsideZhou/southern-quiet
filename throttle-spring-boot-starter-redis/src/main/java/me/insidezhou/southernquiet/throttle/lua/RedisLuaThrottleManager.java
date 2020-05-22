@@ -14,11 +14,11 @@ public class RedisLuaThrottleManager extends BaseThrottleManager {
 
     @Override
     public Throttle createTimeBased(String throttleName) {
-        return new RedisLuaTimeBaseThrottle(stringRedisTemplate,throttleName);
+        return new RedisLuaTimeBasedThrottle(stringRedisTemplate,throttleName);
     }
 
     @Override
     public Throttle createCountBased(String throttleName) {
-        return new RedisLuaCountBaseThrottle(stringRedisTemplate,throttleName);
+        return new RedisLuaCountBasedThrottle(stringRedisTemplate,throttleName);
     }
 }
