@@ -5,9 +5,9 @@ import java.util.concurrent.ConcurrentMap;
 
 public abstract class BaseThrottleManager implements ThrottleManager {
 
-    private final ConcurrentMap<String, Throttle> timeBaseThrottleMap = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, Throttle> timeBaseThrottleMap = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Throttle> countBaseThrottleMap = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, Throttle> countBaseThrottleMap = new ConcurrentHashMap<>();
 
     @Override
     public Throttle getTimeBased(String throttleName) {

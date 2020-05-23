@@ -1,6 +1,9 @@
 package me.insidezhou.southernquiet.throttle.lua;
 
 import me.insidezhou.southernquiet.throttle.Throttle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -10,7 +13,8 @@ import java.util.List;
 /**
  * 使用redis lua脚本实现的计数器节流器
  */
-public class RedisLuaCountBasedThrottle implements Throttle {
+public class RedisLuaCountBasedThrottle implements Throttle, DisposableBean {
+    private final static Logger log = LoggerFactory.getLogger(RedisLuaCountBasedThrottle.class);
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -32,5 +36,11 @@ public class RedisLuaCountBasedThrottle implements Throttle {
     public boolean open(long threshold) {
         Boolean execute = stringRedisTemplate.execute(redisScript, keys, String.valueOf(threshold));
         return execute == null ? false : execute;
+    }
+
+    @Override
+    public void destroy() {
+        Long count = stringRedisTemplate.delete(keys);
+        log.debug("RedisThrottle的key已清理\tkey={}, count={}", keys, count);
     }
 }

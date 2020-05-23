@@ -1,6 +1,9 @@
 package me.insidezhou.southernquiet.throttle.lua;
 
 import me.insidezhou.southernquiet.throttle.Throttle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -10,7 +13,8 @@ import java.util.List;
 /**
  * 使用redis lua脚本实现的基于时间的节流器
  */
-public class RedisLuaTimeBasedThrottle implements Throttle {
+public class RedisLuaTimeBasedThrottle implements Throttle, DisposableBean {
+    private final static Logger log = LoggerFactory.getLogger(RedisLuaTimeBasedThrottle.class);
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -23,7 +27,8 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
     public RedisLuaTimeBasedThrottle(StringRedisTemplate stringRedisTemplate, String throttleName) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.keys = Collections.singletonList(throttleName);
-        setLastOpenAtIfAbsent(throttleName, System.currentTimeMillis());
+
+        stringRedisTemplate.opsForValue().setIfAbsent(throttleName, String.valueOf(System.currentTimeMillis()));
     }
 
     @Override
@@ -33,7 +38,9 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
         return execute == null ? false : execute;
     }
 
-    private void setLastOpenAtIfAbsent(String key, long openAt) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, String.valueOf(openAt));
+    @Override
+    public void destroy() {
+        Long count = stringRedisTemplate.delete(keys);
+        log.debug("RedisThrottle的key已清理\tkey={}, count={}", keys, count);
     }
 }
