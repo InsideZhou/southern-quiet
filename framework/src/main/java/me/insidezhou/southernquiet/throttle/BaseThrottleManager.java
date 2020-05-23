@@ -10,7 +10,7 @@ public abstract class BaseThrottleManager implements ThrottleManager {
     private final ConcurrentMap<String, Throttle> countBaseThrottleMap = new ConcurrentHashMap<>();
 
     @Override
-    public Throttle getTimeBased(String throttleName) {
+    public Throttle getTimeBased(String throttleName, long countDelay) {
         if (throttleName == null) {
             return getTimeBased();
         }
@@ -18,11 +18,11 @@ public abstract class BaseThrottleManager implements ThrottleManager {
         if (throttle != null) {
             return throttle;
         }
-        timeBaseThrottleMap.putIfAbsent(throttleName, createTimeBased(throttleName));
+        timeBaseThrottleMap.putIfAbsent(throttleName, createTimeBased(throttleName, countDelay));
         return timeBaseThrottleMap.get(throttleName);
     }
 
-    public abstract Throttle createTimeBased(String throttleName);
+    public abstract Throttle createTimeBased(String throttleName, long countDelay);
 
     @Override
     public Throttle getCountBased(String throttleName) {

@@ -35,6 +35,19 @@ public class ThrottleTest {
     }
 
     @Test
+    public void countDelay() throws Exception {
+        Throttle throttle = throttleManager.getTimeBased(RandomString.make(), 3);
+
+        Assert.assertTrue(throttle.open(999999999));
+        Assert.assertTrue(throttle.open(100000000));
+        Assert.assertTrue(throttle.open(100));
+        Assert.assertFalse(throttle.open(100));
+
+        Thread.sleep(100);
+        Assert.assertTrue(throttle.open(100));
+    }
+
+    @Test
     public void advisingCount() {
         Assert.assertEquals(1, throttleAdvice.advisingCount());
     }

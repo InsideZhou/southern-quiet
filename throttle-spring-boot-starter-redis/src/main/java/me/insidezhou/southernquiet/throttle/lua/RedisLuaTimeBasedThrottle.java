@@ -20,14 +20,24 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
 
     private final List<String> keys;
 
-    public RedisLuaTimeBasedThrottle(StringRedisTemplate stringRedisTemplate, String throttleName) {
+    private long openedCount = 0;
+
+    private final long countDelay;
+
+    public RedisLuaTimeBasedThrottle(StringRedisTemplate stringRedisTemplate, String throttleName, long countDelay) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.keys = Collections.singletonList(throttleName);
+        this.countDelay = countDelay;
+
         setLastOpenAtIfAbsent(throttleName, System.currentTimeMillis());
     }
 
     @Override
     public boolean open(long threshold) {
+        if (openedCount++ < countDelay) {
+            return true;
+        }
+
         String now = Long.toString(System.currentTimeMillis());
         Boolean execute = stringRedisTemplate.execute(redisScript, keys, Long.toString(threshold), now);
         return execute == null ? false : execute;

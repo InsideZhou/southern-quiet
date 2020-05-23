@@ -33,7 +33,7 @@ public class ThrottleTestApp {
     }
 
     public static class Properties {
-        private String cron = "* * * * * *";
+        private String cron = "0 * * * * *";
 
         public String getCron() {
             return cron;
@@ -52,12 +52,12 @@ public class ThrottleTestApp {
             log.info("scheduledThrottleMethod1 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
         }
 
-        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+//        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
         public void scheduledThrottleMethod2() {
             log.info("scheduledThrottleMethod2 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
         }
 
-        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+//        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
         public void scheduledThrottleMethod3() {
             log.info("scheduledThrottleMethod3 working ...\tbegin={}, elapsed={}", begin, Duration.ofMillis(System.currentTimeMillis() - begin));
         }

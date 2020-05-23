@@ -13,7 +13,11 @@ public interface ThrottleManager {
     /**
      * 获取基于时间的节流器，单位：毫秒。
      */
-    Throttle getTimeBased(String throttleName);
+    default Throttle getTimeBased(String throttleName) {
+        return getTimeBased(throttleName, 0);
+    }
+
+    Throttle getTimeBased(String throttleName, long countDelay);
 
     default Throttle getCountBased() {
         return getCountBased(DEFAULT_THROTTLE_NAME);

@@ -33,7 +33,7 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         Tuple<String, Boolean, Long> throttleValues = getThrottleValues(invocation);
-        Throttle throttle = throttleValues.getSecond() ? throttleManager.getTimeBased(throttleValues.getFirst()) : throttleManager.getCountBased(throttleValues.getFirst());
+        Throttle throttle = throttleValues.getSecond() ? throttleManager.getTimeBased(throttleValues.getFirst(), 1) : throttleManager.getCountBased(throttleValues.getFirst());
         long threshold = throttleValues.getThird();
 
         return throttle.open(threshold) ? invocation.proceed() : null;
