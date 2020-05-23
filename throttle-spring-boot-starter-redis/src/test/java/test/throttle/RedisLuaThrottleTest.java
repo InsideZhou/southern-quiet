@@ -13,7 +13,7 @@ public class RedisLuaThrottleTest extends ThrottleTest {
 
     @Configuration
     @EnableAutoConfiguration
-    @ComponentScan({"me.insidezhou.southernquiet.throttle"})
+    @ComponentScan({"me.insidezhou.southernquiet.throttle", "test.throttle"})
     public static class Config {}
 
 }

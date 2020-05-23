@@ -23,6 +23,7 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
     public RedisLuaTimeBasedThrottle(StringRedisTemplate stringRedisTemplate, String throttleName) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.keys = Collections.singletonList(throttleName);
+        setLastOpenAtIfAbsent(throttleName, System.currentTimeMillis());
     }
 
     @Override
@@ -30,5 +31,9 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
         String now = Long.toString(System.currentTimeMillis());
         Boolean execute = stringRedisTemplate.execute(redisScript, keys, Long.toString(threshold), now);
         return execute == null ? false : execute;
+    }
+
+    private void setLastOpenAtIfAbsent(String key, long openAt) {
+        stringRedisTemplate.opsForValue().setIfAbsent(key, String.valueOf(openAt));
     }
 }
