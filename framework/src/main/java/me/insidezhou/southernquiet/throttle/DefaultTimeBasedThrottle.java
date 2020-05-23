@@ -17,6 +17,10 @@ public class DefaultTimeBasedThrottle implements Throttle {
 
     public DefaultTimeBasedThrottle(long countDelay) {
         this.countDelay = countDelay;
+
+        if (0 == countDelay) {
+            lastOpenedAt = System.currentTimeMillis();
+        }
     }
 
     /**
@@ -24,18 +28,19 @@ public class DefaultTimeBasedThrottle implements Throttle {
      */
     @Override
     public synchronized boolean open(long threshold) {
+        long now = System.currentTimeMillis();
+
         if (openedCount++ < countDelay) {
+
+            if (openedCount == countDelay) {
+                lastOpenedAt = now;
+            }
+
             return true;
         }
 
-        long now = System.currentTimeMillis();
-
         if (threshold <= 0) {
             return reset(now);
-        }
-
-        if (null == lastOpenedAt) {
-            lastOpenedAt = now;
         }
 
         if (log.isTraceEnabled()) {

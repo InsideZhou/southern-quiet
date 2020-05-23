@@ -43,6 +43,13 @@ public class ThrottleTest {
         Assert.assertTrue(throttle.open(100));
         Assert.assertFalse(throttle.open(100));
 
+
+        throttle = throttleManager.getTimeBased(RandomString.make(), 3);
+
+        Assert.assertTrue(throttle.open(999999999));
+        Assert.assertTrue(throttle.open(100000000));
+        Assert.assertTrue(throttle.open(100));
+
         Thread.sleep(100);
         Assert.assertTrue(throttle.open(100));
     }

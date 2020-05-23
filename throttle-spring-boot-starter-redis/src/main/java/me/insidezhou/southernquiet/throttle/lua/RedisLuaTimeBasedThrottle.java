@@ -29,21 +29,29 @@ public class RedisLuaTimeBasedThrottle implements Throttle {
         this.keys = Collections.singletonList(throttleName);
         this.countDelay = countDelay;
 
-        setLastOpenAtIfAbsent(throttleName, System.currentTimeMillis());
+        if (0 == countDelay) {
+            setLastOpenAtIfAbsent(keys.get(0), String.valueOf(System.currentTimeMillis()));
+        }
     }
 
     @Override
     public boolean open(long threshold) {
+        String now = Long.toString(System.currentTimeMillis());
+
         if (openedCount++ < countDelay) {
+
+            if (openedCount == countDelay) {
+                setLastOpenAtIfAbsent(keys.get(0), now);
+            }
+
             return true;
         }
 
-        String now = Long.toString(System.currentTimeMillis());
         Boolean execute = stringRedisTemplate.execute(redisScript, keys, Long.toString(threshold), now);
         return execute == null ? false : execute;
     }
 
-    private void setLastOpenAtIfAbsent(String key, long openAt) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, String.valueOf(openAt));
+    private void setLastOpenAtIfAbsent(String key, String openAt) {
+        stringRedisTemplate.opsForValue().setIfAbsent(key, openAt);
     }
 }
