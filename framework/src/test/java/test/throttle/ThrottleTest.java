@@ -2,6 +2,7 @@ package test.throttle;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.throttle.Throttle;
+import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.assertj.core.internal.bytebuddy.utility.RandomString;
 import org.junit.Assert;
@@ -14,15 +15,28 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.UUID;
 
-@SpringBootTest(classes = FrameworkAutoConfiguration.class)
+@SpringBootTest(classes = {FrameworkAutoConfiguration.class, ThrottleTestApp.class})
 @RunWith(SpringRunner.class)
 public class ThrottleTest {
-
     @Autowired
     protected ThrottleManager throttleManager;
 
+    @Autowired
+    private ThrottleTestApp.ScheduledThrottleBean scheduledThrottleBean;
+
+    @Autowired
+    private ThrottleAdvice throttleAdvice;
+
     @Before
     public void before() {
+        scheduledThrottleBean.scheduledThrottleMethod1();
+        scheduledThrottleBean.scheduledThrottleMethod2();
+        scheduledThrottleBean.scheduledThrottleMethod3();
+    }
+
+    @Test
+    public void advisingCount() {
+        Assert.assertEquals(1, throttleAdvice.advisingCount());
     }
 
     @Test
@@ -65,11 +79,12 @@ public class ThrottleTest {
     }
 
     private static int timeBasedSameKeysMultipleThreadsCount = 0;
+
     private static synchronized void timeBasedSameKeysMultipleThreadsCountAdd() {
         timeBasedSameKeysMultipleThreadsCount++;
     }
 
-    private static class TimeBasedSameKeysMultipleThreadsRunnable implements Runnable{
+    private static class TimeBasedSameKeysMultipleThreadsRunnable implements Runnable {
         Throttle throttle;
         long threshold;
 
@@ -259,7 +274,7 @@ public class ThrottleTest {
 
         Assert.assertFalse(throttle.open(1000));
 
-        boolean open= throttle.open(0);
+        boolean open = throttle.open(0);
         Assert.assertTrue(open);
 
         open = throttle.open(1000);

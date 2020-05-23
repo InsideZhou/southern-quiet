@@ -39,6 +39,10 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
         return throttle.open(threshold) ? invocation.proceed() : null;
     }
 
+    public int advisingCount() {
+        return methodThrottle.size();
+    }
+
     private Tuple<String, Boolean, Long> getThrottleValues(MethodInvocation invocation) {
         Method method = invocation.getMethod();
         me.insidezhou.southernquiet.throttle.annotation.Throttle annotation = AnnotatedElementUtils.findMergedAnnotation(method, me.insidezhou.southernquiet.throttle.annotation.Throttle.class);
