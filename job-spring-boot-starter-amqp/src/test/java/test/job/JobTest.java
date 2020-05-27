@@ -2,10 +2,10 @@ package test.job;
 
 import me.insidezhou.southernquiet.job.JobArranger;
 import me.insidezhou.southernquiet.job.JobProcessor;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -18,7 +18,7 @@ import java.io.Serializable;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class JobTest {
-    private final static Logger log = LoggerFactory.getLogger(JobTest.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JobTest.class);
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
@@ -44,7 +44,10 @@ public class JobTest {
         @JobProcessor(job = AmqpJob.class, name = "b")
         @JobProcessor(job = AmqpJob.class, name = "e")
         public void standard(AmqpJob job, JobProcessor processor) {
-            log.info("使用监听器{}接到任务：{}", processor.name(), job.getId());
+            log.message("使用监听器接到任务")
+                .context("listener", processor.name())
+                .context("job", job.getId())
+                .info();
         }
 
         @JobProcessor(job = AmqpJob.class, name = "e")

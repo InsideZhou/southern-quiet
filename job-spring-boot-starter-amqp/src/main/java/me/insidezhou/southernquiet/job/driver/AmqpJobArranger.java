@@ -3,6 +3,8 @@ package me.insidezhou.southernquiet.job.driver;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobArranger;
 import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -15,7 +17,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 public class AmqpJobArranger<J> implements JobArranger<J> {
-    private final static Logger log = LoggerFactory.getLogger(AmqpJobArranger.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpJobArranger.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final SmartMessageConverter messageConverter;

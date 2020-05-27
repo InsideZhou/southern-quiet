@@ -2,13 +2,16 @@ package me.insidezhou.southernquiet.instep;
 
 import instep.Instep;
 import instep.InstepLogger;
+import instep.InstepLoggerFactory;
 import instep.dao.sql.ConnectionProvider;
 import instep.dao.sql.Dialect;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.TransactionContext;
 import instep.servicecontainer.ServiceNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import kotlin.jvm.functions.Function0;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,8 +21,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @ConditionalOnBean({DataSource.class, DataSourceProperties.class})
@@ -27,72 +28,62 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InstepAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public Instep instep(InstepLogger instepLogger) {
-        Instep.INSTANCE.bind(InstepLogger.class, instepLogger);
-        InstepLogger.Companion.setLogger(instepLogger);
+    public Instep instep(InstepLoggerFactory factory) {
+        Instep.INSTANCE.bind(InstepLoggerFactory.class, factory);
+        InstepLogger.Companion.setFactory(factory);
 
         return Instep.INSTANCE;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Bean
     @ConditionalOnMissingBean
-    public InstepLogger instepLogger() {
-        final Map<String, Logger> loggerCache = new ConcurrentHashMap<>();
-        InstepLogger instepLogger = new InstepLogger() {
+    public InstepLoggerFactory instepLoggerFactory() {
+        return cls -> new InstepLogger() {
+            private final SouthernQuietLogger logger = SouthernQuietLoggerFactory.getLogger(cls);
+
+            @NotNull
             @Override
-            public boolean getEnableDebug() {
-                return true;
+            public InstepLogger message(@NotNull String s) {
+                logger.message(s);
+                return this;
+            }
+
+            @NotNull
+            @Override
+            public InstepLogger exception(@NotNull Throwable throwable) {
+                logger.exception(throwable);
+                return this;
+            }
+
+            @NotNull
+            @Override
+            public InstepLogger context(@NotNull String s, @NotNull Object o) {
+                logger.context(s, o);
+                return this;
+            }
+
+            @NotNull
+            @Override
+            public InstepLogger context(@NotNull String s, @NotNull Function0<String> function0) {
+                logger.context(s, function0::invoke);
+                return this;
             }
 
             @Override
-            public boolean getEnableInfo() {
-                return true;
+            public void debug() {
+                logger.debug();
             }
 
             @Override
-            public boolean getEnableWarning() {
-                return true;
+            public void info() {
+                logger.info();
             }
 
             @Override
-            public void debug(String s, String s1) {
-                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
-                logger.debug(s);
-                loggerCache.putIfAbsent(s1, logger);
-            }
-
-            @Override
-            public void info(String s, String s1) {
-                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
-                logger.info(s);
-                loggerCache.putIfAbsent(s1, logger);
-            }
-
-            @Override
-            public void warning(String s, String s1) {
-                Logger logger = loggerCache.getOrDefault(s1, LoggerFactory.getLogger(s1));
-                logger.warn(s);
-                loggerCache.putIfAbsent(s1, logger);
-            }
-
-            @Override
-            public void debug(String s, Class<?> aClass) {
-                debug(s, aClass.getName());
-            }
-
-            @Override
-            public void info(String s, Class<?> aClass) {
-                info(s, aClass.getName());
-            }
-
-            @Override
-            public void warning(String s, Class<?> aClass) {
-                warning(s, aClass.getName());
+            public void warn() {
+                logger.warn();
             }
         };
-        Instep.INSTANCE.bind(InstepLogger.class, instepLogger);
-        return instepLogger;
     }
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -119,5 +110,4 @@ public class InstepAutoConfiguration {
 
         return InstepSQL.INSTANCE;
     }
-
 }

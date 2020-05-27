@@ -1,15 +1,15 @@
 package test;
 
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.Amplifier;
 import me.insidezhou.southernquiet.util.GoldenRatioAmplifier;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 public class AmplifierTest {
-    private final static Logger log = LoggerFactory.getLogger(AmplifierTest.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmplifierTest.class);
 
     @Test
     public void golden() {
@@ -21,7 +21,7 @@ public class AmplifierTest {
         while (current < Duration.ofDays(1).toMillis()) {
             current = amplifier.amplify(index);
             total += current;
-            log.info("amplified\tindex={}, current={}, total={}", index, Duration.ofMillis(current), Duration.ofMillis(total));
+            log.message("amplified").context("index", index).context("current", Duration.ofMillis(current)).context("total", Duration.ofMillis(total)).info();
             ++index;
         }
     }

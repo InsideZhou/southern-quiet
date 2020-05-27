@@ -1,11 +1,11 @@
 package test.notification;
 
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -17,7 +17,7 @@ import java.io.Serializable;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class NotificationTest {
-    private final static Logger log = LoggerFactory.getLogger(NotificationTest.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(NotificationTest.class);
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
@@ -36,7 +36,10 @@ public class NotificationTest {
         @NotificationListener(notification = StandardNotification.class, name = "b")
         @NotificationListener(notification = StandardNotification.class, name = "e")
         public void standard(StandardNotification notification, NotificationListener listener) {
-            log.info("使用监听器{}接到通知：{}", listener.name(), notification.getId());
+            log.message("使用监听器接到通知")
+                .context("listenerName", listener.name())
+                .context("id", notification.getId())
+                .info();
         }
 
         @NotificationListener(notification = StandardNotification.class, name = "e")

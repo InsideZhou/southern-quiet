@@ -4,8 +4,8 @@ import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
 import instep.dao.sql.dialect.SQLServerDialect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class IdGeneratorWorkerTable extends Table {
@@ -19,11 +19,11 @@ public class IdGeneratorWorkerTable extends Table {
     public StringColumn appId = varchar("app_id", 128).unique().comment("worker所在应用的标识，方便应用重启后获取其上次用过的workerId。");
 
     public static class Cleaner {
-        private final static Logger log = LoggerFactory.getLogger(Cleaner.class);
+        private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(Cleaner.class);
 
-        private IdGeneratorWorkerTable workerTable;
-        private InstepSQL instepSQL;
-        private JdbcIdGeneratorAutoConfiguration.Properties properties;
+        private final IdGeneratorWorkerTable workerTable;
+        private final InstepSQL instepSQL;
+        private final JdbcIdGeneratorAutoConfiguration.Properties properties;
 
         public Cleaner(IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
             this.workerTable = workerTable;
@@ -31,6 +31,7 @@ public class IdGeneratorWorkerTable extends Table {
             this.properties = properties;
         }
 
+        @SuppressWarnings("rawtypes")
         public void clearConsiderDowned() {
             SQLPlan plan = workerTable.delete().where(lastWorkerTimePlusIntervalLesserThanNow()).debug();
             int rowAffected;
@@ -42,7 +43,9 @@ public class IdGeneratorWorkerTable extends Table {
             }
 
             if (rowAffected > 0) {
-                log.info("已清理{}个长时间无上报的Worker", rowAffected);
+                log.message("已清理长时间无上报的Worker")
+                    .context("rowAffected", rowAffected)
+                    .info();
             }
         }
 

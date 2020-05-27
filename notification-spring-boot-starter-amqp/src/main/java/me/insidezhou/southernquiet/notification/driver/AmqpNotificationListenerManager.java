@@ -4,12 +4,12 @@ import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.util.Amplifier;
 import me.insidezhou.southernquiet.util.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.FanoutExchange;
@@ -38,7 +38,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle, RabbitListenerConfigurer {
-    private final static Logger log = LoggerFactory.getLogger(AmqpNotificationListenerManager.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationListenerManager.class);
 
     private final SmartMessageConverter messageConverter;
     private final CachingConnectionFactory cachingConnectionFactory;
@@ -118,13 +118,14 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         listenerEndpoints.stream()
             .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
             .findAny()
-            .ifPresent(listenerEndpoint -> log.warn(
-                "监听器重复: queue={}, listener={}#{}, notification={}",
-                listenerRouting,
-                bean.getClass().getName(),
-                listenerDefaultName,
-                listener.notification().getSimpleName()
-            ));
+            .ifPresent(listenerEndpoint -> log.message("监听器重复")
+                .context(context -> {
+                    context.put("queue", listenerRouting);
+                    context.put("listener", bean.getClass().getName());
+                    context.put("listenerName", listenerName);
+                    context.put("notification", listener.notification().getSimpleName());
+                })
+                .warn());
 
         SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
         endpoint.setId(UUID.randomUUID().toString());
@@ -139,17 +140,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         endpoint.setMessageListener(message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            if (log.isDebugEnabled()) {
-                log.debug(
-                    "监听器收到通知: queue={}, listener={}#{}({}), notification={}, message={}",
-                    endpoint.getQueueNames(),
-                    bean.getClass().getName(),
-                    listenerDefaultName,
-                    endpoint.getId(),
-                    notification.getClass().getSimpleName(),
-                    message
-                );
-            }
+            log.message("监听器收到通知")
+                .context(context -> {
+                    context.put("queue", endpoint.getQueueNames());
+                    context.put("listener", bean.getClass().getName());
+                    context.put("listenerName", listenerName);
+                    context.put("listenerId", endpoint.getId());
+                    context.put("notification", notification.getClass().getSimpleName());
+                    context.put("message", message);
+                })
+                .debug();
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -162,7 +162,10 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                         return listener;
                     }
                     else {
-                        log.warn("不支持在通知监听器中使用此类型的参数\tparameter={}, notification={}", parameter.getClass(), notificationClass);
+                        log.message("不支持在通知监听器中使用此类型的参数")
+                            .context("parameter", parameter.getClass())
+                            .context("notification", notificationClass)
+                            .warn();
 
                         try {
                             return parameterClass.newInstance();
@@ -178,13 +181,13 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                 method.invoke(bean, parameters);
             }
             catch (RuntimeException e) {
-                log.error("通知处理器抛出异常", e);
+                log.message("通知处理器抛出异常").exception(e).error();
                 throw e;
             }
             catch (InvocationTargetException e) {
                 Throwable target = e.getTargetException();
 
-                log.error("通知处理器抛出异常", target);
+                log.message("通知处理器抛出异常").exception(target).error();
 
                 if (target instanceof RuntimeException) {
                     throw (RuntimeException) target;

@@ -1,11 +1,11 @@
 package test.broadcasting;
 
 import me.insidezhou.southernquiet.event.EventPubSub;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.event.EventListener;
@@ -22,7 +22,7 @@ import static me.insidezhou.southernquiet.event.EventPubSub.CustomApplicationEve
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class RedisBroadcastingTest {
-    private final static Logger log = LoggerFactory.getLogger(RedisBroadcastingTest.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(RedisBroadcastingTest.class);
 
     @Autowired
     private EventPubSub eventPubSub;
@@ -60,23 +60,35 @@ public class RedisBroadcastingTest {
     public static class Listener {
         @EventListener
         public void testListener(BroadcastingDone broadcastingDone) {
-            log.debug("testListener\t{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
+            log.message("testListener")
+                .context("name", broadcastingDone.getClass().getSimpleName())
+                .context("id", broadcastingDone.getId())
+                .debug();
         }
 
         @EventListener
         public void duplicate(BroadcastingDone broadcastingDone) {
-            log.debug("duplicate\t{} {}", broadcastingDone.getClass().getSimpleName(), broadcastingDone.getId());
+            log.message("duplicate")
+                .context("name", broadcastingDone.getClass().getSimpleName())
+                .context("id", broadcastingDone.getId())
+                .debug();
         }
 
         @EventListener
         public void testCustomChannelListener(BroadcastingCustomChannel broadcastingCustomChannel) {
-            log.debug("testCustomChannelListener\t{} {}", broadcastingCustomChannel.getClass().getSimpleName(), broadcastingCustomChannel.getId());
+            log.message("testCustomChannelListener")
+                .context("name", broadcastingCustomChannel.getClass().getSimpleName())
+                .context("id", broadcastingCustomChannel.getId())
+                .debug();
+
             testCustomChannelListenerMap.merge(broadcastingCustomChannel.getId().toString(), 1, Integer::sum);
         }
 
         @EventListener
         public void hahaListener(HahaEvent hahaEvent) {
-            log.debug("haha\tguid={}", hahaEvent.getGuid());
+            log.message("haha")
+                .context("guid", hahaEvent.getGuid())
+                .debug();
         }
     }
 }

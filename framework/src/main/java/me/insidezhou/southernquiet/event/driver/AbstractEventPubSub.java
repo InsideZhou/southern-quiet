@@ -3,9 +3,9 @@ package me.insidezhou.southernquiet.event.driver;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.event.ShouldBroadcast;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, InitializingBean, ApplicationEventPublisherAware {
-    private final static Logger log = LoggerFactory.getLogger(AbstractEventPubSub.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AbstractEventPubSub.class);
 
     /**
      * 事件类型标识与实际运行时类型的映射，用于跨语言事件支持。
@@ -92,7 +92,7 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                     return applicationContext.getBean(name);
                 }
                 catch (BeansException e) {
-                    log.info("查找EventListener时，bean未能初始化\tname={}", name);
+                    log.message("查找EventListener时，bean未能初始化").context("name", name).info();
                     return null;
                 }
             })
@@ -101,13 +101,12 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
                 Stream<String> channelsFromBeanMethods = Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                     .flatMap(method -> AnnotationUtils.getRepeatableAnnotations(method, EventListener.class).stream()
                         .flatMap(listener -> {
-                            if (log.isDebugEnabled()) {
-                                log.debug(
-                                    "找到EventListener\t{}#{}",
-                                    bean.getClass().getSimpleName(),
-                                    method.getName()
-                                );
-                            }
+                            log.message("找到EventListener")
+                                .context(context -> {
+                                    context.put("listenerName", bean.getClass().getSimpleName());
+                                    context.put("method", method.getName());
+                                })
+                                .debug();
 
                             return Arrays.stream(method.getParameterTypes());
                         }))
@@ -132,7 +131,11 @@ public abstract class AbstractEventPubSub<E> implements EventPubSub<E>, Initiali
         String typeId = getEventTypeId(type, annotation);
         EventTypeMap.put(typeId, type);
 
-        log.info("已订阅事件\ttypeId={}, channels={}, event={}", typeId, channels, type.getName());
+        log.message("已订阅事件")
+            .context("typeId", typeId)
+            .context("channels", channels)
+            .context("event", type.getName())
+            .info();
 
         return Arrays.stream(channels);
     }

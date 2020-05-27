@@ -1,8 +1,8 @@
 package me.insidezhou.southernquiet.notification.driver;
 
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.NotificationListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -15,7 +15,7 @@ import java.util.Objects;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractNotificationListenerManager implements InitializingBean {
-    private final static Logger log = LoggerFactory.getLogger(AbstractNotificationListenerManager.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AbstractNotificationListenerManager.class);
 
     protected final ApplicationContext applicationContext;
 
@@ -31,7 +31,7 @@ public abstract class AbstractNotificationListenerManager implements Initializin
                     return applicationContext.getBean(name);
                 }
                 catch (BeansException e) {
-                    log.info("查找NotificationListener时，bean未能初始化: {}", name);
+                    log.message("查找NotificationListener时，bean未能初始化").context("name", name).info();
                     return null;
                 }
             })
@@ -39,15 +39,14 @@ public abstract class AbstractNotificationListenerManager implements Initializin
             .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                 .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, NotificationListener.class)
                     .forEach(listener -> {
-                        if (log.isDebugEnabled()) {
-                            log.debug(
-                                "找到NotificationListener：{}(id={}) {}#{}",
-                                listener.notification().getSimpleName(),
-                                listener.name(),
-                                bean.getClass().getSimpleName(),
-                                method.getName()
-                            );
-                        }
+                        log.message("找到NotificationListener：")
+                            .context(context -> {
+                                context.put("notification", listener.notification().getSimpleName());
+                                context.put("name", listener.name());
+                                context.put("listenerName", bean.getClass().getSimpleName());
+                                context.put("method", method.getName());
+                            })
+                            .debug();
 
                         initListener(listener, bean, method);
                     })

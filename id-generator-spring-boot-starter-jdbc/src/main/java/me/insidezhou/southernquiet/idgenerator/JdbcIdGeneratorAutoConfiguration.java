@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 @EnableScheduling
 @ConditionalOnMissingBean(IdGenerator.class)
 public class JdbcIdGeneratorAutoConfiguration {
+    @SuppressWarnings("rawtypes")
     @Bean
     @ConditionalOnMissingBean
     public IdGeneratorWorkerTable idGeneratorWorkerTable(Properties properties, InstepSQL instepSQL) {

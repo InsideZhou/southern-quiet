@@ -4,11 +4,11 @@ import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.*;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,12 +33,12 @@ import java.util.stream.Stream;
  * {@link FileSystem}的mongodb驱动。
  */
 public class MongoDbFileSystem implements FileSystem {
-    private static Logger logger = LoggerFactory.getLogger(MongoDbFileSystem.class);
+    private static final SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(MongoDbFileSystem.class);
 
-    private MongoOperations mongoOperations;
-    private GridFsOperations gridFsOperations;
-    private GridFS gridFs;
-    private String pathCollection;
+    private final MongoOperations mongoOperations;
+    private final GridFsOperations gridFsOperations;
+    private final GridFS gridFs;
+    private final String pathCollection;
     private int fileSizeThreshold;
 
     public MongoDbFileSystem(MongoDbFileSystemAutoConfiguration.Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
@@ -46,7 +46,9 @@ public class MongoDbFileSystem implements FileSystem {
 
         Integer threshHold = properties.getFileSizeThreshold();
         if (16 * 1024 * 1024 <= threshHold) {
-            logger.warn("阈值{}无效，mongodb限制必须小于16m，目前使用默认值。", threshHold);
+            log.message("阈值无效，mongodb限制必须小于16m，目前使用默认值")
+                .context("threshold", threshHold)
+                .warn();
         }
         else {
             this.fileSizeThreshold = threshHold;

@@ -3,11 +3,11 @@ package me.insidezhou.southernquiet.idgenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.*;
 import instep.util.LongIdGenerator;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Random;
 
 public class JdbcIdGenerator implements IdGenerator {
-    private final static Logger log = LoggerFactory.getLogger(JdbcIdGenerator.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JdbcIdGenerator.class);
 
     private final IdGenerator idGenerator;
     private final Metadata metadata;
@@ -138,7 +138,12 @@ public class JdbcIdGenerator implements IdGenerator {
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
             if (1 != rowAffected) {
-                log.warn("workerTime上报异常。workerId={},appId={},rowAffected={},time={}", workerIdInUse, runtimeId, rowAffected, now);
+                log.message("workerTime上报异常")
+                    .context("workerId", workerIdInUse)
+                    .context("appId", runtimeId)
+                    .context("rowAffected", rowAffected)
+                    .context("time", now)
+                    .warn();
             }
         }
         catch (DaoException e) {

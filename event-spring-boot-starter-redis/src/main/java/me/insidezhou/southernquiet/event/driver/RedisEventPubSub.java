@@ -3,8 +3,8 @@ package me.insidezhou.southernquiet.event.driver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.event.RedisTemplateBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.Message;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSub<E> implements DisposableBean {
-    private final static Logger log = LoggerFactory.getLogger(RedisEventPubSub.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(RedisEventPubSub.class);
 
     public final static String EventTypeIdName = "TypeId";
 
@@ -68,9 +68,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
 
     @Override
     protected void initChannel(String channel) {
-        if (log.isDebugEnabled()) {
-            log.debug("创建RedisMessageListener: channel={}", channel);
-        }
+        log.message("创建RedisMessageListener").context("channel", channel).debug();
 
         container.addMessageListener(this::onMessage, new ChannelTopic(channel));
     }
@@ -86,23 +84,19 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
     protected void onMessage(Message message, byte[] pattern) {
         byte[] data = message.getBody();
 
-        if (log.isDebugEnabled()) {
-            log.debug(
-                "收到事件\tchannel={}, pattern={}, data={}",
-                channelSerializer.deserialize(message.getChannel()),
-                redisTemplate.getStringSerializer().deserialize(pattern),
-                new String(data)
-            );
-        }
+        log.message("收到事件")
+            .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
+            .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
+            .context("data", () -> new String(data))
+            .debug();
 
         E event = eventSerializer.deserialize(data);
         if (null == event) {
-            log.warn(
-                "收到空事件\tchannel={}, pattern={}, data={}",
-                channelSerializer.deserialize(message.getChannel()),
-                redisTemplate.getStringSerializer().deserialize(pattern),
-                new String(data)
-            );
+            log.message("收到空事件")
+                .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
+                .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
+                .context("data", () -> new String(data))
+                .warn();
 
             return;
         }

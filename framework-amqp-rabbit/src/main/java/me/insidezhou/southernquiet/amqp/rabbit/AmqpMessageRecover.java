@@ -1,8 +1,8 @@
 package me.insidezhou.southernquiet.amqp.rabbit;
 
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.Amplifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AmqpMessageRecover extends RepublishMessageRecoverer {
-    private final static Logger log = LoggerFactory.getLogger(AmqpMessageRecover.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpMessageRecover.class);
 
     private final Amplifier amplifier;
     private final long maxExpiration;
@@ -52,18 +52,17 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             messageProperties.setDeliveryMode(getDeliveryMode());
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(
-                "准备把消息送进死信队列: exchange={}, queue={}, expiration={}, recoverCount={}, deliveryMode={}, message={}, cause={}",
-                errorExchangeName,
-                errorRoutingKey,
-                expiration,
-                recoverCount,
-                messageProperties.getDeliveryMode(),
-                message,
-                cause
-            );
-        }
+        log.message("准备把消息送进死信队列")
+            .context(context -> {
+                context.put("exchange", errorExchangeName);
+                context.put("queue", errorRoutingKey);
+                context.put("expiration", expiration);
+                context.put("recoverCount", recoverCount);
+                context.put("deliveryMode", messageProperties.getDeliveryMode());
+                context.put("message", message);
+                context.put("cause", cause);
+            })
+            .debug();
 
         if (expiration < maxExpiration) {
             messageProperties.setExpiration(String.valueOf(expiration));

@@ -1,11 +1,11 @@
 package me.insidezhou.southernquiet.notification.driver;
 
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
+import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
-import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
@@ -22,7 +22,7 @@ import org.springframework.util.StringUtils;
 
 @SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, Lifecycle {
-    private final static Logger log = LoggerFactory.getLogger(AmqpNotificationPublisher.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final SmartMessageConverter messageConverter;
@@ -53,11 +53,17 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
 
         if (enablePublisherConfirm) {
             rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-                if (log.isDebugEnabled()) {
-                    log.debug("接到publisher confirm: correlationData={}, ack={}, cause={}", correlationData, ack, cause);
-                }
-                else if (!ack) {
-                    log.warn("通知发送确认失败: correlationData={}, cause={}", correlationData, cause);
+                log.message("接到publisher confirm")
+                    .context("correlationData", correlationData)
+                    .context("ack", ack)
+                    .context("cause", cause)
+                    .debug();
+
+                if (!ack) {
+                    log.message("通知发送确认失败")
+                        .context("correlationData", correlationData)
+                        .context("cause", cause)
+                        .warn();
                 }
             });
         }

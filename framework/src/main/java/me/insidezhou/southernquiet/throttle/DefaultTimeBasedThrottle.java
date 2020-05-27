@@ -1,11 +1,11 @@
 package me.insidezhou.southernquiet.throttle;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 
 @SuppressWarnings("WeakerAccess")
 public class DefaultTimeBasedThrottle implements Throttle {
-    private final static Logger log = LoggerFactory.getLogger(DefaultTimeBasedThrottle.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(DefaultTimeBasedThrottle.class);
 
     /**
      * 上次开闸时间
@@ -43,9 +43,12 @@ public class DefaultTimeBasedThrottle implements Throttle {
             return reset(now);
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("throttled millis\tnow={}, lastOpenedAt={}, threshold={}, throttled={}", now, lastOpenedAt, threshold, now - lastOpenedAt);
-        }
+        log.message("throttled millis")
+            .context("now", now)
+            .context("lastOpenedAt", lastOpenedAt)
+            .context("threshold", threshold)
+            .context("throttled", now - lastOpenedAt)
+            .trace();
 
         if (now >= lastOpenedAt + threshold) {
             return reset(now);

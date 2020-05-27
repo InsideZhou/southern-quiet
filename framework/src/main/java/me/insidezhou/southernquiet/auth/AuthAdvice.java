@@ -1,9 +1,9 @@
 package me.insidezhou.southernquiet.auth;
 
 
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.aop.MethodBeforeAdvice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AuthAdvice implements MethodBeforeAdvice {
-    private final static Logger log = LoggerFactory.getLogger(AuthAdvice.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AuthAdvice.class);
 
     public final static String AuthorizationMatcherQualifier = "AuthAdvice.AuthorizationMatcherQualifier";
 
@@ -68,9 +68,10 @@ public class AuthAdvice implements MethodBeforeAdvice {
 
         if (allPermissions.isEmpty() && anyPermissions.isEmpty()) return;
 
-        if (log.isDebugEnabled()) {
-            log.debug("permission required\tall={}, any={}", allPermissions, anyPermissions);
-        }
+        log.message("permission required")
+            .context("all", allPermissions)
+            .context("any", anyPermissions)
+            .debug();
 
         Authentication authentication = authProvider.getAuthentication(new AuthContext(method, args, target));
         final Set<String> patterns = authentication.getPermissionPatterns();

@@ -2,12 +2,12 @@ package test.auth;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.auth.*;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,7 +26,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, AuthTest.Config.class})
 @RunWith(SpringRunner.class)
 public class AuthTest {
-    private final static Logger log = LoggerFactory.getLogger(AuthTest.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AuthTest.class);
 
     @Configuration
     public static class Config {
@@ -137,12 +137,12 @@ public class AuthTest {
     public static class SecurityTarget {
         @Auth
         public void securityMethod1() {
-            log.info("securityMethod1 worked");
+            log.message("securityMethod1 worked").context("permissionRequired", "<default>").debug();
         }
 
         @Auth("admin/credentials")
         public void securityMethod2() {
-            log.info("securityMethod2 worked");
+            log.message("securityMethod2 worked").context("permissionRequired", "admin/credentials").info();
         }
     }
 }

@@ -1,11 +1,11 @@
 package test.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +20,7 @@ import java.util.Set;
 @org.springframework.boot.test.autoconfigure.json.JsonTest
 @RunWith(SpringRunner.class)
 public class JsonTest {
-    private static Logger logger = LoggerFactory.getLogger(JsonTest.class);
+    private static final SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JsonTest.class);
 
     @Configuration
     @EnableAutoConfiguration
@@ -32,6 +32,7 @@ public class JsonTest {
         }
     }
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private ObjectMapper mapper;
 
@@ -90,7 +91,6 @@ public class JsonTest {
 
         try {
             String json = mapper.writeValueAsString(account);
-            logger.info(json);
             Account other = mapper.readValue(json, Account.class);
             Role otherRole = (Role) other.getRoles().toArray()[0];
             Assert.assertEquals(role.getId(), otherRole.getId());

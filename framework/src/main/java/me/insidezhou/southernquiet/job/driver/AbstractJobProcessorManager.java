@@ -1,8 +1,8 @@
 package me.insidezhou.southernquiet.job.driver;
 
 import me.insidezhou.southernquiet.job.JobProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -15,7 +15,7 @@ import java.util.Objects;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractJobProcessorManager implements InitializingBean {
-    private final static Logger log = LoggerFactory.getLogger(AbstractJobProcessorManager.class);
+    private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AbstractJobProcessorManager.class);
 
     protected final ApplicationContext applicationContext;
 
@@ -31,7 +31,7 @@ public abstract class AbstractJobProcessorManager implements InitializingBean {
                     return applicationContext.getBean(name);
                 }
                 catch (BeansException e) {
-                    log.info("查找JobProcessor时，bean未能初始化: {}", name);
+                    log.message("查找JobProcessor时，bean未能初始化").context("name", name).info();
                     return null;
                 }
             })
@@ -39,15 +39,14 @@ public abstract class AbstractJobProcessorManager implements InitializingBean {
             .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                 .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, JobProcessor.class)
                     .forEach(listener -> {
-                        if (log.isDebugEnabled()) {
-                            log.debug(
-                                "找到JobProcessor：{}(id={}) {}#{}",
-                                listener.job().getSimpleName(),
-                                listener.name(),
-                                bean.getClass().getSimpleName(),
-                                method.getName()
-                            );
-                        }
+                        log.message("找到JobProcessor：")
+                            .context(context -> {
+                                context.put("notification", listener.job().getSimpleName());
+                                context.put("name", listener.name());
+                                context.put("listenerName", bean.getClass().getSimpleName());
+                                context.put("method", method.getName());
+                            })
+                            .debug();
 
                         initProcessor(listener, bean, method);
                     })
