@@ -39,7 +39,7 @@ public abstract class AbstractJobProcessorManager implements InitializingBean {
             .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                 .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, JobProcessor.class)
                     .forEach(listener -> {
-                        log.message("找到JobProcessor：")
+                        log.message("找到JobProcessor")
                             .context(context -> {
                                 context.put("notification", listener.job().getSimpleName());
                                 context.put("name", listener.name());

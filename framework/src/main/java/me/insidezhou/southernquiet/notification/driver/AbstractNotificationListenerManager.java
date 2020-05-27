@@ -39,7 +39,7 @@ public abstract class AbstractNotificationListenerManager implements Initializin
             .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
                 .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, NotificationListener.class)
                     .forEach(listener -> {
-                        log.message("找到NotificationListener：")
+                        log.message("找到NotificationListener")
                             .context(context -> {
                                 context.put("notification", listener.notification().getSimpleName());
                                 context.put("name", listener.name());
