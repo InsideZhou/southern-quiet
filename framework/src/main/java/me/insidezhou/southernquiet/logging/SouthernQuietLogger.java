@@ -13,18 +13,10 @@ import java.util.function.Supplier;
 public class SouthernQuietLogger {
     private final ThreadLocal<LogContext> logContextThreadLocal = ThreadLocal.withInitial(LogContext::new);
 
-    private Logger logger;
+    private final Logger logger;
     private SouthernQuietLogFormatter formatter = new SouthernQuietLogFormatter();
 
     public SouthernQuietLogger(Logger logger) {
-        this.logger = logger;
-    }
-
-    public Logger getLogger() {
-        return logger;
-    }
-
-    public void setLogger(Logger logger) {
         this.logger = logger;
     }
 
@@ -75,7 +67,7 @@ public class SouthernQuietLogger {
     public void trace() {
         LogContext logContext = logContextThreadLocal.get();
 
-        if (!logger.isTraceEnabled() || null == logger) {
+        if (!logger.isTraceEnabled() || null == formatter) {
             logContext.clear();
             return;
         }
@@ -88,7 +80,7 @@ public class SouthernQuietLogger {
     public void debug() {
         LogContext logContext = logContextThreadLocal.get();
 
-        if (!logger.isDebugEnabled() || null == logger) {
+        if (!logger.isDebugEnabled() || null == formatter) {
             logContext.clear();
             return;
         }
@@ -101,7 +93,7 @@ public class SouthernQuietLogger {
     public void info() {
         LogContext logContext = logContextThreadLocal.get();
 
-        if (!logger.isInfoEnabled() || null == logger) {
+        if (!logger.isInfoEnabled() || null == formatter) {
             logContext.clear();
             return;
         }
@@ -114,7 +106,7 @@ public class SouthernQuietLogger {
     public void warn() {
         LogContext logContext = logContextThreadLocal.get();
 
-        if (!logger.isWarnEnabled() || null == logger) {
+        if (!logger.isWarnEnabled() || null == formatter) {
             logContext.clear();
             return;
         }
@@ -128,7 +120,7 @@ public class SouthernQuietLogger {
     public void error() {
         LogContext logContext = logContextThreadLocal.get();
 
-        if (!logger.isErrorEnabled() || null == logger) {
+        if (!logger.isErrorEnabled() || null == formatter) {
             logContext.clear();
             return;
         }
