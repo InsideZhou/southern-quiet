@@ -14,10 +14,11 @@ public class SouthernQuietLogger {
     private final ThreadLocal<LogContext> logContextThreadLocal = ThreadLocal.withInitial(LogContext::new);
 
     private final Logger logger;
-    private SouthernQuietLogFormatter formatter = new SouthernQuietLogFormatter();
+    private SouthernQuietLogFormatter formatter;
 
-    public SouthernQuietLogger(Logger logger) {
+    public SouthernQuietLogger(Logger logger, SouthernQuietLogFormatter formatter) {
         this.logger = logger;
+        this.formatter = formatter;
     }
 
     public SouthernQuietLogFormatter getFormatter() {
@@ -66,6 +67,7 @@ public class SouthernQuietLogger {
     @SuppressWarnings("unused")
     public void trace() {
         LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
 
         if (!logger.isTraceEnabled() || null == formatter) {
             logContext.clear();
@@ -79,6 +81,7 @@ public class SouthernQuietLogger {
 
     public void debug() {
         LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
 
         if (!logger.isDebugEnabled() || null == formatter) {
             logContext.clear();
@@ -92,6 +95,7 @@ public class SouthernQuietLogger {
 
     public void info() {
         LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
 
         if (!logger.isInfoEnabled() || null == formatter) {
             logContext.clear();
@@ -105,6 +109,7 @@ public class SouthernQuietLogger {
 
     public void warn() {
         LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
 
         if (!logger.isWarnEnabled() || null == formatter) {
             logContext.clear();
@@ -119,6 +124,7 @@ public class SouthernQuietLogger {
     @SuppressWarnings("unused")
     public void error() {
         LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
 
         if (!logger.isErrorEnabled() || null == formatter) {
             logContext.clear();
