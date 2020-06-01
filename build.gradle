@@ -9,11 +9,11 @@ plugins {
 
 allprojects {
     group = 'me.insidezhou.southernquiet'
-    version = '4.5.1'
+    version = '4.5.2'
 
     ext {
         jsonpathVersion = '2.4.0'
-        instepVersion = '2.0.5'
+        instepVersion = '2.0.6'
     }
 
     repositories {

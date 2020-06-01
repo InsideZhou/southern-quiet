@@ -12,7 +12,7 @@ public class AmplifierTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmplifierTest.class);
 
     @Test
-    public void golden() {
+    public void golden() throws InterruptedException {
         Amplifier amplifier = new GoldenRatioAmplifier(5);
 
         long index = 0;
@@ -21,8 +21,10 @@ public class AmplifierTest {
         while (current < Duration.ofDays(1).toMillis()) {
             current = amplifier.amplify(index);
             total += current;
-            log.message("amplified").context("index", index).context("current", Duration.ofMillis(current)).context("total", Duration.ofMillis(total)).info();
+            log.message("amplified").context("index", index).context("current", Duration.ofMillis(current)).context("total", Duration.ofMillis(total)).infoAsync();
             ++index;
         }
+
+        Thread.sleep(1000);
     }
 }

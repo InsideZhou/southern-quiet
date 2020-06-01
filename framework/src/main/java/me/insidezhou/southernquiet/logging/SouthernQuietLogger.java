@@ -7,9 +7,11 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class SouthernQuietLogger {
     private final ThreadLocal<LogContext> logContextThreadLocal = ThreadLocal.withInitial(LogContext::new);
 
@@ -64,7 +66,6 @@ public class SouthernQuietLogger {
         return this;
     }
 
-    @SuppressWarnings("unused")
     public void trace() {
         LogContext logContext = logContextThreadLocal.get();
         SouthernQuietLogFormatter formatter = this.formatter;
@@ -77,6 +78,23 @@ public class SouthernQuietLogger {
         Pair<String, List<?>> pair = formatter.formatLogContext(logContext);
         logger.trace(pair.getFirst(), pair.getSecond().toArray());
         logContext.clear();
+    }
+
+    public void traceAsync() {
+        LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
+
+        if (!logger.isTraceEnabled() || null == formatter) {
+            logContext.clear();
+            return;
+        }
+
+        LogContext asyncContext = logContext.clone();
+        logContext.clear();
+        CompletableFuture.runAsync(() -> {
+            Pair<String, List<?>> pair = formatter.formatLogContext(asyncContext);
+            logger.trace(pair.getFirst(), pair.getSecond().toArray());
+        });
     }
 
     public void debug() {
@@ -93,6 +111,23 @@ public class SouthernQuietLogger {
         logContext.clear();
     }
 
+    public void debugAsync() {
+        LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
+
+        if (!logger.isDebugEnabled() || null == formatter) {
+            logContext.clear();
+            return;
+        }
+
+        LogContext asyncContext = logContext.clone();
+        logContext.clear();
+        CompletableFuture.runAsync(() -> {
+            Pair<String, List<?>> pair = formatter.formatLogContext(asyncContext);
+            logger.debug(pair.getFirst(), pair.getSecond().toArray());
+        });
+    }
+
     public void info() {
         LogContext logContext = logContextThreadLocal.get();
         SouthernQuietLogFormatter formatter = this.formatter;
@@ -105,6 +140,23 @@ public class SouthernQuietLogger {
         Pair<String, List<?>> pair = formatter.formatLogContext(logContext);
         logger.info(pair.getFirst(), pair.getSecond().toArray());
         logContext.clear();
+    }
+
+    public void infoAsync() {
+        LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
+
+        if (!logger.isInfoEnabled() || null == formatter) {
+            logContext.clear();
+            return;
+        }
+
+        LogContext asyncContext = logContext.clone();
+        logContext.clear();
+        CompletableFuture.runAsync(() -> {
+            Pair<String, List<?>> pair = formatter.formatLogContext(asyncContext);
+            logger.info(pair.getFirst(), pair.getSecond().toArray());
+        });
     }
 
     public void warn() {
@@ -121,7 +173,23 @@ public class SouthernQuietLogger {
         logContext.clear();
     }
 
-    @SuppressWarnings("unused")
+    public void warnAsync() {
+        LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
+
+        if (!logger.isWarnEnabled() || null == formatter) {
+            logContext.clear();
+            return;
+        }
+
+        LogContext asyncContext = logContext.clone();
+        logContext.clear();
+        CompletableFuture.runAsync(() -> {
+            Pair<String, List<?>> pair = formatter.formatLogContext(asyncContext);
+            logger.warn(pair.getFirst(), pair.getSecond().toArray());
+        });
+    }
+
     public void error() {
         LogContext logContext = logContextThreadLocal.get();
         SouthernQuietLogFormatter formatter = this.formatter;
@@ -136,12 +204,45 @@ public class SouthernQuietLogger {
         logContext.clear();
     }
 
-    public static class LogContext implements Serializable {
+    public void errorAsync() {
+        LogContext logContext = logContextThreadLocal.get();
+        SouthernQuietLogFormatter formatter = this.formatter;
+
+        if (!logger.isErrorEnabled() || null == formatter) {
+            logContext.clear();
+            return;
+        }
+
+        LogContext asyncContext = logContext.clone();
+        logContext.clear();
+        CompletableFuture.runAsync(() -> {
+            Pair<String, List<?>> pair = formatter.formatLogContext(asyncContext);
+            logger.error(pair.getFirst(), pair.getSecond().toArray());
+        });
+    }
+
+    public static class LogContext implements Serializable, Cloneable {
         private final static long serialVersionUID = 8228778036883035515L;
 
         private String message;
         private Throwable throwable;
-        private Map<String, Object> context = new LinkedHashMap<>();
+        private Map<String, Object> context;
+
+        public LogContext() {
+            this.context = new LinkedHashMap<>();
+        }
+
+        public LogContext(String message, Throwable throwable, Map<String, Object> context) {
+            this.message = message;
+            this.throwable = throwable;
+            this.context = new LinkedHashMap<>(context);
+        }
+
+        @SuppressWarnings("MethodDoesntCallSuperMethod")
+        @Override
+        public LogContext clone() {
+            return new LogContext(message, throwable, context);
+        }
 
         public void clear() {
             message = null;

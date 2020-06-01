@@ -1,6 +1,5 @@
 dependencies {
     api project(':framework')
-
     implementation project(':instep-spring-boot-starter')
 
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
