@@ -7,11 +7,12 @@ import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -22,9 +23,6 @@ import org.springframework.util.StringUtils;
 
 @SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublisher<N> implements Lifecycle {
-    public final static String DelayedMessageExchange = "NOTIFICATION.EXCHANGE.DELAYED_MESSAGE";
-    public final static String DelayedMessageQueue = "NOTIFICATION.QUEUE.DELAYED_MESSAGE";
-
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
@@ -35,7 +33,6 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
     private final boolean enablePublisherConfirm;
 
     public AmqpNotificationPublisher(
-        RabbitAdmin rabbitAdmin,
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
@@ -72,13 +69,6 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
             });
         }
         this.rabbitTemplate = rabbitTemplate;
-
-        Exchange exchange = new FanoutExchange(DelayedMessageExchange);
-        Queue queue = new Queue(DelayedMessageQueue);
-
-        rabbitAdmin.declareExchange(exchange);
-        rabbitAdmin.declareQueue(queue);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(DelayedMessageQueue).noargs());
     }
 
     public SmartMessageConverter getMessageConverter() {
@@ -91,6 +81,7 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         String source = getNotificationSource(notification.getClass());
         String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
+        String delayRouting = getDelayedRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
@@ -98,8 +89,6 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
 
             if (delay > 0) {
                 properties.setExpiration(String.valueOf(delay));
-                properties.setHeader(Constants.AMQP_DLK, exchange);
-                properties.setHeader(Constants.AMQP_DLK, routing);
             }
 
             return message;
@@ -108,8 +97,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         if (enablePublisherConfirm) {
             rabbitTemplate.invoke(operations -> {
                 operations.convertAndSend(
-                    delay > 0 ? DelayedMessageExchange : exchange,
-                    delay > 0 ? DelayedMessageQueue : routing,
+                    delay > 0 ? Constants.AMQP_DEFAULT : exchange,
+                    delay > 0 ? delayRouting : routing,
                     notification,
                     messagePostProcessor
                 );
@@ -120,8 +109,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         }
         else {
             rabbitTemplate.convertAndSend(
-                delay > 0 ? DelayedMessageExchange : exchange,
-                delay > 0 ? DelayedMessageQueue : routing,
+                delay > 0 ? Constants.AMQP_DEFAULT : exchange,
+                delay > 0 ? delayRouting : routing,
                 notification,
                 messagePostProcessor
             );
@@ -147,6 +136,14 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
 
     public static String getRouting(String prefix, String source) {
         return prefix + source;
+    }
+
+    public static String getDelayedRouting(String prefix, Class<?> cls) {
+        return getDelayedRouting(prefix, getNotificationSource(cls));
+    }
+
+    public static String getDelayedRouting(String prefix, String source) {
+        return "DELAY." + prefix + source;
     }
 
     @Override

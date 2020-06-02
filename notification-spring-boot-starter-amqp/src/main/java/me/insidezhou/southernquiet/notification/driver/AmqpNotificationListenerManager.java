@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.notification.driver;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
+import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
@@ -30,6 +31,7 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -115,6 +117,8 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         String listenerName = getListenerName(listener, listenerDefaultName);
         String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
+        DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
+
         listenerEndpoints.stream()
             .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
             .findAny()
@@ -160,6 +164,9 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     }
                     else if (parameterClass.isInstance(listener)) {
                         return listener;
+                    }
+                    else if (parameterClass.equals(DelayedMessage.class)) {
+                        return delayedAnnotation;
                     }
                     else {
                         log.message("不支持在通知监听器中使用此类型的参数")
@@ -230,14 +237,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
-        String routing = getListenerRouting(listener, listenerDefaultName);
+        String routing = AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String delayRouting = AmqpNotificationPublisher.getDelayedRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
         Exchange exchange = new FanoutExchange(AmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
-        Queue queue = new Queue(routing);
+        Queue queue = new Queue(listenerRouting);
 
         rabbitAdmin.declareExchange(exchange);
         rabbitAdmin.declareQueue(queue);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routing).noargs());
+        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
@@ -245,6 +254,13 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
         rabbitAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> delayQueueArgs = new HashMap<>();
+        delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());
+        delayQueueArgs.put(Constants.AMQP_DLK, routing);
+
+        Queue delayQueue = new Queue(delayRouting, true, false, false, delayQueueArgs);
+        rabbitAdmin.declareQueue(delayQueue);
     }
 
     @Override

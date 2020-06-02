@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.job.driver;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
+import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
 import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobProcessor;
@@ -28,6 +29,7 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -111,6 +113,8 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
         String listenerName = getListenerName(jobProcessor, listenerDefaultName);
         String listenerRouting = getListenerRouting(jobProcessor, listenerDefaultName);
 
+        DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(jobProcessor.job(), DelayedMessage.class);
+
         listenerEndpoints.stream()
             .filter(listenerEndpoint -> jobProcessor.job() == listenerEndpoint.getSecond().job() && listenerName.equals(listenerEndpoint.getThird()))
             .findAny()
@@ -156,6 +160,9 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                     }
                     else if (parameterClass.isInstance(jobProcessor)) {
                         return jobProcessor;
+                    }
+                    else if (parameterClass.equals(DelayedMessage.class)) {
+                        return delayedAnnotation;
                     }
                     else {
                         log.message("不支持在通知监听器中使用此类型的参数")
@@ -216,14 +223,16 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private void declareExchangeAndQueue(JobProcessor listener, String listenerDefaultName) {
-        String routing = getListenerRouting(listener, listenerDefaultName);
+        String routing = AmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), listener.job());
+        String delayRouting = AmqpJobArranger.getDelayedRouting(amqpJobProperties.getNamePrefix(), listener.job());
+        String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
         Exchange exchange = new FanoutExchange(AmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), listener.job()));
-        Queue queue = new Queue(routing);
+        Queue queue = new Queue(listenerRouting);
 
         rabbitAdmin.declareExchange(exchange);
         rabbitAdmin.declareQueue(queue);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routing).noargs());
+        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
@@ -231,6 +240,13 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
         Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
         rabbitAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> delayQueueArgs = new HashMap<>();
+        delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());
+        delayQueueArgs.put(Constants.AMQP_DLK, routing);
+
+        Queue delayQueue = new Queue(delayRouting, true, false, false, delayQueueArgs);
+        rabbitAdmin.declareQueue(delayQueue);
     }
 
     @Override
