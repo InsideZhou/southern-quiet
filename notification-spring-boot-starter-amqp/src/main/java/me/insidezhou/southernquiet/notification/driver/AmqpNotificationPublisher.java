@@ -1,17 +1,17 @@
 package me.insidezhou.southernquiet.notification.driver;
 
+import me.insidezhou.southernquiet.Constants;
+import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
-import me.insidezhou.southernquiet.notification.NotificationPublisher;
-import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.amqp.core.MessagePostProcessor;
-import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -21,7 +21,10 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 @SuppressWarnings("WeakerAccess")
-public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, Lifecycle {
+public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublisher<N> implements Lifecycle {
+    public final static String DelayedMessageExchange = "NOTIFICATION.EXCHANGE.DELAYED_MESSAGE";
+    public final static String DelayedMessageQueue = "NOTIFICATION.QUEUE.DELAYED_MESSAGE";
+
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
@@ -32,6 +35,7 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
     private final boolean enablePublisherConfirm;
 
     public AmqpNotificationPublisher(
+        RabbitAdmin rabbitAdmin,
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
@@ -68,6 +72,13 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
             });
         }
         this.rabbitTemplate = rabbitTemplate;
+
+        Exchange exchange = new FanoutExchange(DelayedMessageExchange);
+        Queue queue = new Queue(DelayedMessageQueue);
+
+        rabbitAdmin.declareExchange(exchange);
+        rabbitAdmin.declareQueue(queue);
+        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(DelayedMessageQueue).noargs());
     }
 
     public SmartMessageConverter getMessageConverter() {
@@ -75,7 +86,7 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
     }
 
     @Override
-    public void publish(N notification) {
+    public void publish(N notification, long delay) {
         String prefix = notificationProperties.getNamePrefix();
         String source = getNotificationSource(notification.getClass());
         String exchange = getExchange(prefix, source);
@@ -84,14 +95,21 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
             properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+
+            if (delay > 0) {
+                properties.setExpiration(String.valueOf(delay));
+                properties.setHeader(Constants.AMQP_DLK, exchange);
+                properties.setHeader(Constants.AMQP_DLK, routing);
+            }
+
             return message;
         };
 
         if (enablePublisherConfirm) {
             rabbitTemplate.invoke(operations -> {
                 operations.convertAndSend(
-                    exchange,
-                    routing,
+                    delay > 0 ? DelayedMessageExchange : exchange,
+                    delay > 0 ? DelayedMessageQueue : routing,
                     notification,
                     messagePostProcessor
                 );
@@ -102,8 +120,8 @@ public class AmqpNotificationPublisher<N> implements NotificationPublisher<N>, L
         }
         else {
             rabbitTemplate.convertAndSend(
-                exchange,
-                routing,
+                delay > 0 ? DelayedMessageExchange : exchange,
+                delay > 0 ? DelayedMessageQueue : routing,
                 notification,
                 messagePostProcessor
             );
