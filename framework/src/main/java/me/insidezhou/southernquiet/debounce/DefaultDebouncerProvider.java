@@ -47,7 +47,7 @@ public class DefaultDebouncerProvider implements DebouncerProvider, DisposableBe
                     log.message("施加了去抖动的方法执行失败")
                         .context("debouncer", name)
                         .exception(throwable)
-                        .warn();
+                        .error();
                 }
             }
         });

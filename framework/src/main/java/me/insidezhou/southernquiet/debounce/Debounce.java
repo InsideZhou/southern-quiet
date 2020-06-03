@@ -11,12 +11,12 @@ import java.lang.annotation.*;
 @Documented
 public @interface Debounce {
     /**
-     * 去除多长时间内的抖动。
+     * 去除多长时间内的抖动。单位：毫秒。
      */
     long waitFor() default 5000;
 
     /**
-     * 去抖动最多持续的时间。
+     * 去抖动最多持续的时间。单位：毫秒。
      */
     long maxWaitFor() default 60000;
 
