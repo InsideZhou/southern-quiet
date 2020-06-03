@@ -144,7 +144,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         endpoint.setMessageListener(message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            log.message("监听器收到通知")
+            log.message("收到通知")
                 .context(context -> {
                     context.put("queue", endpoint.getQueueNames());
                     context.put("listener", bean.getClass().getName());

@@ -33,6 +33,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -118,7 +119,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
         listenerEndpoints.stream()
             .filter(listenerEndpoint -> jobProcessor.job() == listenerEndpoint.getSecond().job() && listenerName.equals(listenerEndpoint.getThird()))
             .findAny()
-            .ifPresent(listenerEndpoint -> log.message("监听器重复")
+            .ifPresent(listenerEndpoint -> log.message("任务处理器重复")
                 .context(context -> {
                     context.put("queue", listenerRouting);
                     context.put("listener", bean.getClass().getName());
@@ -140,7 +141,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
         endpoint.setMessageListener(message -> {
             Object job = messageConverter.fromMessage(message, typeReference);
 
-            log.message("监听器收到通知")
+            log.message("接到任务")
                 .context(context -> {
                     context.put("queue", endpoint.getQueueNames());
                     context.put("listener", bean.getClass().getName());
@@ -184,9 +185,20 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                 method.invoke(bean, parameters);
             }
             catch (RuntimeException e) {
-                log.message("通知处理器抛出异常").exception(e).error();
+                log.message("任务处理器抛出异常").exception(e).error();
 
                 throw e;
+            }
+            catch (InvocationTargetException e) {
+                Throwable target = e.getTargetException();
+
+                log.message("任务处理器抛出异常").exception(target).error();
+
+                if (target instanceof RuntimeException) {
+                    throw (RuntimeException) target;
+                }
+
+                throw new RuntimeException(target);
             }
             catch (Exception e) {
                 throw new RuntimeException(e);

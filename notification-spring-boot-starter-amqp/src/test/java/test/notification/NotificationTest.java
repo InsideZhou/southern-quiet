@@ -1,6 +1,7 @@
 package test.notification;
 
 import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
+import me.insidezhou.southernquiet.debounce.Debounce;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.NotificationListener;
@@ -44,6 +45,7 @@ public class NotificationTest {
         @NotificationListener(notification = StandardNotification.class, name = "a")
         @NotificationListener(notification = StandardNotification.class, name = "b")
         @NotificationListener(notification = StandardNotification.class, name = "e")
+        @Debounce
         public void standard(StandardNotification notification, NotificationListener listener) {
             log.message("使用监听器接到通知")
                 .context("listenerName", listener.name())

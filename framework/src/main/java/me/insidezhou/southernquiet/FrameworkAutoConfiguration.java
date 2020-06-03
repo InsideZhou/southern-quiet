@@ -2,6 +2,10 @@ package me.insidezhou.southernquiet;
 
 import me.insidezhou.southernquiet.auth.AuthAdvice;
 import me.insidezhou.southernquiet.auth.AuthPointcut;
+import me.insidezhou.southernquiet.debounce.DebounceAdvice;
+import me.insidezhou.southernquiet.debounce.DebouncePointcut;
+import me.insidezhou.southernquiet.debounce.DebouncerProvider;
+import me.insidezhou.southernquiet.debounce.DefaultDebouncerProvider;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
@@ -75,16 +79,40 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
+    @ConditionalOnBean({AuthAdvice.class, AuthPointcut.class})
+    public AnnotationAdvisingBeanPostProcessor authAnnotationAdvisingBeanPostProcessor(AuthAdvice authAdvice, AuthPointcut authPointcut) {
+        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(authPointcut, authAdvice)) {};
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @Qualifier(AuthorizationMatcherQualifier)
     public AntPathMatcher authorizationMatcher() {
         return new AntPathMatcher();
     }
 
     @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnBean({AuthAdvice.class, AuthPointcut.class})
-    public AnnotationAdvisingBeanPostProcessor authAnnotationAdvisingBeanPostProcessor(AuthAdvice authAdvice, AuthPointcut authPointcut) {
-        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(authPointcut, authAdvice)) {};
+    @ConditionalOnMissingBean
+    public DebounceAdvice debounceAdvice(DebouncerProvider provider) {
+        return new DebounceAdvice(provider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DefaultDebouncerProvider defaultDebouncerProvider() {
+        return new DefaultDebouncerProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DebouncePointcut debouncePointcut() {
+        return new DebouncePointcut();
+    }
+
+    @Bean
+    @ConditionalOnBean({DebounceAdvice.class, DebouncePointcut.class})
+    public AnnotationAdvisingBeanPostProcessor debounceAnnotationAdvisingBeanPostProcessor(DebounceAdvice advice, DebouncePointcut pointcut) {
+        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(pointcut, advice)) {};
     }
 
     @Bean

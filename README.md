@@ -51,6 +51,12 @@
 
 - job-spring-boot-starter-*
 
+##### Debouncer 抖动去除器
+
+> 对容器内某个bean的方法按指定时间去除抖动，抖动去除完成后肯定会得到执行。
+
+- me.insidezhou.southernquiet.debounce.*
+
 ##### Throttle 节流器  
 
 > 对容器内某个bean的方法按指定时间或次数节流，节流期间方法不会得到执行。
