@@ -18,6 +18,7 @@ import me.insidezhou.southernquiet.throttle.ThrottlePointcut;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -93,8 +94,8 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DebounceAdvice debounceAdvice(DebouncerProvider provider) {
-        return new DebounceAdvice(provider);
+    public DebounceAdvice debounceAdvice(DebouncerProvider provider, BeanFactory beanFactory) {
+        return new DebounceAdvice(provider, beanFactory);
     }
 
     @Bean
@@ -125,8 +126,8 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager) {
-        return new ThrottleAdvice(throttleManager);
+    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager, BeanFactory beanFactory) {
+        return new ThrottleAdvice(throttleManager, beanFactory);
     }
 
     @Bean

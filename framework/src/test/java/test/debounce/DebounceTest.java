@@ -35,31 +35,41 @@ public class DebounceTest {
 
     @Test
     public void debounce() throws Exception {
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
-        eventPublisher.publishEvent(new WorkerEvent());
+        eventPublisher.publishEvent(new WorkerEvent(1));
+        eventPublisher.publishEvent(new WorkerEvent(1));
+        eventPublisher.publishEvent(new WorkerEvent(1));
+        eventPublisher.publishEvent(new WorkerEvent(1));
+        eventPublisher.publishEvent(new WorkerEvent(2));
+        eventPublisher.publishEvent(new WorkerEvent(2));
+        eventPublisher.publishEvent(new WorkerEvent(2));
 
         Thread.sleep(2000);
-        Assert.assertEquals(1, WorkerEventListener.counter);
+        Assert.assertEquals(2, WorkerEventListener.counter);
     }
 
     public static class WorkerEventListener {
         private static int counter = 0;
 
         @EventListener
-        @Debounce(waitFor = 1000)
+        @Debounce(waitFor = 1000, name = "#root.getDefaultName() + '_' + #event.getId()")
         public void work(WorkerEvent event) {
             ++counter;
-            log.message("被debounce的worker正在工作中").context("uuid", event.uuid).context("counter", counter).info();
+            log.message("被debounce的worker正在工作中").context("worker", event.id).context("uuid", event.uuid).context("counter", counter).info();
         }
     }
 
     public static class WorkerEvent {
         private UUID uuid = UUID.randomUUID();
+
+        private final int id;
+
+        public WorkerEvent(int id) {
+            this.id = id;
+        }
+
+        public int getId() {
+            return id;
+        }
 
         public UUID getUuid() {
             return uuid;

@@ -5,6 +5,7 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.Pair;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.*;
@@ -21,11 +22,13 @@ public class DefaultDebouncerProvider implements DebouncerProvider, DisposableBe
     }
 
     @Override
-    public Debouncer getDebouncer(MethodInvocation invocation, long waitFor, long maxWaitFor) {
+    public Debouncer getDebouncer(MethodInvocation invocation, long waitFor, long maxWaitFor, String debouncerName) {
         Object bean = invocation.getThis();
         Method method = invocation.getMethod();
 
-        String debouncerName = bean.getClass().getName() + "#" + method.getName() + "_" + waitFor + "_" + maxWaitFor;
+        if (StringUtils.isEmpty(debouncerName)) {
+            debouncerName = bean.getClass().getName() + "#" + method.getName() + "_" + waitFor + "_" + maxWaitFor;
+        }
 
         Pair<Debouncer, MethodInvocation> pair = debouncerAndInvocations.computeIfAbsent(debouncerName, (nm) -> new Pair<>(new DefaultDebouncer(waitFor, maxWaitFor), invocation));
         pair.setSecond(invocation);

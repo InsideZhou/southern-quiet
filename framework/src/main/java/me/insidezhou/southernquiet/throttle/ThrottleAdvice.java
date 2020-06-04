@@ -4,8 +4,14 @@ import me.insidezhou.southernquiet.util.Tuple;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.EmbeddedValueResolverAware;
+import org.springframework.context.expression.AnnotatedElementKey;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.context.expression.CachedExpressionEvaluator;
+import org.springframework.context.expression.MethodBasedEvaluationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.expression.Expression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.util.StringUtils;
@@ -23,11 +29,13 @@ import static me.insidezhou.southernquiet.throttle.annotation.Throttle.DefaultTh
 public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
     private final ThrottleManager throttleManager;
     private StringValueResolver embeddedValueResolver;
+    private final NameEvaluator nameEvaluator;
 
     private final Map<String, Tuple<String, Boolean, Long>> methodThrottle = new ConcurrentHashMap<>();
 
-    public ThrottleAdvice(ThrottleManager throttleManager) {
+    public ThrottleAdvice(ThrottleManager throttleManager, BeanFactory beanFactory) {
         this.throttleManager = throttleManager;
+        this.nameEvaluator = new NameEvaluator(beanFactory);
     }
 
     @Override
@@ -48,7 +56,9 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
         me.insidezhou.southernquiet.throttle.annotation.Throttle annotation = AnnotatedElementUtils.findMergedAnnotation(method, me.insidezhou.southernquiet.throttle.annotation.Throttle.class);
         assert annotation != null;
 
-        String throttleName = annotation.name();
+        String throttleName = nameEvaluator.evalName(
+            annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
+        );
 
         Tuple<String, Boolean, Long> throttleValues = methodThrottle.get(throttleName);
         if (null != throttleValues) return throttleValues;
@@ -82,10 +92,6 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
             }
         }
 
-        if (StringUtils.isEmpty(throttleName)) {
-            throttleName = method.getDeclaringClass().getName() + "#" + method.getName();
-        }
-
         if (optionalTimeUnit.isPresent()) {
             throttleValues = new Tuple<>(throttleName, true, optionalTimeUnit.get().toMillis(threshold));//time based
         }
@@ -100,5 +106,64 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
     @Override
     public void setEmbeddedValueResolver(@NotNull StringValueResolver resolver) {
         this.embeddedValueResolver = resolver;
+    }
+
+    public static class NameEvaluator extends CachedExpressionEvaluator {
+        private final Map<ExpressionKey, Expression> expressionCache = new ConcurrentHashMap<>();
+        private final BeanFactory beanFactory;
+
+        public NameEvaluator(BeanFactory beanFactory) {
+            this.beanFactory = beanFactory;
+        }
+
+        public String evalName(String expression, MethodInvocation invocation, me.insidezhou.southernquiet.throttle.annotation.Throttle annotation, AnnotatedElementKey methodKey) {
+            MethodBasedEvaluationContext evaluationContext = new MethodBasedEvaluationContext(
+                new EvaluationRoot(invocation, annotation),
+                invocation.getMethod(),
+                invocation.getArguments(),
+                getParameterNameDiscoverer()
+            );
+            evaluationContext.setBeanResolver(new BeanFactoryResolver(beanFactory));
+
+            return getExpression(this.expressionCache, methodKey, expression).getValue(evaluationContext, String.class);
+        }
+    }
+
+    public static class EvaluationRoot {
+        private Object instance;
+        private me.insidezhou.southernquiet.throttle.annotation.Throttle annotation;
+
+        private String defaultName;
+
+        public EvaluationRoot(MethodInvocation invocation, me.insidezhou.southernquiet.throttle.annotation.Throttle annotation) {
+            this.instance = invocation.getThis();
+            this.annotation = annotation;
+
+            this.defaultName = instance.getClass().getName() + "#" + invocation.getMethod().getName();
+        }
+
+        public String getDefaultName() {
+            return defaultName;
+        }
+
+        public void setDefaultName(String defaultName) {
+            this.defaultName = defaultName;
+        }
+
+        public Object getInstance() {
+            return instance;
+        }
+
+        public void setInstance(Object instance) {
+            this.instance = instance;
+        }
+
+        public me.insidezhou.southernquiet.throttle.annotation.Throttle getAnnotation() {
+            return annotation;
+        }
+
+        public void setAnnotation(me.insidezhou.southernquiet.throttle.annotation.Throttle annotation) {
+            this.annotation = annotation;
+        }
     }
 }
