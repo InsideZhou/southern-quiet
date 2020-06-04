@@ -143,7 +143,7 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
     }
 
     public static String getDelayedRouting(String prefix, String source) {
-        return "DELAY." + prefix + source;
+        return prefix + "DELAY." + source;
     }
 
     @Override

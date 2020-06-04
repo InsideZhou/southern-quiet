@@ -89,7 +89,7 @@ public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Li
     }
 
     public static String getDelayedRouting(String prefix, String source) {
-        return "DELAY." + prefix + source;
+        return prefix + "DELAY." + source;
     }
 
     @Override
