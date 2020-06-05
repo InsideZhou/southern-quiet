@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class AmqpMessageRecover extends RepublishMessageRecoverer {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpMessageRecover.class);
@@ -20,14 +21,22 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
     private final Amplifier amplifier;
     private final long maxExpiration;
 
+    private final String retryExchange;
+    private final String retryRoutingKey;
+
     public AmqpMessageRecover(AmqpTemplate amqpTemplate,
                               Amplifier amplifier,
                               String errorExchange,
                               String errorRoutingKey,
+                              String retryExchange,
+                              String retryRoutingKey,
                               AmqpAutoConfiguration.Properties properties) {
 
         super(amqpTemplate, errorExchange, errorRoutingKey);
         setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+
+        this.retryExchange = retryExchange;
+        this.retryRoutingKey = retryRoutingKey;
 
         this.maxExpiration = properties.getExpiration().toMillis();
         this.amplifier = amplifier;
@@ -52,23 +61,27 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             messageProperties.setDeliveryMode(getDeliveryMode());
         }
 
-        log.message("准备把消息送进死信队列")
-            .context(context -> {
-                context.put("exchange", errorExchangeName);
-                context.put("queue", errorRoutingKey);
-                context.put("expiration", expiration);
-                context.put("recoverCount", recoverCount);
-                context.put("deliveryMode", messageProperties.getDeliveryMode());
-                context.put("message", message);
-                context.put("cause", cause);
-            })
-            .debug();
+        Consumer<Map<String, Object>> consumer = context -> {
+            context.put("deadExchange", errorExchangeName);
+            context.put("deadQueue", errorRoutingKey);
+            context.put("retryExchange", retryExchange);
+            context.put("retryQueue", retryRoutingKey);
+            context.put("expiration", expiration);
+            context.put("recoverCount", recoverCount);
+            context.put("deliveryMode", messageProperties.getDeliveryMode());
+            context.put("message", message);
+            context.put("cause", cause);
+        };
 
         if (expiration < maxExpiration) {
+            log.message("准备把消息送进重试队列").context(consumer).debug();
+
             messageProperties.setExpiration(String.valueOf(expiration));
-            errorTemplate.send(errorExchangeName, errorRoutingKey, message);
+            errorTemplate.send(retryExchange, retryRoutingKey, message);
         }
         else {
+            log.message("准备把消息送进死信队列").context(consumer).warn();
+
             messageProperties.setExpiration(null);
             super.recover(message, cause);
         }

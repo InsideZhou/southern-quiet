@@ -2,7 +2,6 @@ package me.insidezhou.southernquiet.job.driver;
 
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpJobArranger;
-import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePostProcessor;
@@ -11,8 +10,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.context.Lifecycle;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.StringUtils;
 
 public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Lifecycle {
     private final RabbitTemplate rabbitTemplate;
@@ -61,35 +58,6 @@ public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Li
 
     public SmartMessageConverter getMessageConverter() {
         return messageConverter;
-    }
-
-    public static String getQueueSource(Class<?> cls) {
-        MessageSource annotation = AnnotationUtils.getAnnotation(cls, MessageSource.class);
-        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
-    }
-
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getQueueSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
-    public static String getRouting(String prefix, Class<?> cls) {
-        return getRouting(prefix, getQueueSource(cls));
-    }
-
-    public static String getRouting(String prefix, String source) {
-        return prefix + source;
-    }
-
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getQueueSource(cls));
-    }
-
-    public static String getDelayedRouting(String prefix, String source) {
-        return prefix + "DELAY." + source;
     }
 
     @Override

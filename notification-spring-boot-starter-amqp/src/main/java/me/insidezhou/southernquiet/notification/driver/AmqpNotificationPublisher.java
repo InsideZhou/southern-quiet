@@ -3,7 +3,6 @@ package me.insidezhou.southernquiet.notification.driver;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
-import me.insidezhou.southernquiet.amqp.rabbit.MessageSource;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
@@ -18,8 +17,6 @@ import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.Lifecycle;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.StringUtils;
 
 @SuppressWarnings("WeakerAccess")
 public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublisher<N> implements Lifecycle {
@@ -115,35 +112,6 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
                 messagePostProcessor
             );
         }
-    }
-
-    public static String getNotificationSource(Class<?> cls) {
-        MessageSource annotation = AnnotationUtils.getAnnotation(cls, MessageSource.class);
-        return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
-    }
-
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getNotificationSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
-    public static String getRouting(String prefix, Class<?> cls) {
-        return getRouting(prefix, getNotificationSource(cls));
-    }
-
-    public static String getRouting(String prefix, String source) {
-        return prefix + source;
-    }
-
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getNotificationSource(cls));
-    }
-
-    public static String getDelayedRouting(String prefix, String source) {
-        return prefix + "DELAY." + source;
     }
 
     @Override

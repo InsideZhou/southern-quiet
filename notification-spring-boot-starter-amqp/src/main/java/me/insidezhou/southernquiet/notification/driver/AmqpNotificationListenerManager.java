@@ -1,10 +1,7 @@
 package me.insidezhou.southernquiet.notification.driver;
 
 import me.insidezhou.southernquiet.Constants;
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
-import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
-import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
+import me.insidezhou.southernquiet.amqp.rabbit.*;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
@@ -97,6 +94,8 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(listenerAnnotation, listenerName),
+                    Constants.AMQP_DEFAULT,
+                    getRetryRouting(listenerAnnotation, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -211,15 +210,23 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private String getDeadSource(NotificationListener listener, String listenerDefaultName) {
-        return suffix("DEAD." + AmqpNotificationPublisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
+        return suffix("DEAD." + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
     }
 
     private String getDeadRouting(NotificationListener listener, String listenerDefaultName) {
-        return AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
+        return AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
+    }
+
+    private String getRetrySource(NotificationListener listener, String listenerDefaultName) {
+        return suffix("RETRY." + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listener, listenerDefaultName);
+    }
+
+    private String getRetryRouting(NotificationListener listener, String listenerDefaultName) {
+        return AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), getRetrySource(listener, listenerDefaultName));
     }
 
     private String getListenerRouting(NotificationListener listener, String listenerDefaultName) {
-        return suffix(AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listener, listenerDefaultName);
+        return suffix(AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listener, listenerDefaultName);
     }
 
     private String getListenerName(NotificationListener listener, String listenerDefaultName) {
@@ -237,11 +244,11 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private void declareExchangeAndQueue(NotificationListener listener, String listenerDefaultName) {
-        String routing = AmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
-        String delayRouting = AmqpNotificationPublisher.getDelayedRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String routing = AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String delayRouting = AbstractAmqpNotificationPublisher.getDelayedRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
         String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
-        Exchange exchange = new FanoutExchange(AmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
+        Exchange exchange = new FanoutExchange(AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
         Queue queue = new Queue(listenerRouting);
 
         rabbitAdmin.declareExchange(exchange);
@@ -252,8 +259,15 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
         deadQueueArgs.put(Constants.AMQP_DLK, queue.getName());
 
-        Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
+        Queue deadRouting = new Queue(getRetryRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
         rabbitAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> retryQueueArgs = new HashMap<>();
+        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
+        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
+
+        Queue retryRouting = new Queue(getRetryRouting(listener, listenerDefaultName), true, false, false, retryQueueArgs);
+        rabbitAdmin.declareQueue(retryRouting);
 
         Map<String, Object> delayQueueArgs = new HashMap<>();
         delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());

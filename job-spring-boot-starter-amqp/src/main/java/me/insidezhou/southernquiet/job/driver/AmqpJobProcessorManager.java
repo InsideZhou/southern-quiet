@@ -1,10 +1,7 @@
 package me.insidezhou.southernquiet.job.driver;
 
 import me.insidezhou.southernquiet.Constants;
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
-import me.insidezhou.southernquiet.amqp.rabbit.AmqpMessageRecover;
-import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
-import me.insidezhou.southernquiet.amqp.rabbit.DirectRabbitListenerContainerFactoryConfigurer;
+import me.insidezhou.southernquiet.amqp.rabbit.*;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import me.insidezhou.southernquiet.job.JobProcessor;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -94,6 +91,8 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                     amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(processor, listenerName),
+                    Constants.AMQP_DEFAULT,
+                    getRetryRouting(processor, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -209,15 +208,23 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private String getDeadSource(JobProcessor listener, String listenerDefaultName) {
-        return suffix("DEAD." + AmqpJobArranger.getQueueSource(listener.job()), listener, listenerDefaultName);
+        return suffix("DEAD." + AbstractAmqpJobArranger.getQueueSource(listener.job()), listener, listenerDefaultName);
     }
 
     private String getDeadRouting(JobProcessor listener, String listenerDefaultName) {
-        return AmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
+        return AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), getDeadSource(listener, listenerDefaultName));
+    }
+
+    private String getRetrySource(JobProcessor listener, String listenerDefaultName) {
+        return suffix("RETRY." + AbstractAmqpJobArranger.getQueueSource(listener.job()), listener, listenerDefaultName);
+    }
+
+    private String getRetryRouting(JobProcessor listener, String listenerDefaultName) {
+        return AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), getRetrySource(listener, listenerDefaultName));
     }
 
     private String getListenerRouting(JobProcessor listener, String listenerDefaultName) {
-        return suffix(AmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), listener.job()), listener, listenerDefaultName);
+        return suffix(AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), listener.job()), listener, listenerDefaultName);
     }
 
     private String getListenerName(JobProcessor listener, String listenerDefaultName) {
@@ -235,11 +242,11 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private void declareExchangeAndQueue(JobProcessor listener, String listenerDefaultName) {
-        String routing = AmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), listener.job());
-        String delayRouting = AmqpJobArranger.getDelayedRouting(amqpJobProperties.getNamePrefix(), listener.job());
+        String routing = AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), listener.job());
+        String delayRouting = AbstractAmqpJobArranger.getDelayedRouting(amqpJobProperties.getNamePrefix(), listener.job());
         String listenerRouting = getListenerRouting(listener, listenerDefaultName);
 
-        Exchange exchange = new FanoutExchange(AmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), listener.job()));
+        Exchange exchange = new FanoutExchange(AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), listener.job()));
         Queue queue = new Queue(listenerRouting);
 
         rabbitAdmin.declareExchange(exchange);
@@ -250,8 +257,15 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
         deadQueueArgs.put(Constants.AMQP_DLK, queue.getName());
 
-        Queue deadRouting = new Queue(getDeadRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
+        Queue deadRouting = new Queue(getRetryRouting(listener, listenerDefaultName), true, false, false, deadQueueArgs);
         rabbitAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> retryQueueArgs = new HashMap<>();
+        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
+        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
+
+        Queue retryRouting = new Queue(getRetryRouting(listener, listenerDefaultName), true, false, false, retryQueueArgs);
+        rabbitAdmin.declareQueue(retryRouting);
 
         Map<String, Object> delayQueueArgs = new HashMap<>();
         delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());
