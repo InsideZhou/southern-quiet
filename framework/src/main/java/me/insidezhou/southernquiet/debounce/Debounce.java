@@ -1,5 +1,7 @@
 package me.insidezhou.southernquiet.debounce;
 
+import org.springframework.context.event.EventListener;
+
 import java.lang.annotation.*;
 
 /**
@@ -20,5 +22,9 @@ public @interface Debounce {
      */
     long maxWaitFor() default 60000;
 
+    /**
+     * 支持SPEL，参考{@link EventListener#condition()}。
+     * root对象是{@link DebounceAdvice.EvaluationRoot}
+     */
     String name() default "";
 }

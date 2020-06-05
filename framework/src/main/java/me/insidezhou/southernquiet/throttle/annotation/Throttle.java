@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.throttle.annotation;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.*;
@@ -19,7 +20,8 @@ public @interface Throttle {
     long threshold() default DefaultThreshold;
 
     /**
-     * 若为空则使用类名#方法名作为节流器名称。
+     * 支持SPEL，参考{@link EventListener#condition()}。
+     * root对象是{@link me.insidezhou.southernquiet.throttle.ThrottleAdvice.EvaluationRoot}
      */
     String name() default "";
 
