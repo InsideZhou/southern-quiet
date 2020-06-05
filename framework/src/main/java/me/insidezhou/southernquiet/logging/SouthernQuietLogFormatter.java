@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.logging;
 import me.insidezhou.southernquiet.util.Pair;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,12 +33,34 @@ public class SouthernQuietLogFormatter {
                 msg = logContext.getThrowable().getMessage();
             }
 
-            result = msg + "\t" + format + "\n" + logContext.getThrowable().toString();
+            result = msg + "\t" + format + "\n" + formatThrowable(logContext.getThrowable(), "");
         }
         else {
             result = msg + "\t" + format;
         }
 
         return new Pair<>(result, parameters);
+    }
+
+    protected String formatThrowable(Throwable throwable, String indent) {
+        if (null == throwable) return "";
+
+        final String currentIndent = indent + "\t";
+
+        String message = Arrays.stream(throwable.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n" + currentIndent + "at "));
+        String suppressed = Arrays.stream(throwable.getSuppressed()).map(t -> formatThrowable(t, currentIndent)).collect(Collectors.joining("\n" + currentIndent + "at "));
+        String cause = formatThrowable(throwable.getCause(), currentIndent);
+
+        StringBuilder sb = new StringBuilder(message);
+
+        if (StringUtils.hasText(suppressed)) {
+            sb.append("\n").append(currentIndent).append("Suppressed: ").append(suppressed);
+        }
+
+        if (StringUtils.hasText(cause)) {
+            sb.append("\n").append(currentIndent).append("Caused by: ").append(cause);
+        }
+
+        return sb.toString();
     }
 }

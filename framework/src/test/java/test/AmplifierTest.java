@@ -26,5 +26,8 @@ public class AmplifierTest {
         }
 
         Thread.sleep(1000);
+
+        Throwable root = new Exception("SouthernQuietLogFormatTestException", new Exception("SouthernQuietLogFormatTestMiddleException", new Exception("SouthernQuietLogFormatTestNestedException")));
+        log.message("SouthernQuietLogFormatTest").exception(root).error();
     }
 }
