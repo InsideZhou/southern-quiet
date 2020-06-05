@@ -9,24 +9,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class SouthernQuietLogFormatter {
-    @SuppressWarnings("rawtypes")
     public Pair<String, List<?>> formatLogContext(SouthernQuietLogger.LogContext logContext) {
-        String format = logContext.getContext().keySet().stream()
-            .map(key -> key + "={}")
-            .collect(Collectors.joining(", "));
-
-        List<Object> parameters = logContext.getContext().values().stream()
-            .map(v -> {
-                if (v instanceof Supplier) {
-                    return ((Supplier) v).get();
-                }
-                else {
-                    return v;
-                }
-            })
-            .collect(Collectors.toList());
-
+        String format = generateFormat(logContext);
+        List<Object> parameters = generateParameters(logContext);
         String msg = logContext.getMessage();
+
         String result;
         if (null != logContext.getThrowable()) {
             if (StringUtils.isEmpty(msg)) {
@@ -40,6 +27,24 @@ public class SouthernQuietLogFormatter {
         }
 
         return new Pair<>(result, parameters);
+    }
+
+    protected String generateFormat(SouthernQuietLogger.LogContext logContext) {
+        return logContext.getContext().keySet().stream().map(key -> key + "={}").collect(Collectors.joining(", "));
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected List<Object> generateParameters(SouthernQuietLogger.LogContext logContext) {
+        return logContext.getContext().values().stream()
+            .map(v -> {
+                if (v instanceof Supplier) {
+                    return ((Supplier) v).get();
+                }
+                else {
+                    return v;
+                }
+            })
+            .collect(Collectors.toList());
     }
 
     protected String formatThrowable(Throwable throwable, String indent) {
