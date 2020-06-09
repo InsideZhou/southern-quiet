@@ -33,7 +33,7 @@ public class ThrottleTestApp {
     }
 
     public static class Properties {
-        private String cron = "0 * * * * *";
+        private String cron = "*/5 * * * * *";
 
         public String getCron() {
             return cron;

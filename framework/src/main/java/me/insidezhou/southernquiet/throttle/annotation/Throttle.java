@@ -20,10 +20,15 @@ public @interface Throttle {
     long threshold() default DefaultThreshold;
 
     /**
-     * 支持SPEL，参考{@link EventListener#condition()}。
+     * 支持SpEL，参考{@link EventListener#condition()}。
      * root对象是{@link me.insidezhou.southernquiet.throttle.ThrottleAdvice.EvaluationRoot}
      */
     String name() default "";
+
+    /**
+     * {@link #name()}是否SpEL字符串，默认false。
+     */
+    boolean isSpELName() default false;
 
     /**
      * 若为空则创建计数器节流器，否则创建时间节流器。

@@ -13,7 +13,7 @@ public class AmplifierTest {
 
     @Test
     public void golden() throws InterruptedException {
-        Amplifier amplifier = new GoldenRatioAmplifier(5);
+        Amplifier amplifier = new GoldenRatioAmplifier(5000);
 
         long index = 0;
         long total = 0;

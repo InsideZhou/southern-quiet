@@ -14,19 +14,22 @@ public class SouthernQuietLogFormatter {
         List<Object> parameters = generateParameters(logContext);
         String msg = logContext.getMessage();
 
-        String result;
+        String result = combine(logContext, msg, format);
+
+        return new Pair<>(result, parameters);
+    }
+
+    protected String combine(SouthernQuietLogger.LogContext logContext, String msg, String format) {
         if (null != logContext.getThrowable()) {
             if (StringUtils.isEmpty(msg)) {
                 msg = logContext.getThrowable().getMessage();
             }
 
-            result = msg + "\t" + format + "\n" + formatThrowable(logContext.getThrowable(), "");
+            return msg + "\t" + format + "\n" + formatThrowable(logContext.getThrowable(), "");
         }
         else {
-            result = msg + "\t" + format;
+            return msg + "\t" + format;
         }
-
-        return new Pair<>(result, parameters);
     }
 
     protected String generateFormat(SouthernQuietLogger.LogContext logContext) {

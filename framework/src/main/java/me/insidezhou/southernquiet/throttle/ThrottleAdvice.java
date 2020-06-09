@@ -56,9 +56,18 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
         me.insidezhou.southernquiet.throttle.annotation.Throttle annotation = AnnotatedElementUtils.findMergedAnnotation(method, me.insidezhou.southernquiet.throttle.annotation.Throttle.class);
         assert annotation != null;
 
-        String throttleName = nameEvaluator.evalName(
-            annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
-        );
+        String throttleName;
+        if (annotation.isSpELName()) {
+            throttleName = nameEvaluator.evalName(
+                annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
+            );
+        }
+        else if (StringUtils.isEmpty(annotation.name())) {
+            throttleName = getDefaultThrottleName(invocation);
+        }
+        else {
+            throttleName = annotation.name();
+        }
 
         Tuple<String, Boolean, Long> throttleValues = methodThrottle.get(throttleName);
         if (null != throttleValues) return throttleValues;
@@ -103,6 +112,10 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
         return throttleValues;
     }
 
+    private static String getDefaultThrottleName(MethodInvocation invocation) {
+        return invocation.getThis().getClass().getName() + "#" + invocation.getMethod().getName();
+    }
+
     @Override
     public void setEmbeddedValueResolver(@NotNull StringValueResolver resolver) {
         this.embeddedValueResolver = resolver;
@@ -139,7 +152,7 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
             this.instance = invocation.getThis();
             this.annotation = annotation;
 
-            this.defaultName = instance.getClass().getName() + "#" + invocation.getMethod().getName();
+            this.defaultName = getDefaultThrottleName(invocation);
         }
 
         public String getDefaultName() {

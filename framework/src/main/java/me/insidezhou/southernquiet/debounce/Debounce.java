@@ -27,4 +27,9 @@ public @interface Debounce {
      * root对象是{@link DebounceAdvice.EvaluationRoot}
      */
     String name() default "";
+
+    /**
+     * {@link #name()}是否SpEL字符串，默认false。
+     */
+    boolean isSpELName() default false;
 }

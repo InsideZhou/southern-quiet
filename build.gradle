@@ -9,7 +9,7 @@ plugins {
 
 allprojects {
     group = 'me.insidezhou.southernquiet'
-    version = '4.6.2'
+    version = '4.6.3'
 
     ext {
         jsonpathVersion = '2.4.0'

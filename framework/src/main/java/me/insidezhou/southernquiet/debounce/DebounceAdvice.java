@@ -9,6 +9,7 @@ import org.springframework.context.expression.CachedExpressionEvaluator;
 import org.springframework.context.expression.MethodBasedEvaluationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.expression.Expression;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -30,12 +31,26 @@ public class DebounceAdvice implements MethodInterceptor {
         Debounce annotation = AnnotatedElementUtils.findMergedAnnotation(method, Debounce.class);
         assert annotation != null;
 
-        String debouncerName = nameEvaluator.evalName(
-            annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
-        );
+        String debouncerName;
+        if (annotation.isSpELName()) {
+            debouncerName = nameEvaluator.evalName(
+                annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
+            );
+        }
+        else if (StringUtils.isEmpty(annotation.name())) {
+            debouncerName = getDefaultDebouncerName(invocation, annotation);
+        }
+        else {
+            debouncerName = annotation.name();
+        }
+
         Debouncer debouncer = debouncerProvider.getDebouncer(invocation, annotation.waitFor(), annotation.maxWaitFor(), debouncerName);
         debouncer.bounce();
         return null;
+    }
+
+    private static String getDefaultDebouncerName(MethodInvocation invocation, Debounce annotation) {
+        return invocation.getThis().getClass().getName() + "#" + invocation.getMethod().getName() + "_" + annotation.waitFor() + "_" + annotation.maxWaitFor();
     }
 
     public static class NameEvaluator extends CachedExpressionEvaluator {
@@ -69,7 +84,7 @@ public class DebounceAdvice implements MethodInterceptor {
             this.instance = invocation.getThis();
             this.annotation = annotation;
 
-            this.defaultName = instance.getClass().getName() + "#" + invocation.getMethod().getName() + "_" + annotation.waitFor() + "_" + annotation.maxWaitFor();
+            this.defaultName = getDefaultDebouncerName(invocation, annotation);
         }
 
         public String getDefaultName() {
