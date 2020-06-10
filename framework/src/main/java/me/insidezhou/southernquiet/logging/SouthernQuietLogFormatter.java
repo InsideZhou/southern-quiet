@@ -21,10 +21,6 @@ public class SouthernQuietLogFormatter {
 
     protected String combine(SouthernQuietLogger.LogContext logContext, String msg, String format) {
         if (null != logContext.getThrowable()) {
-            if (StringUtils.isEmpty(msg)) {
-                msg = logContext.getThrowable().getMessage();
-            }
-
             return msg + "\t" + format + "\n" + formatThrowable(logContext.getThrowable(), "");
         }
         else {
@@ -53,13 +49,14 @@ public class SouthernQuietLogFormatter {
     protected String formatThrowable(Throwable throwable, String indent) {
         if (null == throwable) return "";
 
+        StringBuilder sb = new StringBuilder(throwable.toString());
         final String currentIndent = indent + "\t";
 
-        String message = Arrays.stream(throwable.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n" + currentIndent + "at "));
+        String stack = Arrays.stream(throwable.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n" + currentIndent + "at "));
         String suppressed = Arrays.stream(throwable.getSuppressed()).map(t -> formatThrowable(t, currentIndent)).collect(Collectors.joining("\n" + currentIndent + "at "));
         String cause = formatThrowable(throwable.getCause(), currentIndent);
 
-        StringBuilder sb = new StringBuilder(message);
+        sb.append("\n").append(stack);
 
         if (StringUtils.hasText(suppressed)) {
             sb.append("\n").append(currentIndent).append("Suppressed: ").append(suppressed);

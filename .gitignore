@@ -13,4 +13,5 @@
 
 *.iml
 application-default.properties
+application-default.yml
 gradle-app.setting

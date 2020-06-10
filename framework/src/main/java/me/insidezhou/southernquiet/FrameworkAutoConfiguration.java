@@ -36,6 +36,7 @@ import org.springframework.util.StringUtils;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 
 import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
 
@@ -46,6 +47,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
+    public final static String ConfigRoot_Debounce = ConfigRoot + ".debounce";
     public final static String ConfigRoot_Throttle = ConfigRoot + ".throttle";
     public final static String ConfigRoot_Event = ConfigRoot + ".event";
     public final static String ConfigRoot_FileSystem = ConfigRoot + ".file-system";
@@ -93,24 +95,28 @@ public class FrameworkAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean
     public DebounceAdvice debounceAdvice(DebouncerProvider provider, BeanFactory beanFactory) {
         return new DebounceAdvice(provider, beanFactory);
     }
 
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean
-    public DefaultDebouncerProvider defaultDebouncerProvider() {
-        return new DefaultDebouncerProvider();
+    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
+        return new DefaultDebouncerProvider(debounceProperties);
     }
 
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean
     public DebouncePointcut debouncePointcut() {
         return new DebouncePointcut();
     }
 
     @Bean
+    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnBean({DebounceAdvice.class, DebouncePointcut.class})
     public AnnotationAdvisingBeanPostProcessor debounceAnnotationAdvisingBeanPostProcessor(DebounceAdvice advice, DebouncePointcut pointcut) {
         return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(pointcut, advice)) {};
@@ -181,6 +187,13 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConfigurationProperties(ConfigRoot_Debounce)
+    public DebounceProperties debounceProperties() {
+        return new DebounceProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     @ConfigurationProperties(ConfigRoot_Event)
     public EventProperties eventProperties() {
         return new EventProperties();
@@ -213,6 +226,35 @@ public class FrameworkAutoConfiguration {
 
         public void setRuntimeId(String runtimeId) {
             this.runtimeId = runtimeId;
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static class DebounceProperties {
+        /**
+         * 多长时间上报一次检查及执行计数。
+         */
+        private Duration reportDuration = Duration.ofMinutes(1);
+
+        /**
+         * 启动的工作线程数量。
+         */
+        private int workerCount = 10;
+
+        public Duration getReportDuration() {
+            return reportDuration;
+        }
+
+        public void setReportDuration(Duration reportDuration) {
+            this.reportDuration = reportDuration;
+        }
+
+        public int getWorkerCount() {
+            return workerCount;
+        }
+
+        public void setWorkerCount(int workerCount) {
+            this.workerCount = workerCount;
         }
     }
 

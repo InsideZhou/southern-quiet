@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.debounce;
 
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.Pair;
@@ -10,38 +11,36 @@ import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 
+@SuppressWarnings("DuplicatedCode")
 public class DefaultDebouncerProvider implements DebouncerProvider, DisposableBean {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(DefaultDebouncerProvider.class);
 
     private final ConcurrentMap<String, Pair<Debouncer, MethodInvocation>> debouncerAndInvocations = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Tuple<String, Debouncer, MethodInvocation>> pendingInvocations = new ConcurrentLinkedQueue<>();
-    private final Future<?> checkFuture;
-    private final Future<?> invokeFuture;
 
-    private long checkCounter;
-    private long invokeCounter;
+    private final Duration reportDuration;
+    private long reportTimer = System.currentTimeMillis();
 
-    private final Duration checkReportDuration = Duration.ofSeconds(1);
-    private final Duration invokeReportDuration = Duration.ofSeconds(1);
+    private long checkCounter = 0;
+    private final AtomicLong workCounter = new AtomicLong(0);
 
-    private Instant checkTimer;
-    private Instant invokeTimer;
+    private final ScheduledExecutorService executorService;
 
-    public DefaultDebouncerProvider() {
-        checkFuture = Executors.newSingleThreadScheduledExecutor()
-            .scheduleAtFixedRate(this::checkDebouncer, 1, 1, TimeUnit.MILLISECONDS);
+    public DefaultDebouncerProvider(FrameworkAutoConfiguration.DebounceProperties properties) {
+        this.reportDuration = properties.getReportDuration();
+        executorService = Executors.newScheduledThreadPool(properties.getWorkerCount() + 1);
 
-        checkTimer = Instant.now();
+        executorService.scheduleAtFixedRate(this::checkDebouncer, 1, 1, TimeUnit.MILLISECONDS);
 
-        invokeFuture = Executors.newSingleThreadScheduledExecutor()
-            .scheduleAtFixedRate(this::invokeDebouncer, 1, 1, TimeUnit.MILLISECONDS);
-
-        invokeTimer = Instant.now();
+        IntStream.range(0, properties.getWorkerCount()).forEach(i -> {
+            executorService.scheduleAtFixedRate(this::invokeDebouncer, 1, 1, TimeUnit.MILLISECONDS);
+        });
     }
 
     @Override
@@ -79,15 +78,20 @@ public class DefaultDebouncerProvider implements DebouncerProvider, DisposableBe
                 debouncerAndInvocations.remove(tuple.getFirst());
             });
 
-        Instant now = Instant.now();
-        if (now.minus(checkReportDuration).isAfter(checkTimer)) {
-            log.message("debouncer稳定检查计数器")
-                .context("count", checkCounter)
-                .context("duration", Duration.between(invokeTimer, now))
+        long now = System.currentTimeMillis();
+        Duration interval = Duration.ofMillis(now - reportTimer);
+        if (interval.compareTo(reportDuration) >= 0) {
+            long work = workCounter.getAndSet(0);
+
+            log.message("debouncer计数器")
+                .context("check", checkCounter)
+                .context("work", work)
+                .context("pending", pendingInvocations.size())
+                .context("interval", interval)
                 .debug();
 
             checkCounter = 0;
-            checkTimer = now;
+            reportTimer = now;
         }
     }
 
@@ -107,28 +111,13 @@ public class DefaultDebouncerProvider implements DebouncerProvider, DisposableBe
                     .error();
             }
 
-            ++invokeCounter;
+            workCounter.incrementAndGet();
             tuple = pendingInvocations.poll();
-        }
-
-        Instant now = Instant.now();
-        if (now.minus(invokeReportDuration).isAfter(invokeTimer)) {
-            log.message("debouncer执行计数器")
-                .context("count", invokeCounter)
-                .context("duration", Duration.between(invokeTimer, now))
-                .debug();
-
-            invokeCounter = 0;
-            invokeTimer = now;
         }
     }
 
     @Override
-    public void destroy() throws Exception {
-        checkFuture.cancel(true);
-        checkFuture.get();
-
-        invokeFuture.cancel(true);
-        invokeFuture.get();
+    public void destroy() {
+        executorService.shutdown();
     }
 }
