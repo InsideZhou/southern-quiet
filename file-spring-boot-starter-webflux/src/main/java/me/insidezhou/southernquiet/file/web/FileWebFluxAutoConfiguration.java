@@ -1,11 +1,15 @@
 package me.insidezhou.southernquiet.file.web;
 
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.server.WebFilter;
 
@@ -14,6 +18,7 @@ import org.springframework.web.server.WebFilter;
 @EnableAsync
 @EnableWebFlux
 @ComponentScan
+@EnableConfigurationProperties
 public class FileWebFluxAutoConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
@@ -30,5 +35,26 @@ public class FileWebFluxAutoConfiguration {
 
             return chain.filter(exchange);
         };
+    }
+
+    @Bean
+    @ConfigurationProperties(FrameworkAutoConfiguration.ConfigRoot + ".file-web")
+    public Properties properties() {
+        return new Properties();
+    }
+
+    public static class Properties {
+        /**
+         * IO的buffer。
+         */
+        private DataSize BufferSize = DataSize.ofKilobytes(64);
+
+        public DataSize getBufferSize() {
+            return BufferSize;
+        }
+
+        public void setBufferSize(DataSize bufferSize) {
+            BufferSize = bufferSize;
+        }
     }
 }

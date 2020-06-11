@@ -1,7 +1,6 @@
 package test;
 
-import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
-import me.insidezhou.southernquiet.file.web.controller.MainController;
+import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.apache.commons.codec.binary.Base64;
@@ -34,16 +33,15 @@ import java.util.List;
 
 @SuppressWarnings("ConstantConditions")
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = FileWebTest.class)
 @AutoConfigureWebFlux
 @AutoConfigureWebTestClient
-public class MainControllerTest {
+public class FileWebControllerTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(classes = {
         WebFluxAutoConfiguration.class,
-        WebTestClientAutoConfiguration.class,
-        FileWebFluxAutoConfiguration.class
+        WebTestClientAutoConfiguration.class
     })
     public static class Config {}
 
@@ -58,7 +56,7 @@ public class MainControllerTest {
     @Autowired
     private ServerProperties serverProperties;
 
-    private FileSystemResource resource = new FileSystemResource("src/test/resources/test.png");
+    private final FileSystemResource resource = new FileSystemResource("src/test/resources/test.png");
     private String base64EncodedFile;
     private String contextPath;
 
@@ -122,7 +120,7 @@ public class MainControllerTest {
             .expectBody()
             .returnResult();
 
-        String filePath = MainController.getFilePath(fileInfo.getId());
+        String filePath = FileWebController.getFilePath(fileInfo.getId());
 
         fileSystem.put(filePath + "_file.png", new ByteArrayInputStream(result.getResponseBody()));
     }
@@ -160,7 +158,7 @@ public class MainControllerTest {
             .expectBody()
             .returnResult();
 
-        String filePath = MainController.getFilePath(fileInfo.getId());
+        String filePath = FileWebController.getFilePath(fileInfo.getId());
 
         fileSystem.put(filePath + "_image.png", new ByteArrayInputStream(result.getResponseBody()));
         Assert.assertTrue(result.getResponseHeaders().getContentLength() > 0);

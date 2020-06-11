@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.file.web.controller;
 
+import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.exception.NotFoundException;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
@@ -21,7 +22,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -34,9 +34,7 @@ import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@SuppressWarnings({"WeakerAccess", "Duplicates"})
-@RestController
-public class MainController {
+public class FileWebController {
     public static String getFilePath(String filename) {
         int size = 3;
         String hash = DigestUtils.md5Hex(filename);
@@ -56,19 +54,24 @@ public class MainController {
         return complementImagePath(getFilePath(filename), scale);
     }
 
-    private Tika tika = new Tika();
+    private final Tika tika = new Tika();
 
-    private FileSystem fileSystem;
-    private AsyncRunner asyncRunner;
-    private String contextPath;
+    private final FileSystem fileSystem;
+    private final AsyncRunner asyncRunner;
+    private final String contextPath;
+    private final FileWebFluxAutoConfiguration.Properties fileWebProperties;
 
-    public MainController(FileSystem fileSystem, AsyncRunner asyncRunner, ServerProperties serverProperties) {
+    public FileWebController(FileSystem fileSystem,
+                             AsyncRunner asyncRunner,
+                             FileWebFluxAutoConfiguration.Properties fileWebProperties,
+                             ServerProperties serverProperties) {
+
         this.fileSystem = fileSystem;
         this.asyncRunner = asyncRunner;
         this.contextPath = serverProperties.getServlet().getContextPath();
+        this.fileWebProperties = fileWebProperties;
     }
 
-    @PostMapping("upload")
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
         return files
             .map(part -> {
@@ -114,7 +117,6 @@ public class MainController {
     }
 
 
-    @PostMapping("base64upload")
     public Flux<FileInfo> base64upload(Flux<Part> files, ServerHttpRequest request) {
         return files
             .flatMap(Part::content)
@@ -150,8 +152,7 @@ public class MainController {
             });
     }
 
-    @GetMapping("file/{id}")
-    public Flux<DataBuffer> file(@PathVariable String id, ServerHttpResponse response) {
+    public Flux<DataBuffer> file(String id, ServerHttpResponse response) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) throw new NotFoundException();
@@ -170,11 +171,10 @@ public class MainController {
                 return resultStream;
             },
             new DefaultDataBufferFactory(),
-            8192);
+            (int) fileWebProperties.getBufferSize().toBytes());
     }
 
-    @GetMapping("base64file/{id}")
-    public Mono<String> base64file(@PathVariable String id, ServerHttpResponse response) {
+    public Mono<String> base64file(String id, ServerHttpResponse response) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) throw new NotFoundException();
@@ -188,14 +188,12 @@ public class MainController {
                 sink.success(base64);
             }
             catch (Exception e) {
-                throw new RuntimeException(e);
+                sink.error(e);
             }
         });
     }
 
-    @SuppressWarnings("MVCPathVariableInspection")
-    @GetMapping(value = {"image/{id}/{scale}", "image/{id}"})
-    public Flux<DataBuffer> image(@PathVariable String id, @RequestParam(required = false) ImageScale scale, ServerHttpResponse response) {
+    public Flux<DataBuffer> image(String id, ImageScale scale, ServerHttpResponse response) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) throw new NotFoundException();
@@ -242,7 +240,7 @@ public class MainController {
                 return resultStream;
             },
             new DefaultDataBufferFactory(),
-            8192);
+            (int) fileWebProperties.getBufferSize().toBytes());
     }
 
     private void saveFile(String filename, InputStream data) {
@@ -257,9 +255,7 @@ public class MainController {
         });
     }
 
-    @SuppressWarnings("MVCPathVariableInspection")
-    @ModelAttribute
-    public ImageScale imageScale(@PathVariable(value = "scale", required = false) String scale) {
+    public ImageScale imageScale(String scale) {
         if (!StringUtils.hasText(scale)) return null;
 
         String[] values = scale.split("X");
