@@ -1,10 +1,27 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:0.9.17"
+    }
+}
+
 plugins {
     id 'java'
     id 'java-library'
     id 'maven-publish'
     id 'signing'
 
+    id "org.jetbrains.kotlin.jvm" version "1.3.72"
+    id "org.jetbrains.kotlin.plugin.spring" version "1.3.72"
+    id 'org.jetbrains.dokka' version '0.9.17'
+
     id 'org.springframework.boot' version '2.1.8.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
 }
 
 allprojects {
@@ -33,12 +50,20 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
+
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'org.jetbrains.kotlin.plugin.spring'
+    apply plugin: 'org.jetbrains.dokka'
+
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
 
     dependencies {
-        compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        implementation "org.jetbrains.kotlin:kotlin-reflect"
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7'
         implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+
         compileClasspath "org.springframework.boot:spring-boot-configuration-processor"
         testImplementation "org.springframework.boot:spring-boot-starter-test"
     }

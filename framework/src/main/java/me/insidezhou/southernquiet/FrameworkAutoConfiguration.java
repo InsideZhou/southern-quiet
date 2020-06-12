@@ -236,25 +236,12 @@ public class FrameworkAutoConfiguration {
          */
         private Duration reportDuration = Duration.ofMinutes(1);
 
-        /**
-         * 启动的工作线程数量。
-         */
-        private int workerCount = 10;
-
         public Duration getReportDuration() {
             return reportDuration;
         }
 
         public void setReportDuration(Duration reportDuration) {
             this.reportDuration = reportDuration;
-        }
-
-        public int getWorkerCount() {
-            return workerCount;
-        }
-
-        public void setWorkerCount(int workerCount) {
-            this.workerCount = workerCount;
         }
     }
 
