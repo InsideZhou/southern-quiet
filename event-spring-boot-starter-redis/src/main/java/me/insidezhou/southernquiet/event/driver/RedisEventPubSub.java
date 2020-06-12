@@ -96,7 +96,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
                 .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
                 .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
                 .context("data", () -> new String(data))
-                .warn();
+                .trace();
 
             return;
         }
