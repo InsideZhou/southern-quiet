@@ -1,6 +1,7 @@
 package me.insidezhou.southernquiet.file.web;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,7 +23,8 @@ import org.springframework.web.server.WebFilter;
 public class FileWebFluxAutoConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
-    public WebFilter contextPathWebFilter(ServerProperties serverProperties) {
+    @ConditionalOnMissingBean
+    public WebFilter fileWebFilter(ServerProperties serverProperties) {
         String contextPath = serverProperties.getServlet().getContextPath();
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
