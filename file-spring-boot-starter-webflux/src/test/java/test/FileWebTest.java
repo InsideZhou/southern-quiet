@@ -60,7 +60,7 @@ public class FileWebTest {
         @SuppressWarnings("MVCPathVariableInspection")
         @GetMapping(value = {"image/{id}/{scale}", "image/{id}"})
         @Override
-        public Flux<DataBuffer> image(@PathVariable String id, @RequestParam(required = false) ImageScale scale, ServerHttpResponse response) {
+        public Flux<DataBuffer> image(@PathVariable String id, ImageScale scale, ServerHttpResponse response) {
             return super.image(id, scale, response);
         }
 
