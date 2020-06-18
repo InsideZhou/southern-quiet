@@ -5,7 +5,6 @@ import me.insidezhou.southernquiet.file.web.exception.NotFoundException;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
-import me.insidezhou.southernquiet.util.AsyncRunner;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tika.Tika;
@@ -57,17 +56,14 @@ public class FileWebController {
     private final Tika tika = new Tika();
 
     private final FileSystem fileSystem;
-    private final AsyncRunner asyncRunner;
     private final String contextPath;
     private final FileWebFluxAutoConfiguration.Properties fileWebProperties;
 
     public FileWebController(FileSystem fileSystem,
-                             AsyncRunner asyncRunner,
                              FileWebFluxAutoConfiguration.Properties fileWebProperties,
                              ServerProperties serverProperties) {
 
         this.fileSystem = fileSystem;
-        this.asyncRunner = asyncRunner;
         this.contextPath = serverProperties.getServlet().getContextPath();
         this.fileWebProperties = fileWebProperties;
     }
@@ -115,7 +111,6 @@ public class FileWebController {
                 return info;
             });
     }
-
 
     public Flux<FileInfo> base64upload(Flux<Part> files, ServerHttpRequest request) {
         return files
@@ -206,34 +201,27 @@ public class FileWebController {
                 }
 
                 String mediaType = tika.detect(resultStream);
+                resultStream.reset();
+
                 if (!StringUtils.hasText(mediaType) || !mediaType.startsWith("image")) throw new NotFoundException();
                 response.getHeaders().set("Content-Type", mediaType);
 
                 if (null != scale) {
-                    String scaledImagePath = complementImagePath(path, scale);
+                    BufferedImage image = Scalr.resize(
+                        ImageIO.read(resultStream),
+                        Scalr.Method.AUTOMATIC,
+                        Scalr.Mode.AUTOMATIC,
+                        scale.getWidth(),
+                        scale.getHeight()
+                    );
 
-                    if (!fileSystem.exists(scaledImagePath)) {
-                        try (InputStream inputStream = fileSystem.openReadStream(path)) {
-                            BufferedImage image = Scalr.resize(
-                                ImageIO.read(inputStream),
-                                Scalr.Method.AUTOMATIC,
-                                Scalr.Mode.AUTOMATIC,
-                                scale.getWidth(),
-                                scale.getHeight()
-                            );
+                    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                        String subType = mediaType.split("/")[1];
+                        ImageIO.write(image, subType, outputStream);
 
-                            String subType = mediaType.split("/")[1];
-
-                            try (OutputStream outputStream = fileSystem.openWriteStream(scaledImagePath)) {
-                                ImageIO.write(image, subType, outputStream);
-                            }
-                        }
+                        resultStream.close();
+                        resultStream = new ByteArrayInputStream(outputStream.toByteArray());
                     }
-
-                    resultStream = fileSystem.openReadStream(scaledImagePath);
-                }
-                else {
-                    resultStream.reset();
                 }
 
                 response.getHeaders().set("Content-Length", String.valueOf(resultStream.available()));
@@ -244,15 +232,13 @@ public class FileWebController {
     }
 
     private void saveFile(String filename, InputStream data) {
-        asyncRunner.run(() -> {
-            try {
-                data.reset();
-                fileSystem.put(getFilePath(filename), data);
-            }
-            catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            data.reset();
+            fileSystem.put(getFilePath(filename), data);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public ImageScale imageScale(String scale) {
