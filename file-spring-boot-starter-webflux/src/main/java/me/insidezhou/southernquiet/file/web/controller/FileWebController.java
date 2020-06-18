@@ -43,16 +43,6 @@ public class FileWebController {
             .collect(Collectors.joining(FileSystem.PATH_SEPARATOR_STRING)) + FileSystem.PATH_SEPARATOR_STRING + filename;
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public static String complementImagePath(String filePath, ImageScale scale) {
-        return filePath + String.format("_%sX%s", scale.getWidth(), scale.getHeight());
-    }
-
-    @SuppressWarnings("unused")
-    public static String getImagePath(String filename, ImageScale scale) {
-        return complementImagePath(getFilePath(filename), scale);
-    }
-
     private final Tika tika = new Tika();
 
     private final FileSystem fileSystem;
@@ -69,8 +59,8 @@ public class FileWebController {
     }
 
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
-        return files
-            .map(part -> {
+    return files
+        .map(part -> {
 
                 Path tmpPath;
                 try {

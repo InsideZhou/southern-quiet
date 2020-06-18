@@ -5,7 +5,6 @@ import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
-import me.insidezhou.southernquiet.util.AsyncRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -29,8 +28,8 @@ public class FileWebTest {
     @RestController
     public static class MainController extends FileWebController {
         @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-        public MainController(FileSystem fileSystem, AsyncRunner asyncRunner, FileWebFluxAutoConfiguration.Properties fileWebProperties, ServerProperties serverProperties) {
-            super(fileSystem, asyncRunner, fileWebProperties, serverProperties);
+        public MainController(FileSystem fileSystem, FileWebFluxAutoConfiguration.Properties fileWebProperties, ServerProperties serverProperties) {
+            super(fileSystem, fileWebProperties, serverProperties);
         }
 
         @PostMapping("upload")
