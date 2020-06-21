@@ -51,7 +51,7 @@ public class AmqpAutoConfiguration {
         }
 
         map.from(rabbitProperties::determineAddresses).to(factory::setAddresses);
-        map.from(rabbitProperties::isPublisherConfirms).to(factory::setPublisherConfirms);
+        map.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(factory::setPublisherConfirmType);
         map.from(rabbitProperties::isPublisherReturns).to(factory::setPublisherReturns);
         RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
         map.from(channel::getSize).whenNonNull().to(factory::setChannelCacheSize);
@@ -81,7 +81,7 @@ public class AmqpAutoConfiguration {
         map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds)
             .to(factory::setRequestedHeartbeat);
         RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
-        if (ssl.isEnabled()) {
+        if (null != ssl.getEnabled() && ssl.getEnabled()) {
             factory.setUseSSL(true);
             map.from(ssl::getAlgorithm).whenNonNull().to(factory::setSslAlgorithm);
             map.from(ssl::getKeyStoreType).to(factory::setKeyStoreType);

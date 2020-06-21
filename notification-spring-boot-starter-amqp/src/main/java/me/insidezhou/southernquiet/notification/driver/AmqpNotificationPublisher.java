@@ -44,7 +44,9 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         this.enablePublisherConfirm = enablePublisherConfirm;
 
         CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
-        connectionFactory.setPublisherConfirms(enablePublisherConfirm);
+        if (enablePublisherConfirm) {
+            connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
+        }
 
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter);

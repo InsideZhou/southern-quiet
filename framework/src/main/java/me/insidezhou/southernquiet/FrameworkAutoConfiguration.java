@@ -220,6 +220,10 @@ public class FrameworkAutoConfiguration {
          */
         private String runtimeId;
 
+        private Auth auth;
+
+        private Throttle throttle;
+
         public String getRuntimeId() {
             return runtimeId;
         }
@@ -227,14 +231,63 @@ public class FrameworkAutoConfiguration {
         public void setRuntimeId(String runtimeId) {
             this.runtimeId = runtimeId;
         }
+
+        public Auth getAuth() {
+            return auth;
+        }
+
+        public void setAuth(Auth auth) {
+            this.auth = auth;
+        }
+
+        public Throttle getThrottle() {
+            return throttle;
+        }
+
+        public void setThrottle(Throttle throttle) {
+            this.throttle = throttle;
+        }
+
+        public static class Auth {
+            private boolean enable = true;
+
+            public boolean isEnable() {
+                return enable;
+            }
+
+            public void setEnable(boolean enable) {
+                this.enable = enable;
+            }
+        }
+
+        public static class Throttle {
+            private boolean enable = true;
+
+            public boolean isEnable() {
+                return enable;
+            }
+
+            public void setEnable(boolean enable) {
+                this.enable = enable;
+            }
+        }
     }
 
     @SuppressWarnings("WeakerAccess")
     public static class DebounceProperties {
+        private boolean enable = true;
         /**
          * 多长时间上报一次检查及执行计数。
          */
         private Duration reportDuration = Duration.ofMinutes(1);
+
+        public boolean isEnable() {
+            return enable;
+        }
+
+        public void setEnable(boolean enable) {
+            this.enable = enable;
+        }
 
         public Duration getReportDuration() {
             return reportDuration;

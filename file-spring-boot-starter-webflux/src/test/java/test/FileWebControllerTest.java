@@ -89,11 +89,11 @@ public class FileWebControllerTest {
     private FileInfo uploadAssert(MultipartBodyBuilder builder, String uri) {
         EntityExchangeResult<List<FileInfo>> result = client.post()
             .uri(contextPath + "/" + uri)
-            .accept(MediaType.APPLICATION_JSON_UTF8)
-            .syncBody(builder.build())
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(builder.build())
             .exchange()
             .expectStatus().is2xxSuccessful()
-            .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_UTF8)
+            .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
             .expectBodyList(FileInfo.class).hasSize(1)
             .returnResult();
 

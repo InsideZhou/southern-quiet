@@ -1,7 +1,9 @@
 package me.insidezhou.southernquiet.filesystem.driver;
 
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSBuckets;
+import com.mongodb.client.gridfs.GridFSUploadStream;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.*;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -14,8 +16,8 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.mongodb.gridfs.GridFsCriteria;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
@@ -37,11 +39,11 @@ public class MongoDbFileSystem implements FileSystem {
 
     private final MongoOperations mongoOperations;
     private final GridFsOperations gridFsOperations;
-    private final GridFS gridFs;
+    private final GridFSBucket gridFSBucket;
     private final String pathCollection;
     private int fileSizeThreshold;
 
-    public MongoDbFileSystem(MongoDbFileSystemAutoConfiguration.Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
+    public MongoDbFileSystem(MongoDbFileSystemAutoConfiguration.Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, MongoDatabase mongoDatabase) {
         this.pathCollection = properties.getPathCollection();
 
         Integer threshHold = properties.getFileSizeThreshold();
@@ -56,7 +58,7 @@ public class MongoDbFileSystem implements FileSystem {
 
         this.mongoOperations = mongoOperations;
         this.gridFsOperations = gridFsOperations;
-        this.gridFs = gridFS;
+        this.gridFSBucket = GridFSBuckets.create(mongoDatabase);
 
         if (!mongoOperations.collectionExists(this.pathCollection)) {
             mongoOperations.createCollection(this.pathCollection);
@@ -72,7 +74,52 @@ public class MongoDbFileSystem implements FileSystem {
     public void put(String path, InputStream stream) throws InvalidFileException {
         Assert.notNull(stream, "stream");
 
-        put(new NormalizedPath(path), stream);
+        NormalizedPath normalizedPath = new NormalizedPath(path);
+
+        MongoPathMeta file = queryPathMeta(normalizedPath);
+        if (null == file) {
+            MongoPathMeta directory = createAndGetDirectory(normalizedPath.getParentPath());
+            file = new MongoPathMeta(normalizedPath, stream);
+            file.setId(ObjectId.get().toString());
+            file.setParentId(directory.getId());
+
+            Instant now = Instant.now();
+            file.setCreationTime(now);
+            file.setLastModifiedTime(now);
+            file.setLastAccessTime(now);
+        }
+        else if (file.isDirectory()) {
+            throw new InvalidFileException(normalizedPath.toString());
+        }
+        else {
+            file.setLastModifiedTime(Instant.now());
+            try {
+                file.setSize(stream.available());
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (file.getSize() <= fileSizeThreshold) {
+            try {
+                file.setFileData(new Binary(StreamUtils.copyToByteArray(stream)));
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else {
+            if (null != file.getFileId()) {
+                gridFSBucket.delete(file.getFileId());
+            }
+
+            ObjectId objectId = gridFsOperations.store(stream, file.getPath());
+            file.setFileId(objectId);
+        }
+
+        //务必保证fileId、fileData其中之一不为空，读取时会依赖这个假设。
+        mongoOperations.upsert(newPathQuery(file), Update.fromDocument(new Document(file.toMap())), MongoPathMeta.class, pathCollection);
     }
 
     @Override
@@ -84,9 +131,15 @@ public class MongoDbFileSystem implements FileSystem {
             return new ByteArrayInputStream(pathMeta.getFileData().getData());
         }
 
-        GridFSDBFile gridFSDBFile = gridFs.findOne(pathMeta.getFileId());
-        if (null == gridFSDBFile) throw new InvalidFileException(path);
-        return gridFSDBFile.getInputStream();
+        GridFsResource resource = gridFsOperations.getResource(pathMeta.getPath());
+        if (!resource.exists()) throw new InvalidFileException(path);
+
+        try {
+            return resource.getInputStream();
+        }
+        catch (IOException e) {
+            throw new InvalidFileException(path, e);
+        }
     }
 
     @Override
@@ -100,50 +153,47 @@ public class MongoDbFileSystem implements FileSystem {
 
         if (pathMeta.isDirectory()) throw new InvalidFileException(path);
 
-        File tmp;
-        try {
-            tmp = File.createTempFile("sq_write_proxy", "");
-            tmp.deleteOnExit();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        MongoPathMeta mongoPathMeta = pathMeta;
+        String candidateFilename = pathMeta.getPath() + "_" + System.nanoTime();
+
+        GridFSUploadStream stream = gridFSBucket.openUploadStream(candidateFilename);
+
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(stream) {
+            @Override
+            public void close() throws IOException {
+                super.close();
+
+                if (null != mongoPathMeta.getFileId()) {
+                    gridFSBucket.delete(mongoPathMeta.getFileId());
+                }
+
+                gridFSBucket.rename(stream.getObjectId(), mongoPathMeta.getPath());
+
+                mongoPathMeta.setFileId(stream.getObjectId());
+                mongoPathMeta.setFileData(null);
+
+                mongoOperations.upsert(
+                    newPathQuery(mongoPathMeta),
+                    Update.fromDocument(new Document(mongoPathMeta.toMap())),
+                    MongoPathMeta.class,
+                    pathCollection
+                );
+            }
+        };
 
         if (null != pathMeta.getFileId()) {
-            try {
-                gridFs.findOne(pathMeta.getFileId()).writeTo(tmp);
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            gridFSBucket.downloadToStream(pathMeta.getFileId(), bufferedOutputStream);
         }
         else if (null != pathMeta.getFileData()) {
-            try (FileOutputStream fileOutputStream = new FileOutputStream(tmp)) {
-                fileOutputStream.write(pathMeta.getFileData().getData());
+            try {
+                bufferedOutputStream.write(pathMeta.getFileData().getData());
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        try {
-            return new FileOutputStream(tmp, true) {
-                @Override
-                public void close() throws IOException {
-                    super.close();
-
-                    try (FileInputStream fileInputStream = new FileInputStream(tmp)) {
-                        put(new NormalizedPath(path), fileInputStream);
-                    }
-                    catch (InvalidFileException e) {
-                        throw new IOException(e);
-                    }
-                }
-            };
-        }
-        catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return bufferedOutputStream;
     }
 
     @Override
@@ -390,52 +440,6 @@ public class MongoDbFileSystem implements FileSystem {
         return meta;
     }
 
-    /**
-     * 务必保证fileId、fileData其中之一不为空，读取时会依赖这个假设。
-     */
-    private void put(NormalizedPath normalizedPath, InputStream stream) throws InvalidFileException {
-        MongoPathMeta file = queryPathMeta(normalizedPath);
-        if (null == file) {
-            MongoPathMeta directory = createAndGetDirectory(normalizedPath.getParentPath());
-            file = new MongoPathMeta(normalizedPath, stream);
-            file.setId(ObjectId.get().toString());
-            file.setParentId(directory.getId());
-
-            Instant now = Instant.now();
-            file.setCreationTime(now);
-            file.setLastModifiedTime(now);
-            file.setLastAccessTime(now);
-        }
-        else if (file.isDirectory()) {
-            throw new InvalidFileException(normalizedPath.toString());
-        }
-        else {
-            file.setLastModifiedTime(Instant.now());
-            try {
-                file.setSize(stream.available());
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        if (file.getSize() <= fileSizeThreshold) {
-            try {
-                file.setFileData(new Binary(StreamUtils.copyToByteArray(stream)));
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else {
-            ObjectId objectId = gridFsOperations.store(stream, file.getPath());
-            file.setFileId(objectId);
-            gridFsOperations.delete(Query.query(GridFsCriteria.whereFilename().is(file.getPath())).addCriteria(GridFsCriteria.where("_id").ne(objectId)));
-        }
-
-        mongoOperations.upsert(newPathQuery(file), Update.fromDocument(new Document(file.toMap())), MongoPathMeta.class, pathCollection);
-    }
-
     private void delete(NormalizedPath normalizedPath) {
         Query query = newPathQuery(normalizedPath);
 
@@ -449,7 +453,7 @@ public class MongoDbFileSystem implements FileSystem {
             mongoOperations.remove(query, pathCollection);
 
             if (null != pathMeta.getFileId()) {
-                gridFs.remove(pathMeta.getFileId());
+                gridFsOperations.delete(query);
             }
         }
     }
@@ -465,7 +469,7 @@ public class MongoDbFileSystem implements FileSystem {
             destFileMeta.setParent(directory.getPath());
 
             if (null != existFile.getFileId()) {
-                gridFs.remove(existFile.getFileId());
+                gridFSBucket.delete(existFile.getFileId());
             }
 
             mongoOperations.updateFirst(newPathQuery(destFileMeta), Update.fromDocument(new Document(destFileMeta.toMap())), pathCollection);
@@ -476,10 +480,16 @@ public class MongoDbFileSystem implements FileSystem {
             destFileMeta.setParent(directory.getPath());
 
             if (null != destFileMeta.getFileId()) {
-                ObjectId fileId = gridFsOperations.store(
-                    gridFs.findOne(destFileMeta.getFileId()).getInputStream(),
-                    destFileMeta.getPath()
-                );
+                ObjectId fileId;
+                try {
+                    fileId = gridFsOperations.store(
+                        gridFsOperations.getResource(sourceFileMeta.getPath()).getInputStream(),
+                        destFileMeta.getPath()
+                    );
+                }
+                catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 destFileMeta.setFileId(fileId);
             }
 

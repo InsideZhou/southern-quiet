@@ -1,13 +1,14 @@
 package me.insidezhou.southernquiet.filesystem;
 
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.gridfs.GridFSBucket;
 import me.insidezhou.southernquiet.filesystem.driver.MongoDbFileSystem;
-import com.mongodb.gridfs.GridFS;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
 
@@ -17,14 +18,8 @@ import org.springframework.data.mongodb.gridfs.GridFsOperations;
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public MongoDbFileSystem mongoDbFileSystem(Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, GridFS gridFS) {
-        return new MongoDbFileSystem(properties, mongoOperations, gridFsOperations, gridFS);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public GridFS gridFS(MongoDbFactory factory) {
-        return new GridFS(factory.getLegacyDb());
+    public MongoDbFileSystem mongoDbFileSystem(Properties properties, MongoOperations mongoOperations, GridFsOperations gridFsOperations, MongoDatabaseFactory factory) {
+        return new MongoDbFileSystem(properties, mongoOperations, gridFsOperations, factory.getMongoDatabase());
     }
 
     @Bean
@@ -37,6 +32,7 @@ public class MongoDbFileSystemAutoConfiguration {
     /**
      * @see org.springframework.boot.autoconfigure.mongo.MongoProperties
      */
+    @SuppressWarnings("unused")
     public static class Properties {
         /**
          * 路径集合
