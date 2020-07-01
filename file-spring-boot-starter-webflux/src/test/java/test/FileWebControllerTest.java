@@ -99,7 +99,7 @@ public class FileWebControllerTest {
 
         FileInfo fileInfo = result.getResponseBody().get(0);
         Assert.assertEquals(MediaType.IMAGE_PNG_VALUE, fileInfo.getContentType());
-        Assert.assertEquals(contextPath + "/file/" + fileInfo.getId(), fileInfo.getUrl());
+        Assert.assertEquals(contextPath + "/image/" + fileInfo.getId(), fileInfo.getUrl());
 
         return fileInfo;
     }

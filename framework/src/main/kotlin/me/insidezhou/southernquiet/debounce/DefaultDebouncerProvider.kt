@@ -34,7 +34,18 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
         if (StringUtils.isEmpty(debouncerName)) {
             debouncerName = bean.javaClass.name + "#" + method.name + "_" + waitFor + "_" + maxWaitFor
         }
-        val pair = debouncerAndInvocations.computeIfAbsent(debouncerName) { Pair(DefaultDebouncer(waitFor, maxWaitFor), invocation) }
+
+        val pair = debouncerAndInvocations.computeIfAbsent(debouncerName) {
+            log.message("已生成debouncer")
+                .context("name", debouncerName)
+                .context("class", bean.javaClass.simpleName)
+                .context("method", method.name)
+                .context("waitFor", waitFor)
+                .context("maxWaitFor", maxWaitFor)
+                .debug()
+
+            Pair(DefaultDebouncer(waitFor, maxWaitFor), invocation)
+        }
         pair.second = invocation
         debouncerAndInvocations[debouncerName] = pair
         return pair.first

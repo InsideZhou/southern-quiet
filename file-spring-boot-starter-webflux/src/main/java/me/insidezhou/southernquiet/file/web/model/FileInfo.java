@@ -1,6 +1,10 @@
 package me.insidezhou.southernquiet.file.web.model;
 
-public class FileInfo {
+import java.io.Serializable;
+
+public class FileInfo implements Serializable {
+    private final static long serialVersionUID = 8826108912694997037L;
+
     private String id;
     private String url;
     private String contentType;
@@ -18,13 +22,7 @@ public class FileInfo {
     }
 
     public void setUrl(String url) {
-        int i = url.indexOf("://");
-        if (i >= 0) {
-            this.url = url.substring(i + 1);
-        }
-        else {
-            this.url = url;
-        }
+        this.url = url;
     }
 
     public String getContentType() {

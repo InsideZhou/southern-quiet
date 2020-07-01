@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@SuppressWarnings("DuplicatedCode")
 public class FileWebController {
     public static String getFilePath(String filename) {
         int size = 3;
@@ -59,8 +60,8 @@ public class FileWebController {
     }
 
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
-    return files
-        .map(part -> {
+        return files
+            .map(part -> {
 
                 Path tmpPath;
                 try {
@@ -96,7 +97,13 @@ public class FileWebController {
                 FileInfo info = new FileInfo();
                 info.setId(hash);
                 info.setContentType(mediaType);
-                info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
+
+                if (mediaType.startsWith("image")) {
+                    info.setUrl(builder.replacePath(contextPath + "/image/{hash}").build(hash).toString());
+                }
+                else {
+                    info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
+                }
 
                 return info;
             });
@@ -131,7 +138,13 @@ public class FileWebController {
                 FileInfo info = new FileInfo();
                 info.setId(hash);
                 info.setContentType(mediaType);
-                info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
+
+                if (mediaType.startsWith("image")) {
+                    info.setUrl(builder.replacePath(contextPath + "/image/{hash}").build(hash).toString());
+                }
+                else {
+                    info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
+                }
 
                 return info;
             });
