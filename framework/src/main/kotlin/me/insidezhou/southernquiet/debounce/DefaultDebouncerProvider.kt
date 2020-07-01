@@ -11,19 +11,29 @@ import org.aopalliance.intercept.MethodInvocation
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.util.StringUtils
 import java.time.Duration
-import java.util.concurrent.*
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvider, DisposableBean {
-    private val debouncerAndInvocations: ConcurrentMap<String, Pair<Debouncer, MethodInvocation>> = ConcurrentHashMap()
-    private val pendingInvocations = ConcurrentLinkedQueue<Tuple<String, Debouncer, MethodInvocation>>()
+    private val debouncerAndInvocations = ConcurrentHashMap<String, Pair<Debouncer, MethodInvocation>>()
+    private val pendingInvocations = LinkedList<Tuple<String, Debouncer, MethodInvocation>>()
     private val reportDuration: Duration = properties.reportDuration
     private var reportTimer = System.currentTimeMillis()
     private var checkCounter: Long = 0
     private val workCounter = AtomicLong(0)
 
-    private val checkFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({ checkDebouncer() }, 1, 1, TimeUnit.MILLISECONDS)
-    private val workFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({ workDebouncer() }, 1, 1, TimeUnit.MILLISECONDS)
+    private val scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
+        {
+            checkDebouncer()
+            workDebouncer()
+        },
+        1,
+        1,
+        TimeUnit.MILLISECONDS)
+
     private val workCoroutineScope = CoroutineScope(Dispatchers.IO)
 
     override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String): Debouncer {
@@ -36,7 +46,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
         }
 
         val pair = debouncerAndInvocations.computeIfAbsent(debouncerName) {
-            log.message("已生成debouncer")
+            log.message("准备生成debouncer")
                 .context("name", debouncerName)
                 .context("class", bean.javaClass.simpleName)
                 .context("method", method.name)
@@ -107,8 +117,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
     }
 
     override fun destroy() {
-        checkFuture.cancel(true)
-        workFuture.cancel(true)
+        scheduledFuture.cancel(true)
     }
 
     companion object {
