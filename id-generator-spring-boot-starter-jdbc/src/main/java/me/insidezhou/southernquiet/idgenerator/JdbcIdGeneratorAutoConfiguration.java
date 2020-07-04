@@ -68,6 +68,8 @@ public class JdbcIdGeneratorAutoConfiguration {
         @DurationUnit(ChronoUnit.MINUTES)
         private Duration considerWorkerDowned = Duration.ofDays(1);
 
+        private String reportCron = "*/5 * * * * *";
+
         /**
          * timestamp - highPadding - worker - lowPadding - sequence
          *
@@ -89,6 +91,14 @@ public class JdbcIdGeneratorAutoConfiguration {
          * Thu Feb 01 2018 00:00:00 GMT, seconds
          */
         private long epoch = 1517414400L;
+
+        public String getReportCron() {
+            return reportCron;
+        }
+
+        public void setReportCron(String reportCron) {
+            this.reportCron = reportCron;
+        }
 
         public int getTickAccuracy() {
             return tickAccuracy;

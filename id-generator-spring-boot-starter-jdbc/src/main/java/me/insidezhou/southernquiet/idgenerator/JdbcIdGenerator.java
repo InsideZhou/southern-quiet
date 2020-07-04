@@ -26,6 +26,7 @@ public class JdbcIdGenerator implements IdGenerator {
     private final InstepSQL instepSQL;
     private final int workerIdInUse;
     private final int maxWorkerId;
+    private boolean clockMovedBack = false;
 
     @SuppressWarnings("WeakerAccess")
     public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
@@ -121,7 +122,7 @@ public class JdbcIdGenerator implements IdGenerator {
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(cron = "#{jdbcIdGeneratorProperties.reportCron}")
     @PreDestroy
     public void report() {
         Instant now = Instant.now();
@@ -137,6 +138,8 @@ public class JdbcIdGenerator implements IdGenerator {
                 ).debug();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
+            clockMovedBack = 0 == rowAffected;
+
             if (1 != rowAffected) {
                 log.message("workerTime上报异常")
                     .context("workerId", workerIdInUse)
@@ -153,6 +156,8 @@ public class JdbcIdGenerator implements IdGenerator {
 
     @Override
     public long generate() {
+        if (clockMovedBack) throw new RuntimeException("时钟已回退，无法发号。");
+
         return idGenerator.generate();
     }
 

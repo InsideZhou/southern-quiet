@@ -55,7 +55,7 @@ public class IdGeneratorWorkerTable extends Table {
             long interval = properties.getConsiderWorkerDowned().getSeconds();
 
             if (dialect instanceof PostgreSQLDialect) {
-                return Condition.Companion.plain(workerTable.workerTime.getName() + "+ INTERVAL '" + interval + " SECONDS') < CURRENT_TIMESTAMP");
+                return Condition.Companion.plain(workerTable.workerTime.getName() + "+ INTERVAL '" + interval + " SECONDS' < CURRENT_TIMESTAMP");
             }
             else if (dialect instanceof MySQLDialect) {
                 return Condition.Companion.plain(
