@@ -51,7 +51,19 @@ public class JdbcIdGeneratorAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, Properties properties) {
-        return new JdbcIdGenerator(metadata, workerTable, InstepSQL.INSTANCE, properties);
+        return new JdbcIdGenerator(
+            metadata,
+            workerTable,
+            InstepSQL.INSTANCE,
+            properties.getTimestampBits(),
+            properties.getHighPaddingBits(),
+            properties.getWorkerIdBits(),
+            properties.getLowPaddingBits(),
+            properties.getEpoch(),
+            properties.getSequenceStartRange(),
+            properties.isRandomSequenceStart(),
+            properties.getTickAccuracy()
+        );
     }
 
     @Bean
@@ -69,6 +81,7 @@ public class JdbcIdGeneratorAutoConfiguration {
         private Duration considerWorkerDowned = Duration.ofDays(1);
 
         private String reportCron = "*/5 * * * * *";
+        private String cleanCron = "0 0 */1 * * *";
 
         /**
          * timestamp - highPadding - worker - lowPadding - sequence
@@ -91,6 +104,14 @@ public class JdbcIdGeneratorAutoConfiguration {
          * Thu Feb 01 2018 00:00:00 GMT, seconds
          */
         private long epoch = 1517414400L;
+
+        public String getCleanCron() {
+            return cleanCron;
+        }
+
+        public void setCleanCron(String cleanCron) {
+            this.cleanCron = cleanCron;
+        }
 
         public String getReportCron() {
             return reportCron;

@@ -10,12 +10,13 @@ import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PreDestroy;
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class JdbcIdGenerator implements IdGenerator {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JdbcIdGenerator.class);
@@ -29,33 +30,44 @@ public class JdbcIdGenerator implements IdGenerator {
     private boolean clockMovedBack = false;
 
     @SuppressWarnings("WeakerAccess")
-    public JdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, InstepSQL instepSQL, JdbcIdGeneratorAutoConfiguration.Properties properties) {
+    public JdbcIdGenerator(Metadata metadata,
+                           IdGeneratorWorkerTable workerTable,
+                           InstepSQL instepSQL,
+                           int timestampBits,
+                           int highPaddingBits,
+                           int workerIdBits,
+                           int lowPaddingBits,
+                           long epochInSeconds,
+                           int sequenceStartRange,
+                           boolean randomSequenceStart,
+                           int tickAccuracy
+    ) {
         this.metadata = metadata;
         this.workerTable = workerTable;
         this.instepSQL = instepSQL;
 
         Assert.hasText(metadata.getRuntimeId(), "应用的id不能为空");
 
-        maxWorkerId = LongIdGenerator.Companion.maxIntAtBits(properties.getWorkerIdBits());
+        maxWorkerId = LongIdGenerator.Companion.maxIntAtBits(workerIdBits);
         workerIdInUse = getWorkerId();
 
         idGenerator = new SnowflakeIdGenerator(
             workerIdInUse,
-            properties.getTimestampBits(),
-            properties.getHighPaddingBits(),
-            properties.getWorkerIdBits(),
-            properties.getLowPaddingBits(),
-            properties.getEpoch(),
-            properties.getSequenceStartRange(),
-            properties.isRandomSequenceStart() ? new Random() : null,
-            properties.getTickAccuracy()
+            timestampBits,
+            highPaddingBits,
+            workerIdBits,
+            lowPaddingBits,
+            epochInSeconds,
+            sequenceStartRange,
+            randomSequenceStart ? new Random() : null,
+            tickAccuracy
         );
     }
 
     private int getWorkerId() {
         String appId = metadata.getRuntimeId();
 
-        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, appId));
+        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, appId)).orderBy(ColumnExtensionKt.desc(workerTable.workerTime));
         List<TableRow> rows;
         try {
             rows = instepSQL.executor().execute(plan, TableRow.class);
@@ -82,46 +94,47 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     private int newWorkerId() {
-        SQLPlan<TableSelectPlan> plan = workerTable.select(ColumnExtensionKt.min(workerTable.workerId))
-            .where(ColumnExtensionKt.isNull(workerTable.appId).and(ColumnExtensionKt.isNull(workerTable.workerTime)));
+        SQLPlan<TableSelectPlan> plan = workerTable.select(workerTable.workerId);
+        List<Integer> exists = instepSQL.executor().execute(plan, TableRow.class).stream().map(row -> row.get(workerTable.workerId)).collect(Collectors.toList());
+        List<Integer> available = IntStream.range(1, maxWorkerId).boxed().collect(Collectors.toList());
+        available.removeAll(exists);
 
-        Integer workerId;
-        try {
-            workerId = instepSQL.executor().executeScalar(plan, Integer.class);
-        }
-        catch (SQLPlanExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        for (Integer workerId : available) {
+            SQLPlan<TableInsertPlan> insertPlan = workerTable.insert()
+                .addValue(workerTable.appId, metadata.getRuntimeId())
+                .addValue(workerTable.workerTime, Instant.now())
+                .addValue(workerTable.workerId, workerId)
+                .debug();
 
-        if (null != workerId) return workerId;
-
-        workerId = 0;
-        while (workerId <= maxWorkerId) {
-            plan = workerTable.select(workerTable.workerId).where(ColumnExtensionKt.eq(workerTable.workerId, workerId));
-
+            int rowAffected;
             try {
-                if (StringUtils.isEmpty(instepSQL.executor().executeScalar(plan))) {
-                    SQLPlan<TableInsertPlan> insertPlan = workerTable.insert()
-                        .addValue(workerTable.appId, metadata.getRuntimeId())
-                        .addValue(workerTable.workerTime, Instant.now())
-                        .addValue(workerTable.workerId, workerId);
-
-                    int rowAffected = instepSQL.executor().executeUpdate(insertPlan);
-                    Assert.isTrue(1 == rowAffected, "workerId插入异常。rowAffected=" + rowAffected);
-
-                    return workerId;
-                }
+                rowAffected = instepSQL.executor().executeUpdate(insertPlan);
             }
-            catch (DaoException e) {
-                throw new RuntimeException(e);
+            catch (SQLPlanExecutionException e) {
+                log.message("workerId已被占用，获取新workerId需要重试")
+                    .context("workerId", workerId)
+                    .exception(e)
+                    .info();
+
+                continue;
             }
 
-            ++workerId;
+            if (1 != rowAffected) {
+                log.message("获取新workerId异常")
+                    .context("rowAffected", rowAffected)
+                    .context("workerId", workerId)
+                    .error();
+
+                break;
+            }
+
+            return workerId;
         }
 
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
+    @SuppressWarnings("SpringElInspection")
     @Scheduled(cron = "#{jdbcIdGeneratorProperties.reportCron}")
     @PreDestroy
     public void report() {

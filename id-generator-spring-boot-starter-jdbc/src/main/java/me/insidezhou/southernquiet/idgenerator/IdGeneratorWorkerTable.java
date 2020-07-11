@@ -6,6 +6,10 @@ import instep.dao.sql.dialect.PostgreSQLDialect;
 import instep.dao.sql.dialect.SQLServerDialect;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class IdGeneratorWorkerTable extends Table {
@@ -31,7 +35,10 @@ public class IdGeneratorWorkerTable extends Table {
             this.properties = properties;
         }
 
-        @SuppressWarnings("rawtypes")
+        @SuppressWarnings({"rawtypes", "SpringElInspection"})
+        @Scheduled(cron = "#{jdbcIdGeneratorProperties.cleanCron}")
+        @PostConstruct
+        @PreDestroy
         public void clearConsiderDowned() {
             SQLPlan plan = workerTable.delete().where(lastWorkerTimePlusIntervalLesserThanNow()).debug();
             int rowAffected;
@@ -64,7 +71,7 @@ public class IdGeneratorWorkerTable extends Table {
             }
             else if (dialect instanceof SQLServerDialect) {
                 return Condition.Companion.plain(
-                    "DATEADD(second, " + interval + "," + workerTable.workerTime.getName() + ") < CURRENT_TIMESTAMP");
+                    "DATEADD(second, " + interval + ", " + workerTable.workerTime.getName() + ") < CURRENT_TIMESTAMP");
             }
             else {
                 throw new UnsupportedOperationException("不支持当前数据库：" + dialect.getClass().getSimpleName());
