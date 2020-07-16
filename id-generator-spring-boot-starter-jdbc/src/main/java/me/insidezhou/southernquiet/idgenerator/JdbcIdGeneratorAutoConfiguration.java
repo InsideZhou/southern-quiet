@@ -3,9 +3,11 @@ package me.insidezhou.southernquiet.idgenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
+import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 @EnableTransactionManagement
 @EnableScheduling
 @ConditionalOnMissingBean(IdGenerator.class)
+@AutoConfigureOrder(Constants.AutoConfigLevel_Highest)
 public class JdbcIdGeneratorAutoConfiguration {
     @SuppressWarnings("rawtypes")
     @Bean

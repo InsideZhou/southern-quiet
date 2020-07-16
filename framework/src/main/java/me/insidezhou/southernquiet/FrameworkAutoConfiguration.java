@@ -9,7 +9,6 @@ import me.insidezhou.southernquiet.debounce.DefaultDebouncerProvider;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
-import me.insidezhou.southernquiet.keyvalue.KeyValueStore;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
 import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
@@ -20,6 +19,7 @@ import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,10 +40,12 @@ import java.time.Duration;
 
 import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
 
+@SuppressWarnings("DefaultAnnotationParam")
 @Configuration
 @EnableAsync
 @EnableScheduling
 @EnableConfigurationProperties
+@AutoConfigureOrder(Constants.AutoConfigLevel_Lowest)
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
@@ -55,14 +57,14 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_KeyValue)
-    @ConditionalOnMissingBean(KeyValueStore.class)
+    @ConditionalOnMissingBean
     public FileSystemKeyValueStore keyValueStore(KeyValueStoreProperties properties, FileSystem fileSystem) {
         return new FileSystemKeyValueStore(properties.getFileSystem(), fileSystem);
     }
 
     @Bean
-    @ConditionalOnMissingBean(FileSystem.class)
-    public LocalFileSystem fileSystem(LocalFileSystemProperties properties) {
+    @ConditionalOnMissingBean
+    public LocalFileSystem localFileSystem(LocalFileSystemProperties properties) {
         return new LocalFileSystem(properties);
     }
 
@@ -103,7 +105,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnMissingBean(DebouncerProvider.class)
+    @ConditionalOnMissingBean
     public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
         return new DefaultDebouncerProvider(debounceProperties);
     }
@@ -138,8 +140,8 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnMissingBean(ThrottleManager.class)
-    public DefaultThrottleManager throttleManager() {
+    @ConditionalOnMissingBean
+    public DefaultThrottleManager defaultThrottleManager() {
         return new DefaultThrottleManager();
     }
 

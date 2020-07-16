@@ -1,6 +1,8 @@
 package me.insidezhou.southernquiet.file.web;
 
+import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,6 +22,7 @@ import org.springframework.web.server.WebFilter;
 @EnableWebFlux
 @ComponentScan
 @EnableConfigurationProperties
+@AutoConfigureOrder(Constants.AutoConfigLevel_Highest)
 public class FileWebFluxAutoConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean

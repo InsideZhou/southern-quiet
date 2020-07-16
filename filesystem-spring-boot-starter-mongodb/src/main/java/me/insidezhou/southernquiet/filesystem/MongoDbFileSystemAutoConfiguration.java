@@ -1,8 +1,8 @@
 package me.insidezhou.southernquiet.filesystem;
 
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.gridfs.GridFSBucket;
+import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.filesystem.driver.MongoDbFileSystem;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.gridfs.GridFsOperations;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties
+@AutoConfigureOrder(Constants.AutoConfigLevel_Highest)
 public class MongoDbFileSystemAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean

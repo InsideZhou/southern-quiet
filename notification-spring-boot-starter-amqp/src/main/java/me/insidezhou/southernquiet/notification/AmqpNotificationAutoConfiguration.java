@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.notification;
 
+import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationPublisher;
@@ -12,6 +13,7 @@ import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,6 +30,7 @@ import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.Reco
 @Configuration
 @EnableConfigurationProperties
 @AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
+@AutoConfigureOrder(Constants.AutoConfigLevel_Highest)
 public class AmqpNotificationAutoConfiguration {
     @SuppressWarnings("rawtypes")
     @Bean
