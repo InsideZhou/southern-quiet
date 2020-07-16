@@ -103,7 +103,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(DebouncerProvider.class)
     public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
         return new DefaultDebouncerProvider(debounceProperties);
     }
@@ -138,8 +138,8 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public ThrottleManager throttleManager() {
+    @ConditionalOnMissingBean(ThrottleManager.class)
+    public DefaultThrottleManager throttleManager() {
         return new DefaultThrottleManager();
     }
 
