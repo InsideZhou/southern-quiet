@@ -1,23 +1,32 @@
 package test.notification;
 
+import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
 import me.insidezhou.southernquiet.debounce.Debounce;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
+import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.QueueInformation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+
+import static me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager.DeadMark;
+import static me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager.RetryMark;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -26,10 +35,21 @@ public class NotificationTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    public static class Config {}
+    public static class Config {
+        @Bean
+        public NotificationTest.Listener listener() {
+            return new NotificationTest.Listener();
+        }
+    }
 
     @Autowired
     private NotificationPublisher<Serializable> notificationPublisher;
+
+    @Autowired
+    private AmqpAdmin amqpAdmin;
+
+    @Autowired
+    private AmqpNotificationAutoConfiguration.Properties properties;
 
     @Test
     public void dummy() {
@@ -39,6 +59,21 @@ public class NotificationTest {
     @Test
     public void delay() {
         notificationPublisher.publish(new DelayedNotification());
+    }
+
+    @Test
+    public void queueDeclared() {
+        String deadRouting = properties.getNamePrefix() + DeadMark + StandardNotification.class.getSimpleName() + "#a";
+        QueueInformation deadQueue = amqpAdmin.getQueueInfo(deadRouting);
+        Assert.assertNotNull(deadQueue);
+
+        String retryRouting = properties.getNamePrefix() + RetryMark + StandardNotification.class.getSimpleName() + "#a";
+        QueueInformation retryQueue = amqpAdmin.getQueueInfo(retryRouting);
+        Assert.assertNotNull(retryQueue);
+
+        String delayRouting = AbstractAmqpNotificationPublisher.getDelayedRouting(properties.getNamePrefix(), StandardNotification.class);
+        QueueInformation delayQueue = amqpAdmin.getQueueInfo(delayRouting);
+        Assert.assertNotNull(delayQueue);
     }
 
     public static class Listener {

@@ -5,10 +5,10 @@ import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.job.driver.AmqpJobArranger;
 import me.insidezhou.southernquiet.job.driver.AmqpJobProcessorManager;
 import me.insidezhou.southernquiet.util.Amplifier;
+import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -59,7 +59,7 @@ public class AmqpJobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AmqpJobProcessorManager amqpJobProcessorManager(
-        RabbitAdmin rabbitAdmin,
+        AmqpAdmin amqpAdmin,
         @Qualifier(RecoverAmplifierQualifier) Amplifier amplifier,
         AmqpJobArranger<?> jobArranger,
         AmqpJobAutoConfiguration.Properties amqpJobProperties,
@@ -69,7 +69,7 @@ public class AmqpJobAutoConfiguration {
         ApplicationContext applicationContext
     ) {
         return new AmqpJobProcessorManager(
-            rabbitAdmin, jobArranger, amplifier, amqpJobProperties, amqpProperties, transactionManager, rabbitProperties, applicationContext
+            amqpAdmin, jobArranger, amplifier, amqpJobProperties, amqpProperties, transactionManager, rabbitProperties, applicationContext
         );
     }
 

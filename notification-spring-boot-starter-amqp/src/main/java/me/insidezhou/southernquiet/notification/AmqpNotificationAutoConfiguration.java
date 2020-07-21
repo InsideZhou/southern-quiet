@@ -5,6 +5,7 @@ import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager;
 import me.insidezhou.southernquiet.notification.driver.AmqpNotificationPublisher;
 import me.insidezhou.southernquiet.util.Amplifier;
+import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
@@ -57,7 +58,7 @@ public class AmqpNotificationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AmqpNotificationListenerManager amqpNotificationListenerManager(
-        RabbitAdmin rabbitAdmin,
+        AmqpAdmin amqpAdmin,
         @Qualifier(RecoverAmplifierQualifier) Amplifier amplifier,
         AmqpNotificationPublisher<?> publisher,
         AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
@@ -68,7 +69,7 @@ public class AmqpNotificationAutoConfiguration {
         ApplicationContext applicationContext
     ) {
         return new AmqpNotificationListenerManager(
-            rabbitAdmin,
+            amqpAdmin,
             publisher,
             amplifier,
             amqpNotificationProperties,

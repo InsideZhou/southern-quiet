@@ -6,6 +6,8 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 public abstract class AbstractAmqpNotificationPublisher<N> implements NotificationPublisher<N> {
+    public final static String DelayMark = "DELAY.";
+
     @Override
     public void publish(N notification) {
         long delay = 0;
@@ -44,6 +46,6 @@ public abstract class AbstractAmqpNotificationPublisher<N> implements Notificati
     }
 
     public static String getDelayedRouting(String prefix, String source) {
-        return prefix + "DELAY." + source;
+        return prefix + DelayMark + source;
     }
 }

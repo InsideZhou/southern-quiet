@@ -40,7 +40,6 @@ import java.time.Duration;
 
 import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
 
-@SuppressWarnings("DefaultAnnotationParam")
 @Configuration
 @EnableAsync
 @EnableScheduling
@@ -63,7 +62,7 @@ public class FrameworkAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(FileSystem.class)
     public LocalFileSystem localFileSystem(LocalFileSystemProperties properties) {
         return new LocalFileSystem(properties);
     }
@@ -105,7 +104,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(DebouncerProvider.class)
     public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
         return new DefaultDebouncerProvider(debounceProperties);
     }
@@ -140,7 +139,7 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(ThrottleManager.class)
     public DefaultThrottleManager defaultThrottleManager() {
         return new DefaultThrottleManager();
     }
