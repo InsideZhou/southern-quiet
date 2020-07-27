@@ -6,7 +6,7 @@ import me.insidezhou.southernquiet.notification.NotificationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -36,21 +36,23 @@ public abstract class AbstractNotificationListenerManager implements Initializin
                 }
             })
             .filter(Objects::nonNull)
-            .forEach(bean -> Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
-                .forEach(method -> AnnotationUtils.getRepeatableAnnotations(method, NotificationListener.class)
-                    .forEach(listener -> {
-                        log.message("找到NotificationListener")
-                            .context(context -> {
-                                context.put("notification", listener.notification().getSimpleName());
-                                context.put("name", listener.name());
-                                context.put("listenerName", bean.getClass().getSimpleName());
-                                context.put("method", method.getName());
-                            })
-                            .debug();
+            .forEach(bean -> {
+                    Arrays.stream(ReflectionUtils.getAllDeclaredMethods(bean.getClass()))
+                        .forEach(method -> AnnotatedElementUtils.getMergedRepeatableAnnotations(method, NotificationListener.class)
+                            .forEach(listener -> {
+                                log.message("找到NotificationListener")
+                                    .context(context -> {
+                                        context.put("notification", listener.notification().getSimpleName());
+                                        context.put("listenerName", listener.name());
+                                        context.put("bean", bean.getClass().getSimpleName());
+                                        context.put("method", method.getName());
+                                    })
+                                    .info();
 
-                        initListener(listener, bean, method);
-                    })
-                )
+                                initListener(listener, bean, method);
+                            })
+                        );
+                }
             );
     }
 
