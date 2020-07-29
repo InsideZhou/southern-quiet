@@ -371,4 +371,18 @@ public class LocalFileSystem implements FileSystem {
 
         return meta;
     }
+
+    @Override
+    public void createSymbolicLink(String link, String path) throws InvalidFileException {
+        Path linkPath = getWorkingPath(link);
+        Path workingPath = getWorkingPath(path);
+
+        try {
+            createDirectories(linkPath.getParent());
+            Files.createSymbolicLink(linkPath, workingPath);
+        }
+        catch (IOException e) {
+            throw new InvalidFileException(path, e);
+        }
+    }
 }

@@ -19,6 +19,7 @@ import org.springframework.http.codec.multipart.Part;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -93,6 +94,7 @@ public class FileWebController {
                 }
 
                 saveFile(hash, inputStream);
+                saveSymbolicLink(hash, request, inputStream);
 
                 FileInfo info = new FileInfo();
                 info.setId(hash);
@@ -134,6 +136,7 @@ public class FileWebController {
                 }
 
                 saveFile(hash, inputStream);
+                saveSymbolicLink(hash,request,inputStream);
 
                 FileInfo info = new FileInfo();
                 info.setId(hash);
@@ -238,6 +241,20 @@ public class FileWebController {
         try {
             data.reset();
             fileSystem.put(getFilePath(filename), data);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveSymbolicLink(String filename, ServerHttpRequest request, InputStream inputStream) {
+        MultiValueMap<String, String> queryParams = request.getQueryParams();
+        if (queryParams.get("link") == null || !"sha1".equals(queryParams.get("link").toString())) return;
+
+        try {
+            inputStream.reset();
+            String link = DigestUtils.sha1Hex(inputStream);
+            fileSystem.createSymbolicLink(getFilePath(link), getFilePath(filename));
         }
         catch (Exception e) {
             throw new RuntimeException(e);

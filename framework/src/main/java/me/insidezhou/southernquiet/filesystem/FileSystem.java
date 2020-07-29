@@ -313,4 +313,13 @@ public interface FileSystem {
      * @throws PathNotFoundException 目录不存在
      */
     Stream<? extends PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
+
+    /**
+     * 创建文件软链接
+     *
+     * @param link   软链接路径
+     * @param targetPath 目标路径
+     * @throws InvalidFileException 无效文件
+     */
+    void createSymbolicLink(String link, String targetPath) throws InvalidFileException;
 }
