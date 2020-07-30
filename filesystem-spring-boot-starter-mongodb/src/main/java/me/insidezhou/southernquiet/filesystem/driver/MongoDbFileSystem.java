@@ -114,7 +114,7 @@ public class MongoDbFileSystem implements FileSystem {
                 gridFSBucket.delete(file.getFileId());
             }
 
-            ObjectId objectId = gridFsOperations.store(stream, file.getPath());  //保存真正文件
+            ObjectId objectId = gridFsOperations.store(stream, file.getPath());
             file.setFileId(objectId);
         }
 
