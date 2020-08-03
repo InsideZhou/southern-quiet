@@ -192,6 +192,10 @@ public class FileWebController {
     }
 
     public Flux<DataBuffer> image(String id, ImageScale scale, ServerHttpResponse response) {
+        return image(id, scale, Scalr.Method.AUTOMATIC, response);
+    }
+
+    public Flux<DataBuffer> image(String id, ImageScale scale, Scalr.Method scaleMethod, ServerHttpResponse response) {
         String path = getFilePath(id);
 
         if (!fileSystem.exists(path)) throw new NotFoundException();
@@ -212,7 +216,7 @@ public class FileWebController {
                 if (null != scale) {
                     BufferedImage image = Scalr.resize(
                         ImageIO.read(resultStream),
-                        Scalr.Method.AUTOMATIC,
+                        scaleMethod,
                         Scalr.Mode.AUTOMATIC,
                         scale.getWidth(),
                         scale.getHeight()

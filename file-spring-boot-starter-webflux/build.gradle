@@ -2,9 +2,9 @@ dependencies {
     api project(':framework')
     api "org.springframework.boot:spring-boot-starter-webflux"
 
-    implementation 'commons-codec:commons-codec'
-    implementation 'org.apache.tika:tika-core:1.18'
-    implementation 'org.imgscalr:imgscalr-lib:4.2'
+    api 'commons-codec:commons-codec'
+    api 'org.apache.tika:tika-core:1.18'
+    api 'org.imgscalr:imgscalr-lib:4.2'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
