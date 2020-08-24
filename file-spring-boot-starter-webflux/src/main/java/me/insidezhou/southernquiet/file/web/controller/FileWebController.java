@@ -249,7 +249,7 @@ public class FileWebController {
 
     private void saveSymbolicLink(String filename, ServerHttpRequest request, InputStream inputStream) {
         MultiValueMap<String, String> queryParams = request.getQueryParams();
-        if (queryParams.get("link") == null || !"sha1".equals(queryParams.get("link").toString())) return;
+        if (queryParams.getFirst("link") == null || !"sha1".equals(queryParams.getFirst("link"))) return;
 
         try {
             inputStream.reset();

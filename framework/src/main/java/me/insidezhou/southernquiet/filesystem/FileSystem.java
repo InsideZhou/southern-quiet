@@ -317,9 +317,9 @@ public interface FileSystem {
     /**
      * 创建文件软链接
      *
-     * @param link   软链接路径
+     * @param linkPath   软链接路径
      * @param targetPath 目标路径
      * @throws InvalidFileException 无效文件
      */
-    void createSymbolicLink(String link, String targetPath) throws InvalidFileException;
+    void createSymbolicLink(String linkPath, String targetPath) throws InvalidFileException;
 }

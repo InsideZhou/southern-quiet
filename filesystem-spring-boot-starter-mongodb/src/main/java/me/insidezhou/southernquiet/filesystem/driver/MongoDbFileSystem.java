@@ -147,12 +147,12 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     @Override
-    public void createSymbolicLink(String symbolicLink, String targetPath) {
+    public void createSymbolicLink(String linkPath, String targetPath) {
         NormalizedPath normalizedPath = new NormalizedPath(targetPath);
         MongoPathMeta file = queryPathMeta(normalizedPath);
 
         //更新保存软链接,获取文件时判断是否存在软链接,有则直接返回
-        mongoOperations.updateFirst(newPathQuery(file), Update.update("symbolicLink",symbolicLink), MongoPathMeta.class, pathCollection);
+        mongoOperations.updateFirst(newPathQuery(file), Update.update("symbolicLink",linkPath), MongoPathMeta.class, pathCollection);
     }
 
     @Override
