@@ -84,11 +84,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
     protected void onMessage(Message message, byte[] pattern) {
         byte[] data = message.getBody();
 
-        log.message("收到事件")
-            .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
-            .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
-            .context("data", () -> new String(data))
-            .debug();
+        onMessageReceived(message, pattern, data);
 
         E event = eventSerializer.deserialize(data);
         if (null == event) {
@@ -101,6 +97,18 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
             return;
         }
 
+        onEventDeserialized(event);
+    }
+
+    protected void onMessageReceived(Message message, byte[] pattern, byte[] data) {
+        log.message("收到事件")
+            .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
+            .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
+            .context("data", () -> new String(data))
+            .debug();
+    }
+
+    protected void onEventDeserialized(E event) {
         publishToLocalOnly(event);
     }
 
