@@ -121,7 +121,7 @@ subprojects {
 
                 pom {
                     name = 'SouthernQuiet'
-                    description = '这是一个基于Spring Boot，为了复用一些公共代码而存在的库。'
+                    description = '这是一个基于Spring Boot，为了提供一些基础设施抽象，减少重复劳动而存在的库。'
                     url = 'https://github.com/InsideZhou/southern-quiet'
 
                     scm {
