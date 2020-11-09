@@ -133,22 +133,31 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         declareExchangeAndQueue(listener, listenerName);
 
-        Class<?> notificationClass = listener.notification();
-        ParameterizedTypeReference<?> typeReference = ParameterizedTypeReference.forType(notificationClass);
+        endpoint.setMessageListener(generateMessageListener(
+            ParameterizedTypeReference.forType(listener.notification()),
+            endpoint,
+            listener,
+            bean,
+            method,
+            listenerName,
+            delayedAnnotation
+        ));
 
-        endpoint.setMessageListener(message -> {
+        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+    }
+
+    protected MessageListener generateMessageListener(ParameterizedTypeReference<?> typeReference,
+                                                      SimpleRabbitListenerEndpoint endpoint,
+                                                      NotificationListener listener,
+                                                      Object bean,
+                                                      Method method,
+                                                      String listenerName,
+                                                      DelayedMessage delayedAnnotation
+    ) {
+        return message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            log.message("收到通知")
-                .context(context -> {
-                    context.put("queue", endpoint.getQueueNames());
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", listenerName);
-                    context.put("listenerId", endpoint.getId());
-                    context.put("notification", notification.getClass().getSimpleName());
-                    context.put("message", message);
-                })
-                .debug();
+            onMessageReceived(endpoint, bean, listenerName, notification, message);
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -166,7 +175,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     else {
                         log.message("不支持在通知监听器中使用此类型的参数")
                             .context("parameter", parameter.getClass())
-                            .context("notification", notificationClass)
+                            .context("notification", listener.notification())
                             .warn();
 
                         try {
@@ -200,9 +209,26 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        };
+    }
 
-        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+    protected void onMessageReceived(
+        SimpleRabbitListenerEndpoint endpoint,
+        Object bean,
+        String listenerName,
+        Object notification,
+        Message message
+    ) {
+        log.message("收到通知")
+            .context(context -> {
+                context.put("queue", endpoint.getQueueNames());
+                context.put("listener", bean.getClass().getName());
+                context.put("listenerName", listenerName);
+                context.put("listenerId", endpoint.getId());
+                context.put("notification", notification.getClass().getSimpleName());
+                context.put("message", message);
+            })
+            .debug();
     }
 
     public final static String DeadMark = "DEAD.";

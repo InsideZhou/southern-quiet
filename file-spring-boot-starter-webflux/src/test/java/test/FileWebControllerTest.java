@@ -191,12 +191,15 @@ public class FileWebControllerTest {
         builder.part("files", resource, MediaType.IMAGE_PNG);
 
         FileInfo fileInfo = uploadAssert(builder, "upload");
+        String etag = "\"" + fileInfo.getId() + "\"";
+
 
         EntityExchangeResult<byte[]> result = client.get()
             .uri("/image/{hash}", fileInfo.getId())
             .exchange()
             .expectStatus().is2xxSuccessful()
             .expectHeader().contentTypeCompatibleWith(MediaType.IMAGE_PNG)
+            .expectHeader().valueMatches("etag", etag)
             .expectBody()
             .returnResult();
 
@@ -204,5 +207,20 @@ public class FileWebControllerTest {
 
         fileSystem.put(filePath + "_image.png", new ByteArrayInputStream(result.getResponseBody()));
         Assert.assertTrue(result.getResponseHeaders().getContentLength() > 0);
+    }
+
+    @Test
+    public void imageNotModified() {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("files", resource, MediaType.IMAGE_PNG);
+
+        FileInfo fileInfo = uploadAssert(builder, "upload");
+        String etag = "\"" + fileInfo.getId() + "\"";
+
+        client.get()
+            .uri("/image/{hash}", fileInfo.getId())
+            .headers(httpHeaders -> httpHeaders.setIfNoneMatch(etag))
+            .exchange()
+            .expectStatus().isNotModified();
     }
 }
