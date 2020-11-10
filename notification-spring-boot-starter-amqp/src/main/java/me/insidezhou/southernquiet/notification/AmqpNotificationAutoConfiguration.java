@@ -94,12 +94,25 @@ public class AmqpNotificationAutoConfiguration {
          */
         private String namePrefix = "NOTIFICATION.";
 
+        /**
+         * 监听器并发上限
+         */
+        private Integer concurrentLimit = 100;
+
         public String getNamePrefix() {
             return namePrefix;
         }
 
         public void setNamePrefix(String namePrefix) {
             this.namePrefix = namePrefix;
+        }
+
+        public Integer getConcurrentLimit() {
+            return concurrentLimit;
+        }
+
+        public void setConcurrentLimit(Integer concurrentLimit) {
+            this.concurrentLimit = concurrentLimit;
         }
     }
 }

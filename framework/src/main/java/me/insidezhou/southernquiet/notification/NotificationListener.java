@@ -13,6 +13,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Repeatable(NotificationListener.List.class)
 public @interface NotificationListener {
+
+    /**
+     * 监听器并发量
+     */
+    int concurrency() default 1;
+
     /**
      * 要监听的通知类。
      */

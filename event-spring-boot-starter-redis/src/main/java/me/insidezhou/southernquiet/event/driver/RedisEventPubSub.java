@@ -17,6 +17,7 @@ import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 
 @SuppressWarnings("rawtypes")
 public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSub<E> implements DisposableBean {
@@ -81,26 +82,41 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
         container.start();
     }
 
-    protected void onMessage(Message message, byte[] pattern) {
+    protected void onMessage(Message message, byte[] patternRaw) {
+        String channel = Objects.requireNonNull(channelSerializer.deserialize(message.getChannel())).toString();
+        String pattern = Objects.requireNonNull(redisTemplate.getStringSerializer().deserialize(patternRaw)).toString();
         byte[] data = message.getBody();
 
-        log.message("收到事件")
-            .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
-            .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
-            .context("data", () -> new String(data))
-            .debug();
+        onMessageReceived(channel, data, pattern);
 
         E event = eventSerializer.deserialize(data);
         if (null == event) {
             log.message("收到空事件")
-                .context("channel", () -> channelSerializer.deserialize(message.getChannel()))
-                .context("pattern", () -> redisTemplate.getStringSerializer().deserialize(pattern))
-                .context("data", () -> new String(data))
+                .context(context -> {
+                    context.put("channel", channel);
+                    context.put("pattern", pattern);
+                    context.put("data", new String(data));
+                })
                 .trace();
 
             return;
         }
 
+        onEventDeserialized(channel, event, pattern);
+    }
+
+    protected void onMessageReceived(String channel, byte[] data, String pattern) {
+        log.message("收到事件")
+            .context(context -> {
+                context.put("channel", channel);
+                context.put("pattern", pattern);
+                context.put("data", new String(data));
+            })
+            .debug();
+    }
+
+    @SuppressWarnings("unused")
+    protected void onEventDeserialized(String channel, E event, String pattern) {
         publishToLocalOnly(event);
     }
 

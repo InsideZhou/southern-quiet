@@ -109,46 +109,64 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     @Override
     protected void initListener(NotificationListener listener, Object bean, Method method) {
-        String listenerName = getListenerName(listener, method);
-        String listenerRouting = getListenerRouting(listener, listenerName);
+        int concurrency = listener.concurrency();
+        if (concurrency <= 0)
+            concurrency = 1;
+        else if (concurrency > amqpNotificationProperties.getConcurrentLimit())
+            concurrency = amqpNotificationProperties.getConcurrentLimit();
 
-        DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
+        for (int i = 0; i < concurrency; i++) {
 
-        listenerEndpoints.stream()
-            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
-            .findAny()
-            .ifPresent(listenerEndpoint -> log.message("监听器重复")
-                .context(context -> {
-                    context.put("queue", listenerRouting);
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", listenerName);
-                    context.put("notification", listener.notification().getSimpleName());
-                })
-                .warn());
+            String listenerName = i == 0 ? getListenerName(listener, method) : getListenerName(listener, method) + "_" + i;  //queueName 默认方法名
+            String listenerRouting = getListenerRouting(listener, listenerName); //Notification.类名#queueName  / Notification.ExchangeName#queueName
 
-        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-        endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setQueueNames(listenerRouting);
-        endpoint.setAdmin(amqpAdmin);
+            DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
+            //校验重复
+            listenerEndpoints.stream()
+                .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
+                .findAny()
+                .ifPresent(listenerEndpoint -> log.message("监听器重复")
+                    .context(context -> {
+                        context.put("queue", listenerRouting);
+                        context.put("listener", bean.getClass().getName());
+                        context.put("listenerName", listenerName);
+                        context.put("notification", listener.notification().getSimpleName());
+                    })
+                    .warn());
 
-        declareExchangeAndQueue(listener, listenerName);
+            SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
+            endpoint.setId(UUID.randomUUID().toString());
+            endpoint.setQueueNames(listenerRouting);
+            endpoint.setAdmin(amqpAdmin);
 
-        Class<?> notificationClass = listener.notification();
-        ParameterizedTypeReference<?> typeReference = ParameterizedTypeReference.forType(notificationClass);
+            declareExchangeAndQueue(listener, listenerName);//声明交换器和队列
 
-        endpoint.setMessageListener(message -> {
+            endpoint.setMessageListener(generateMessageListener(
+                ParameterizedTypeReference.forType(listener.notification()),
+                endpoint,
+                listener,
+                bean,
+                method,
+                listenerName,
+                delayedAnnotation
+            ));
+
+            listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+        }
+    }
+
+    protected MessageListener generateMessageListener(ParameterizedTypeReference<?> typeReference,
+                                                      SimpleRabbitListenerEndpoint endpoint,
+                                                      NotificationListener listener,
+                                                      Object bean,
+                                                      Method method,
+                                                      String listenerName,
+                                                      DelayedMessage delayedAnnotation
+    ) {
+        return message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            log.message("收到通知")
-                .context(context -> {
-                    context.put("queue", endpoint.getQueueNames());
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", listenerName);
-                    context.put("listenerId", endpoint.getId());
-                    context.put("notification", notification.getClass().getSimpleName());
-                    context.put("message", message);
-                })
-                .debug();
+            onMessageReceived(endpoint, bean, listenerName, notification, message);
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -166,7 +184,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     else {
                         log.message("不支持在通知监听器中使用此类型的参数")
                             .context("parameter", parameter.getClass())
-                            .context("notification", notificationClass)
+                            .context("notification", listener.notification())
                             .warn();
 
                         try {
@@ -200,9 +218,26 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        };
+    }
 
-        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+    protected void onMessageReceived(
+        SimpleRabbitListenerEndpoint endpoint,
+        Object bean,
+        String listenerName,
+        Object notification,
+        Message message
+    ) {
+        log.message("收到通知")
+            .context(context -> {
+                context.put("queue", endpoint.getQueueNames());
+                context.put("listener", bean.getClass().getName());
+                context.put("listenerName", listenerName);
+                context.put("listenerId", endpoint.getId());
+                context.put("notification", notification.getClass().getSimpleName());
+                context.put("message", message);
+            })
+            .debug();
     }
 
     public final static String DeadMark = "DEAD.";

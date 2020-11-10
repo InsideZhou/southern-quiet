@@ -7,7 +7,7 @@ public final class Constants {
     public final static String AMQP_DLK = "x-dead-letter-routing-key";
     public final static String AMQP_DEFAULT = "";
 
-    public final static int AutoConfigLevel_Lowest = AutoConfigureOrder.DEFAULT_ORDER + 10;
-    public final static int AutoConfigLevel_Middle = AutoConfigureOrder.DEFAULT_ORDER + 9;
-    public final static int AutoConfigLevel_Highest = AutoConfigureOrder.DEFAULT_ORDER + 8;
+    public final static int AutoConfigLevel_Lowest = AutoConfigureOrder.DEFAULT_ORDER + 300;
+    public final static int AutoConfigLevel_Middle = AutoConfigureOrder.DEFAULT_ORDER + 200;
+    public final static int AutoConfigLevel_Highest = AutoConfigureOrder.DEFAULT_ORDER + 100;
 }
