@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.QueueInformation;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -20,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.annotation.Resource;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -45,6 +48,9 @@ public class NotificationTest {
     @Autowired
     private NotificationPublisher<Serializable> notificationPublisher;
 
+    @Resource
+    private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
+
     @Autowired
     private AmqpAdmin amqpAdmin;
 
@@ -59,6 +65,17 @@ public class NotificationTest {
     @Test
     public void delay() {
         notificationPublisher.publish(new DelayedNotification());
+    }
+
+    @Test
+    public void concurrent() {
+        notificationPublisher.publish(new ConcurrentNotification());
+
+        long concurrent = rabbitListenerEndpointRegistry.getListenerContainers().stream()
+            .filter(containers -> ((DirectMessageListenerContainer) containers).getQueueNames()[0].contains("concurrent")).count();
+
+        Assert.assertEquals(Listener.concurrency, concurrent);
+
     }
 
     @Test
@@ -101,6 +118,18 @@ public class NotificationTest {
                 .context("duration", Duration.between(notification.publishedAt, Instant.now()))
                 .info();
         }
+
+        public static final int concurrency = 2;
+
+        @NotificationListener(notification = ConcurrentNotification.class, concurrency = Listener.concurrency)
+        public void concurrent(ConcurrentNotification notification, NotificationListener listener) {
+
+            log.message("使用并发监听器接到通知")
+                .context("listenerName", listener.name())
+                .context("listenerConcurrent", listener.concurrency())
+                .context("notificationId", notification.getId())
+                .info();
+        }
     }
 
     public static class StandardNotification implements Serializable {
@@ -125,6 +154,18 @@ public class NotificationTest {
 
         public void setPublishedAt(Instant publishedAt) {
             this.publishedAt = publishedAt;
+        }
+    }
+
+    public static class ConcurrentNotification implements Serializable {
+        private UUID id = UUID.randomUUID();
+
+        public UUID getId() {
+            return id;
+        }
+
+        public void setId(UUID id) {
+            this.id = id;
         }
     }
 }
