@@ -109,41 +109,50 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     @Override
     protected void initListener(NotificationListener listener, Object bean, Method method) {
-        String listenerName = getListenerName(listener, method);
-        String listenerRouting = getListenerRouting(listener, listenerName);
+        int concurrency = listener.concurrency();
+        if (concurrency <= 0)
+            concurrency = 1;
+        else if (concurrency > amqpNotificationProperties.getConcurrentLimit())
+            concurrency = amqpNotificationProperties.getConcurrentLimit();
 
-        DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
+        for (int i = 0; i < concurrency; i++) {
 
-        listenerEndpoints.stream()
-            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
-            .findAny()
-            .ifPresent(listenerEndpoint -> log.message("监听器重复")
-                .context(context -> {
-                    context.put("queue", listenerRouting);
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", listenerName);
-                    context.put("notification", listener.notification().getSimpleName());
-                })
-                .warn());
+            String listenerName = i == 0 ? getListenerName(listener, method) : getListenerName(listener, method) + "_" + i;  //queueName 默认方法名
+            String listenerRouting = getListenerRouting(listener, listenerName); //Notification.类名#queueName  / Notification.ExchangeName#queueName
 
-        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-        endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setQueueNames(listenerRouting);
-        endpoint.setAdmin(amqpAdmin);
+            DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
+            //校验重复
+            listenerEndpoints.stream()
+                .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
+                .findAny()
+                .ifPresent(listenerEndpoint -> log.message("监听器重复")
+                    .context(context -> {
+                        context.put("queue", listenerRouting);
+                        context.put("listener", bean.getClass().getName());
+                        context.put("listenerName", listenerName);
+                        context.put("notification", listener.notification().getSimpleName());
+                    })
+                    .warn());
 
-        declareExchangeAndQueue(listener, listenerName);
+            SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
+            endpoint.setId(UUID.randomUUID().toString());
+            endpoint.setQueueNames(listenerRouting);
+            endpoint.setAdmin(amqpAdmin);
 
-        endpoint.setMessageListener(generateMessageListener(
-            ParameterizedTypeReference.forType(listener.notification()),
-            endpoint,
-            listener,
-            bean,
-            method,
-            listenerName,
-            delayedAnnotation
-        ));
+            declareExchangeAndQueue(listener, listenerName);//声明交换器和队列
 
-        listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+            endpoint.setMessageListener(generateMessageListener(
+                ParameterizedTypeReference.forType(listener.notification()),
+                endpoint,
+                listener,
+                bean,
+                method,
+                listenerName,
+                delayedAnnotation
+            ));
+
+            listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
+        }
     }
 
     protected MessageListener generateMessageListener(ParameterizedTypeReference<?> typeReference,
