@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -164,4 +165,38 @@ public class FileSystemTest {
             throw new RuntimeException(e);
         }
     }
+
+    @Test
+    public void createSymbolicLink() {
+        try {
+            String link = "hello/link";
+            String target = "hello/world.txt";
+            fileSystem.put(target, "你好，Spring Boot。");
+            fileSystem.createSymbolicLink(link, target);
+
+            try (InputStream inputStream1 = fileSystem.openReadStream(link);
+                 InputStream inputStream2 = fileSystem.openReadStream(target)) {
+                //1.读取软链接和源文件,指纹一样
+                String hash1 = DigestUtils.md5DigestAsHex(inputStream1);
+                String hash2 = DigestUtils.md5DigestAsHex(inputStream2);
+
+                Assert.assertEquals(hash1, hash2);
+            }
+            catch (InvalidFileException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            //2.删掉软链接,源文件不受影响
+            fileSystem.delete(link);
+            Assert.assertTrue(fileSystem.exists(target));
+
+            //3.删掉源文件,软链接失效
+            fileSystem.delete(target);
+            Assert.assertFalse(fileSystem.exists(link));
+        }
+        catch (InvalidFileException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

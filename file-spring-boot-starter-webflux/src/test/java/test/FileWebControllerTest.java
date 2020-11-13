@@ -1,9 +1,11 @@
 package test;
 
+import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,9 +28,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.SystemPropertyUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
 
 @SuppressWarnings("ConstantConditions")
@@ -63,7 +71,7 @@ public class FileWebControllerTest {
     @Before
     public void before() throws Exception {
         contextPath = serverProperties.getServlet().getContextPath();
-        client = WebTestClient.bindToApplicationContext(applicationContext).build();
+        client = WebTestClient.bindToApplicationContext(applicationContext).configureClient().responseTimeout(Duration.ofMillis(300000)).build();
 
         byte[] data = StreamUtils.copyToByteArray(resource.getInputStream());
         base64EncodedFile = Base64.encodeBase64String(data);
@@ -75,6 +83,40 @@ public class FileWebControllerTest {
         builder.part("files", resource, MediaType.IMAGE_PNG);
 
         uploadAssert(builder, "upload");
+    }
+
+    @Autowired
+    private FrameworkAutoConfiguration.LocalFileSystemProperties properties;
+
+    @Test
+    public void createSymbolicLink() throws IOException {
+        //创建link
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("files", resource, MediaType.IMAGE_PNG);
+        uploadAssert(builder, "upload?link=sha1");
+        String workingRoot = SystemPropertyUtils.resolvePlaceholders(properties.getWorkingRoot());
+
+        InputStream inputStream = new ByteArrayInputStream(StreamUtils.copyToByteArray(resource.getInputStream()));
+        String link = DigestUtils.sha1Hex(inputStream);
+
+        //通过link获取文件
+        EntityExchangeResult<byte[]> result = client.get()
+            .uri("/file/{id}", link)
+            .exchange()
+            .expectStatus().is2xxSuccessful()
+            .expectHeader().contentLength(resource.contentLength())
+            .expectHeader().contentTypeCompatibleWith(MediaType.IMAGE_PNG)
+            .expectBody()
+            .returnResult();
+
+        inputStream.reset();
+        ByteArrayInputStream resultInputStream = new ByteArrayInputStream(result.getResponseBody());
+        Assert.assertEquals(resultInputStream.available(), inputStream.available());
+
+        //删除已创建link
+        File file = new File(workingRoot + FileSystem.PATH_SEPARATOR_STRING + FileWebController.getFilePath(link));
+        Assert.assertTrue(Files.isSymbolicLink(file.toPath()));
+        file.deleteOnExit();
     }
 
     @Test

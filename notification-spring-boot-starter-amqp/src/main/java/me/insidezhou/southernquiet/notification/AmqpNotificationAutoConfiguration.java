@@ -9,7 +9,6 @@ import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -94,12 +93,25 @@ public class AmqpNotificationAutoConfiguration {
          */
         private String namePrefix = "NOTIFICATION.";
 
+        /**
+         * 监听器并发上限
+         */
+        private int concurrencyLimit = 100;
+
         public String getNamePrefix() {
             return namePrefix;
         }
 
         public void setNamePrefix(String namePrefix) {
             this.namePrefix = namePrefix;
+        }
+
+        public int getConcurrencyLimit() {
+            return concurrencyLimit;
+        }
+
+        public void setConcurrencyLimit(int concurrencyLimit) {
+            this.concurrencyLimit = concurrencyLimit;
         }
     }
 }

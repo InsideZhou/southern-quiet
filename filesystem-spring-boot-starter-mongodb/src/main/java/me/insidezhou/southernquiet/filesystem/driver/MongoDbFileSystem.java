@@ -125,6 +125,10 @@ public class MongoDbFileSystem implements FileSystem {
     @Override
     public InputStream openReadStream(String path) throws InvalidFileException {
         MongoPathMeta pathMeta = meta(path);
+        if (pathMeta == null) {
+            pathMeta = metaBySymbolicLink(path);
+        }
+
         if (null == pathMeta) throw new InvalidFileException(path);
 
         if (null == pathMeta.getFileId()) {
@@ -140,6 +144,15 @@ public class MongoDbFileSystem implements FileSystem {
         catch (IOException e) {
             throw new InvalidFileException(path, e);
         }
+    }
+
+    @Override
+    public void createSymbolicLink(String linkPath, String targetPath) {
+        NormalizedPath normalizedPath = new NormalizedPath(targetPath);
+        MongoPathMeta file = queryPathMeta(normalizedPath);
+
+        //更新保存软链接,获取文件时判断是否存在软链接,有则直接返回
+        mongoOperations.updateFirst(newPathQuery(file), Update.update("symbolicLink", linkPath), MongoPathMeta.class, pathCollection);
     }
 
     @Override
@@ -260,6 +273,11 @@ public class MongoDbFileSystem implements FileSystem {
         return (M) queryPathMeta(new NormalizedPath(path));
     }
 
+    @SuppressWarnings("unchecked")
+    public <M extends PathMeta> M metaBySymbolicLink(String symbolicLink) {
+        return (M) queryPathMetaBySymbolicLink(symbolicLink);
+    }
+
     @Override
     public Stream<MongoPathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
         NormalizedPath normalizePath = new NormalizedPath(path);
@@ -330,8 +348,16 @@ public class MongoDbFileSystem implements FileSystem {
         return Query.query(Criteria.where("name").is(normalizedPath.getName()).and("parent").is(normalizedPath.getParent()));
     }
 
+    private Query newPathQuery(String symbolicLink) {
+        return Query.query(Criteria.where("symbolicLink").is(symbolicLink));
+    }
+
     private MongoPathMeta queryPathMeta(NormalizedPath normalizedPath) {
         return mongoOperations.findOne(newPathQuery(normalizedPath), MongoPathMeta.class, pathCollection);
+    }
+
+    private MongoPathMeta queryPathMetaBySymbolicLink(String symbolicLink) {
+        return mongoOperations.findOne(newPathQuery(symbolicLink), MongoPathMeta.class, pathCollection);
     }
 
     private MongoPathMeta queryPathMeta(String pathName, String parentId) {

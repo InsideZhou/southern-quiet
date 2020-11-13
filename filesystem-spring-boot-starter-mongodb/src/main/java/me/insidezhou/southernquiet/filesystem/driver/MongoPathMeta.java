@@ -45,6 +45,7 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
         map.put("parentId", getParentId());
         map.put("fileId", getFileId());
         map.put("fileData", getFileData());
+        map.put("symbolicLink", getSymbolicLink());
         return map;
     }
 
@@ -53,6 +54,8 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
 
     private ObjectId fileId;
     private Binary fileData;
+
+    private String symbolicLink;
 
     public String getId() {
         return id;
@@ -84,5 +87,13 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
 
     public void setFileData(Binary fileData) {
         this.fileData = fileData;
+    }
+
+    public String getSymbolicLink() {
+        return symbolicLink;
+    }
+
+    public void setSymbolicLink(String symbolicLink) {
+        this.symbolicLink = symbolicLink;
     }
 }

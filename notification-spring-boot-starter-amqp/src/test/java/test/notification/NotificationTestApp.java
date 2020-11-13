@@ -24,4 +24,5 @@ public class NotificationTestApp {
         manager.setConnectionFactory(connectionFactory);
         return manager;
     }
+
 }
