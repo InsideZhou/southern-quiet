@@ -111,7 +111,7 @@ public class FileWebControllerTest {
 
         inputStream.reset();
         ByteArrayInputStream resultInputStream = new ByteArrayInputStream(result.getResponseBody());
-        Assert.assertEquals(resultInputStream.available() ,inputStream.available());
+        Assert.assertEquals(resultInputStream.available(), inputStream.available());
 
         //删除已创建link
         File file = new File(workingRoot + FileSystem.PATH_SEPARATOR_STRING + FileWebController.getFilePath(link));

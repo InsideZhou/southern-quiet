@@ -167,22 +167,22 @@ public class FileSystemTest {
     }
 
     @Test
-    public void createSymbolicLink(){
+    public void createSymbolicLink() {
         try {
             String link = "hello/link";
             String target = "hello/world.txt";
             fileSystem.put(target, "你好，Spring Boot。");
-            fileSystem.createSymbolicLink(link,target);
+            fileSystem.createSymbolicLink(link, target);
 
             try (InputStream inputStream1 = fileSystem.openReadStream(link);
-                 InputStream inputStream2 = fileSystem.openReadStream(target)){
+                 InputStream inputStream2 = fileSystem.openReadStream(target)) {
                 //1.读取软链接和源文件,指纹一样
                 String hash1 = DigestUtils.md5DigestAsHex(inputStream1);
                 String hash2 = DigestUtils.md5DigestAsHex(inputStream2);
 
-                Assert.assertEquals(hash1,hash2);
+                Assert.assertEquals(hash1, hash2);
             }
-            catch (InvalidFileException |IOException e) {
+            catch (InvalidFileException | IOException e) {
                 throw new RuntimeException(e);
             }
 
@@ -194,7 +194,7 @@ public class FileSystemTest {
             fileSystem.delete(target);
             Assert.assertFalse(fileSystem.exists(link));
         }
-        catch (InvalidFileException  e) {
+        catch (InvalidFileException e) {
             throw new RuntimeException(e);
         }
     }
