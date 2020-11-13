@@ -110,10 +110,12 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     @Override
     protected void initListener(NotificationListener listener, Object bean, Method method) {
         int concurrency = listener.concurrency();
+        int concurrencyLimit = amqpNotificationProperties.getConcurrencyLimit();
+
         if (concurrency <= 0)
             concurrency = 1;
-        else if (concurrency > amqpNotificationProperties.getConcurrentLimit())
-            concurrency = amqpNotificationProperties.getConcurrentLimit();
+        else if (concurrencyLimit >= 1 && concurrency > concurrencyLimit)
+            concurrency = concurrencyLimit;
 
         for (int i = 0; i < concurrency; i++) {
 
