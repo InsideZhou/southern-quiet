@@ -69,7 +69,8 @@ public class NotificationTest {
 
     @Test
     public void concurrent() {
-        notificationPublisher.publish(new ConcurrentNotification());
+        for (int i = 0; i < 30; i++)
+            notificationPublisher.publish(new ConcurrentNotification());
 
         long concurrent = rabbitListenerEndpointRegistry.getListenerContainers().stream()
             .filter(containers -> ((DirectMessageListenerContainer) containers).getQueueNames()[0].contains("concurrent")).count();
@@ -128,6 +129,7 @@ public class NotificationTest {
                 .context("listenerName", listener.name())
                 .context("listenerConcurrent", listener.concurrency())
                 .context("notificationId", notification.getId())
+                .context("currentThreadName", Thread.currentThread().getName())
                 .info();
         }
     }
