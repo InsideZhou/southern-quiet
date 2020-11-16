@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
     @Override
     public void arrange(J job) {
-        long delay = 0;
+        int delay = 0;
 
         DelayedMessage annotation = AnnotatedElementUtils.findMergedAnnotation(job.getClass(), DelayedMessage.class);
         if (null != annotation) {
@@ -37,13 +37,5 @@ public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
 
     public static String getRouting(String prefix, String source) {
         return prefix + source;
-    }
-
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getQueueSource(cls));
-    }
-
-    public static String getDelayedRouting(String prefix, String source) {
-        return prefix + "DELAY." + source;
     }
 }

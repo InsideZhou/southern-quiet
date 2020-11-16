@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.notification.driver;
 
-import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -75,19 +74,18 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
     }
 
     @Override
-    public void publish(N notification, long delay) {
+    public void publish(N notification, int delay) {
         String prefix = notificationProperties.getNamePrefix();
         String source = getNotificationSource(notification.getClass());
         String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
-        String delayRouting = getDelayedRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
             properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (delay > 0) {
-                properties.setExpiration(String.valueOf(delay));
+                properties.setDelay(delay);
             }
 
             return message;
@@ -96,8 +94,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         if (enablePublisherConfirm) {
             rabbitTemplate.invoke(operations -> {
                 operations.convertAndSend(
-                    delay > 0 ? Constants.AMQP_DEFAULT : exchange,
-                    delay > 0 ? delayRouting : routing,
+                    exchange,
+                    routing,
                     notification,
                     messagePostProcessor
                 );
@@ -108,8 +106,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         }
         else {
             rabbitTemplate.convertAndSend(
-                delay > 0 ? Constants.AMQP_DEFAULT : exchange,
-                delay > 0 ? delayRouting : routing,
+                exchange,
+                routing,
                 notification,
                 messagePostProcessor
             );

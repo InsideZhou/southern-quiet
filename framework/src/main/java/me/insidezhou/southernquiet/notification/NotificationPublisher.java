@@ -16,5 +16,5 @@ public interface NotificationPublisher<N> {
      *
      * @param delay 要延迟的时间，单位：毫秒。
      */
-    void publish(N notification, long delay);
+    void publish(N notification, int delay);
 }

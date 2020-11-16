@@ -6,11 +6,9 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 public abstract class AbstractAmqpNotificationPublisher<N> implements NotificationPublisher<N> {
-    public final static String DelayMark = "DELAY.";
-
     @Override
     public void publish(N notification) {
-        long delay = 0;
+        int delay = 0;
 
         DelayedMessage annotation = AnnotatedElementUtils.findMergedAnnotation(notification.getClass(), DelayedMessage.class);
         if (null != annotation) {
@@ -39,13 +37,5 @@ public abstract class AbstractAmqpNotificationPublisher<N> implements Notificati
 
     public static String getRouting(String prefix, String source) {
         return prefix + source;
-    }
-
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getNotificationSource(cls));
-    }
-
-    public static String getDelayedRouting(String prefix, String source) {
-        return prefix + DelayMark + source;
     }
 }

@@ -91,8 +91,8 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(amqpNotificationProperties.getNamePrefix(), listenerAnnotation, listenerName),
-                    Constants.AMQP_DEFAULT,
-                    getRetryRouting(amqpNotificationProperties.getNamePrefix(), listenerAnnotation, listenerName),
+                    AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listenerAnnotation.notification()),
+                    getListenerRouting(listenerAnnotation, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -251,12 +251,6 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             suffix(DeadMark + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listenerName));
     }
 
-    public static String getRetryRouting(String prefix, NotificationListener listener, String listenerName) {
-        return AbstractAmqpNotificationPublisher.getRouting(
-            prefix,
-            suffix(RetryMark + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listenerName));
-    }
-
     private String getListenerRouting(NotificationListener listener, String listenerName) {
         return suffix(AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()), listenerName);
     }
@@ -276,11 +270,17 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private void declareExchangeAndQueue(NotificationListener listener, String listenerName) {
-        String routing = AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
-        String delayRouting = AbstractAmqpNotificationPublisher.getDelayedRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
         String listenerRouting = getListenerRouting(listener, listenerName);
 
-        Exchange exchange = new FanoutExchange(AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()));
+        Map<String, Object> exchangeArguments = new HashMap<>();
+        exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
+        Exchange exchange = new CustomExchange(
+            AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification()),
+            Constants.AMQP_DELAYED_EXCHANGE,
+            true,
+            false,
+            exchangeArguments
+            );
         Queue queue = new Queue(listenerRouting);
 
         amqpAdmin.declareExchange(exchange);
@@ -293,20 +293,6 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         Queue deadRouting = new Queue(getDeadRouting(amqpNotificationProperties.getNamePrefix(), listener, listenerName), true, false, false, deadQueueArgs);
         amqpAdmin.declareQueue(deadRouting);
-
-        Map<String, Object> retryQueueArgs = new HashMap<>();
-        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
-        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
-
-        Queue retryRouting = new Queue(getRetryRouting(amqpNotificationProperties.getNamePrefix(), listener, listenerName), true, false, false, retryQueueArgs);
-        amqpAdmin.declareQueue(retryRouting);
-
-        Map<String, Object> delayQueueArgs = new HashMap<>();
-        delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());
-        delayQueueArgs.put(Constants.AMQP_DLK, routing);
-
-        Queue delayQueue = new Queue(delayRouting, true, false, false, delayQueueArgs);
-        amqpAdmin.declareQueue(delayQueue);
     }
 
     @Override

@@ -13,11 +13,11 @@ import java.lang.annotation.*;
 @Documented
 public @interface DelayedMessage {
     @AliasFor("delay")
-    long value() default 0;
+    int value() default 0;
 
     /**
      * 单位：毫秒。
      */
     @AliasFor("value")
-    long delay() default 0;
+    int delay() default 0;
 }

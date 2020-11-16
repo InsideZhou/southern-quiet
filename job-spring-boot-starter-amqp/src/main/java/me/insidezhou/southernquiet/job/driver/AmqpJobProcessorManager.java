@@ -88,8 +88,8 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                     amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(amqpJobProperties.getNamePrefix(), processor, listenerName),
-                    Constants.AMQP_DEFAULT,
-                    getRetryRouting(amqpJobProperties.getNamePrefix(), processor, listenerName),
+                    AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job()),
+                    getProcessorRouting(processor, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -237,11 +237,18 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private void declareExchangeAndQueue(JobProcessor processor, String processorName) {
-        String routing = AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), processor.job());
-        String delayRouting = AbstractAmqpJobArranger.getDelayedRouting(amqpJobProperties.getNamePrefix(), processor.job());
         String listenerRouting = getProcessorRouting(processor, processorName);
 
-        Exchange exchange = new FanoutExchange(AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job()));
+        Map<String, Object> exchangeArguments = new HashMap<>();
+        exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
+        Exchange exchange = new CustomExchange(
+            AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job()),
+            Constants.AMQP_DELAYED_EXCHANGE,
+            true,
+            false,
+            exchangeArguments
+        );
+
         Queue queue = new Queue(listenerRouting);
 
         amqpAdmin.declareExchange(exchange);
@@ -254,20 +261,6 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
         Queue deadRouting = new Queue(getDeadRouting(amqpJobProperties.getNamePrefix(), processor, processorName), true, false, false, deadQueueArgs);
         amqpAdmin.declareQueue(deadRouting);
-
-        Map<String, Object> retryQueueArgs = new HashMap<>();
-        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
-        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
-
-        Queue retryRouting = new Queue(getRetryRouting(amqpJobProperties.getNamePrefix(), processor, processorName), true, false, false, retryQueueArgs);
-        amqpAdmin.declareQueue(retryRouting);
-
-        Map<String, Object> delayQueueArgs = new HashMap<>();
-        delayQueueArgs.put(Constants.AMQP_DLX, exchange.getName());
-        delayQueueArgs.put(Constants.AMQP_DLK, routing);
-
-        Queue delayQueue = new Queue(delayRouting, true, false, false, delayQueueArgs);
-        amqpAdmin.declareQueue(delayQueue);
     }
 
     @Override
