@@ -1,5 +1,6 @@
 package me.insidezhou.southernquiet.job.driver;
 
+import com.rabbitmq.client.AMQP;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.*;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
@@ -27,6 +28,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -204,18 +206,11 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     public final static String DeadMark = "DEAD.";
-    public final static String RetryMark = "RETRY.";
 
     public static String getDeadRouting(String prefix, JobProcessor processor, String processorName) {
         return AbstractAmqpNotificationPublisher.getRouting(
             prefix,
             suffix(DeadMark + AbstractAmqpNotificationPublisher.getNotificationSource(processor.job()), processorName));
-    }
-
-    public static String getRetryRouting(String prefix, JobProcessor processor, String processorName) {
-        return AbstractAmqpNotificationPublisher.getRouting(
-            prefix,
-            suffix(RetryMark + AbstractAmqpNotificationPublisher.getNotificationSource(processor.job()), processorName));
     }
 
     private String getProcessorRouting(JobProcessor processor, String processorName) {
@@ -237,23 +232,40 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     }
 
     private void declareExchangeAndQueue(JobProcessor processor, String processorName) {
+        String exchangeName = AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job());
         String listenerRouting = getProcessorRouting(processor, processorName);
 
-        Map<String, Object> exchangeArguments = new HashMap<>();
-        exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
-        Exchange exchange = new CustomExchange(
-            AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job()),
-            Constants.AMQP_DELAYED_EXCHANGE,
-            true,
-            false,
-            exchangeArguments
-        );
+        AMQP.Exchange.DeclareOk exchangeDeclare = rabbitTemplate.execute(channel -> {
+            try {
+                return channel.exchangeDeclarePassive(exchangeName);
+            }
+            catch (IOException e) {
+                log.message("准备新建任务处理器")
+                    .context("exchange", exchangeName)
+                    .context("queue", listenerRouting)
+                    .trace();
+
+                return null;
+            }
+        });
 
         Queue queue = new Queue(listenerRouting);
 
-        amqpAdmin.declareExchange(exchange);
-        amqpAdmin.declareQueue(queue);
-        amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
+        if (null == exchangeDeclare) {
+            Map<String, Object> exchangeArguments = new HashMap<>();
+            exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
+            Exchange exchange = new CustomExchange(
+                exchangeName,
+                Constants.AMQP_DELAYED_EXCHANGE,
+                true,
+                false,
+                exchangeArguments
+            );
+
+            amqpAdmin.declareExchange(exchange);
+            amqpAdmin.declareQueue(queue);
+            amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
+        }
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
