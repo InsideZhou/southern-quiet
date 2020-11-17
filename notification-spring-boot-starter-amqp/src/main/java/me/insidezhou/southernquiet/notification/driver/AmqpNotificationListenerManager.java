@@ -121,7 +121,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         for (int i = 0; i < concurrency; i++) {
 
-            String listenerName = i == 0 ? getListenerName(listener, method) : getListenerName(listener, method) + "_" + i;  //queueName 默认方法名
+            String listenerName = getListenerName(listener, method);  //queueName 默认方法名
             String listenerRouting = getListenerRouting(listener, listenerName); //Notification.类名#queueName  / Notification.ExchangeName#queueName
 
             DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
