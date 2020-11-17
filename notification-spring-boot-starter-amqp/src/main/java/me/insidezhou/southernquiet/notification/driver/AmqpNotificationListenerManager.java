@@ -299,7 +299,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         Map<String, Object> retryQueueArgs = new HashMap<>();
         retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
         retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
-        retryQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1); //这里的硬编码是为了消息到达队列之后立即转发至相应的工作队列。下同。
+        retryQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 0); //这里的硬编码是为了消息到达队列之后立即转发至相应的工作队列。下同。
         Queue retryQueue = new Queue(
             getRetryRouting(amqpNotificationProperties.getNamePrefix(), listener, listenerName),
             true,
@@ -313,7 +313,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         Map<String, Object> delayQueueArgs = new HashMap<>();
         delayQueueArgs.put(Constants.AMQP_DLX, routing);
         delayQueueArgs.put(Constants.AMQP_DLK, routing);
-        delayQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1);
+        delayQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 0);
         Queue delayQueue = new Queue(
             AbstractAmqpNotificationPublisher.getDelayRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()),
             true,
