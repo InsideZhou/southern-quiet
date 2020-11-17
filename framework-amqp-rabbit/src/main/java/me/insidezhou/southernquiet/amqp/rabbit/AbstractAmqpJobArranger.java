@@ -23,19 +23,19 @@ public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getQueueSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
     public static String getRouting(String prefix, Class<?> cls) {
         return getRouting(prefix, getQueueSource(cls));
     }
 
     public static String getRouting(String prefix, String source) {
         return prefix + source;
+    }
+
+    public static String getDelayRouting(String prefix, Class<?> cls) {
+        return getDelayRouting(prefix, getQueueSource(cls));
+    }
+
+    public static String getDelayRouting(String prefix, String source) {
+        return prefix + "DELAY." + source;
     }
 }

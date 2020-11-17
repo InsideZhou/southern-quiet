@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.notification.driver;
 
-import com.rabbitmq.client.AMQP;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.*;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -30,10 +29,10 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle, RabbitListenerConfigurer {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationListenerManager.class);
@@ -78,8 +77,9 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
         listenerEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
-            NotificationListener listenerAnnotation = tuple.getSecond();
             String listenerName = tuple.getThird();
+
+            NotificationListener listenerAnnotation = tuple.getSecond();
             Amplifier amplifier = this.amplifier;
 
             if (!StringUtils.isEmpty(listenerAnnotation.amplifierBeanName())) {
@@ -93,8 +93,8 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                     amplifier,
                     Constants.AMQP_DEFAULT,
                     getDeadRouting(amqpNotificationProperties.getNamePrefix(), listenerAnnotation, listenerName),
-                    AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listenerAnnotation.notification()),
-                    getListenerRouting(listenerAnnotation, listenerName),
+                    AbstractAmqpNotificationPublisher.getDelayRouting(amqpNotificationProperties.getNamePrefix(), listenerAnnotation.notification()),
+                    getRetryRouting(amqpNotificationProperties.getNamePrefix(), listenerAnnotation, listenerName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -111,39 +111,30 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     @Override
     protected void initListener(NotificationListener listener, Object bean, Method method) {
-        int concurrency = listener.concurrency();
-        int concurrencyLimit = amqpNotificationProperties.getConcurrencyLimit();
+        String listenerName = getListenerName(listener, method);
+        String listenerRouting = getListenerRouting(listener, listenerName);
 
-        if (concurrency <= 0)
-            concurrency = 1;
-        else if (concurrencyLimit >= 1 && concurrency > concurrencyLimit)
-            concurrency = concurrencyLimit;
+        listenerEndpoints.stream()
+            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
+            .findAny()
+            .ifPresent(listenerEndpoint -> log.message("监听器重复")
+                .context(context -> {
+                    context.put("queue", listenerRouting);
+                    context.put("listener", bean.getClass().getName());
+                    context.put("listenerName", listenerName);
+                    context.put("notification", listener.notification().getSimpleName());
+                })
+                .warn());
 
-        for (int i = 0; i < concurrency; i++) {
+        declareExchangeAndQueue(listener, listenerName);
 
-            String listenerName = getListenerName(listener, method);  //queueName 默认方法名
-            String listenerRouting = getListenerRouting(listener, listenerName); //Notification.类名#queueName  / Notification.ExchangeName#queueName
+        DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
 
-            DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
-            //校验重复
-            listenerEndpoints.stream()
-                .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
-                .findAny()
-                .ifPresent(listenerEndpoint -> log.message("监听器重复")
-                    .context(context -> {
-                        context.put("queue", listenerRouting);
-                        context.put("listener", bean.getClass().getName());
-                        context.put("listenerName", listenerName);
-                        context.put("notification", listener.notification().getSimpleName());
-                    })
-                    .warn());
-
+        IntStream.range(0, Math.min(listener.concurrency(), 1)).forEach(i -> {
             SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
             endpoint.setId(UUID.randomUUID().toString());
             endpoint.setQueueNames(listenerRouting);
             endpoint.setAdmin(amqpAdmin);
-
-            declareExchangeAndQueue(listener, listenerName);//声明交换器和队列
 
             endpoint.setMessageListener(generateMessageListener(
                 ParameterizedTypeReference.forType(listener.notification()),
@@ -156,7 +147,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             ));
 
             listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
-        }
+        });
     }
 
     protected MessageListener generateMessageListener(ParameterizedTypeReference<?> typeReference,
@@ -244,12 +235,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             .debug();
     }
 
-    public final static String DeadMark = "DEAD.";
-
     public static String getDeadRouting(String prefix, NotificationListener listener, String listenerName) {
         return AbstractAmqpNotificationPublisher.getRouting(
             prefix,
-            suffix(DeadMark + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listenerName));
+            suffix("DEAD." + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listenerName));
+    }
+
+    public static String getRetryRouting(String prefix, NotificationListener listener, String listenerName) {
+        return AbstractAmqpNotificationPublisher.getRouting(
+            prefix,
+            suffix("RETRY." + AbstractAmqpNotificationPublisher.getNotificationSource(listener.notification()), listenerName));
     }
 
     private String getListenerRouting(NotificationListener listener, String listenerName) {
@@ -271,40 +266,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     private void declareExchangeAndQueue(NotificationListener listener, String listenerName) {
-        String exchangeName = AbstractAmqpNotificationPublisher.getExchange(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String routing = AbstractAmqpNotificationPublisher.getRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
+        String delayRouting = AbstractAmqpNotificationPublisher.getDelayRouting(amqpNotificationProperties.getNamePrefix(), listener.notification());
         String listenerRouting = getListenerRouting(listener, listenerName);
 
-        AMQP.Exchange.DeclareOk exchangeDeclare = rabbitTemplate.execute(channel -> {
-            try {
-                return channel.exchangeDeclarePassive(exchangeName);
-            }
-            catch (IOException e) {
-                log.message("准备新建通知监听器")
-                    .context("exchange", exchangeName)
-                    .context("queue", listenerRouting)
-                    .trace();
-
-                return null;
-            }
-        });
-
+        Exchange exchange = new FanoutExchange(routing, true, false);
         Queue queue = new Queue(listenerRouting);
 
-        if (null == exchangeDeclare) {
-            Map<String, Object> exchangeArguments = new HashMap<>();
-            exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
-            Exchange exchange = new CustomExchange(
-                exchangeName,
-                Constants.AMQP_DELAYED_EXCHANGE,
-                true,
-                false,
-                exchangeArguments
-            );
-
-            amqpAdmin.declareExchange(exchange);
-            amqpAdmin.declareQueue(queue);
-            amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
-        }
+        amqpAdmin.declareExchange(exchange);
+        amqpAdmin.declareQueue(queue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
@@ -312,6 +283,46 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         Queue deadRouting = new Queue(getDeadRouting(amqpNotificationProperties.getNamePrefix(), listener, listenerName), true, false, false, deadQueueArgs);
         amqpAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> exchangeArguments = new HashMap<>();
+        exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "direct");
+        Exchange delayExchange = new CustomExchange(
+            delayRouting,
+            Constants.AMQP_DELAYED_EXCHANGE,
+            true,
+            false,
+            exchangeArguments
+        );
+
+        amqpAdmin.declareExchange(delayExchange);
+
+        Map<String, Object> retryQueueArgs = new HashMap<>();
+        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
+        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
+        retryQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1); //这里的硬编码是为了消息到达队列之后立即转发至相应的工作队列。下同。
+        Queue retryQueue = new Queue(
+            getRetryRouting(amqpNotificationProperties.getNamePrefix(), listener, listenerName),
+            true,
+            false,
+            false,
+            retryQueueArgs
+        );
+        amqpAdmin.declareQueue(retryQueue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(retryQueue).to(delayExchange).with(retryQueue.getName()).noargs());
+
+        Map<String, Object> delayQueueArgs = new HashMap<>();
+        delayQueueArgs.put(Constants.AMQP_DLX, routing);
+        delayQueueArgs.put(Constants.AMQP_DLK, routing);
+        delayQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1);
+        Queue delayQueue = new Queue(
+            AbstractAmqpNotificationPublisher.getDelayRouting(amqpNotificationProperties.getNamePrefix(), listener.notification()),
+            true,
+            false,
+            false,
+            delayQueueArgs
+        );
+        amqpAdmin.declareQueue(delayQueue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(delayQueue).to(delayExchange).with(delayQueue.getName()).noargs());
     }
 
     @Override

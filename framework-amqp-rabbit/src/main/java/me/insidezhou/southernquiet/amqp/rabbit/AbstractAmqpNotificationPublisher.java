@@ -23,19 +23,19 @@ public abstract class AbstractAmqpNotificationPublisher<N> implements Notificati
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getNotificationSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
     public static String getRouting(String prefix, Class<?> cls) {
         return getRouting(prefix, getNotificationSource(cls));
     }
 
     public static String getRouting(String prefix, String source) {
         return prefix + source;
+    }
+
+    public static String getDelayRouting(String prefix, Class<?> cls) {
+        return getDelayRouting(prefix, getNotificationSource(cls));
+    }
+
+    public static String getDelayRouting(String prefix, String source) {
+        return prefix + "DELAY." + source;
     }
 }

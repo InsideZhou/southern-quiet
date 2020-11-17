@@ -77,8 +77,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
     public void publish(N notification, int delay) {
         String prefix = notificationProperties.getNamePrefix();
         String source = getNotificationSource(notification.getClass());
-        String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
+        String delayedRouting = getDelayRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
@@ -94,8 +94,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         if (enablePublisherConfirm) {
             rabbitTemplate.invoke(operations -> {
                 operations.convertAndSend(
-                    exchange,
-                    routing,
+                    delay > 0 ? delayedRouting : routing,
+                    delay > 0 ? delayedRouting : routing,
                     notification,
                     messagePostProcessor
                 );
@@ -106,8 +106,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         }
         else {
             rabbitTemplate.convertAndSend(
-                exchange,
-                routing,
+                delay > 0 ? delayedRouting : routing,
+                delay > 0 ? delayedRouting : routing,
                 notification,
                 messagePostProcessor
             );

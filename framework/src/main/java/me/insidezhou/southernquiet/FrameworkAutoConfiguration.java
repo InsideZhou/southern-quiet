@@ -155,9 +155,16 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean
     public Metadata metadata(Properties properties) {
         return new Metadata() {
+            final private int coreNumber = Runtime.getRuntime().availableProcessors();
+
             @Override
             public String getRuntimeId() {
                 return StringUtils.hasText(properties.getRuntimeId()) ? properties.getRuntimeId() : getIPWithProcessId();
+            }
+
+            @Override
+            public int getCoreNumber() {
+                return coreNumber > 0 ? coreNumber : 1;
             }
 
             private String getIPWithProcessId() {

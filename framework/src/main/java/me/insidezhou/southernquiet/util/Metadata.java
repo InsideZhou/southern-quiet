@@ -8,4 +8,6 @@ public interface Metadata {
      * 框架运行时的id，必须唯一。
      */
     String getRuntimeId();
+
+    int getCoreNumber();
 }

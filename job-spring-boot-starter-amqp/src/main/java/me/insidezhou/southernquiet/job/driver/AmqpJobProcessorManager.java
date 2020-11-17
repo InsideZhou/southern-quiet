@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.job.driver;
 
-import com.rabbitmq.client.AMQP;
 import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.*;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
@@ -28,7 +27,6 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -39,7 +37,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     private final SmartMessageConverter messageConverter;
     private final ConnectionFactory connectionFactory;
 
-    private final List<Tuple<RabbitListenerEndpoint, JobProcessor, String>> listenerEndpoints = new ArrayList<>();
+    private final List<Tuple<RabbitListenerEndpoint, JobProcessor, String>> processorEndpoints = new ArrayList<>();
     private final AmqpAutoConfiguration.Properties amqpProperties;
     private final AmqpJobAutoConfiguration.Properties amqpJobProperties;
     private final Amplifier amplifier;
@@ -73,10 +71,10 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
     @Override
     public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
-        listenerEndpoints.forEach(tuple -> {
+        processorEndpoints.forEach(tuple -> {
             RabbitListenerEndpoint endpoint = tuple.getFirst();
             JobProcessor processor = tuple.getSecond();
-            String listenerName = tuple.getThird();
+            String processorName = tuple.getThird();
             Amplifier amplifier = this.amplifier;
 
             if (!StringUtils.isEmpty(processor.amplifierBeanName())) {
@@ -89,9 +87,9 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                     rabbitTemplate,
                     amplifier,
                     Constants.AMQP_DEFAULT,
-                    getDeadRouting(amqpJobProperties.getNamePrefix(), processor, listenerName),
-                    AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job()),
-                    getProcessorRouting(processor, listenerName),
+                    getDeadRouting(amqpJobProperties.getNamePrefix(), processor, processorName),
+                    AbstractAmqpJobArranger.getDelayRouting(amqpJobProperties.getNamePrefix(), processor.job()),
+                    getRetryRouting(amqpJobProperties.getNamePrefix(), processor, processorName),
                     amqpProperties
                 ),
                 amqpProperties
@@ -109,25 +107,25 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
     @Override
     protected void initProcessor(JobProcessor jobProcessor, Object bean, Method method) {
         String processorName = getProcessorName(jobProcessor, method);
-        String listenerRouting = getProcessorRouting(jobProcessor, processorName);
+        String processorRouting = getProcessorRouting(jobProcessor, processorName);
 
         DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(jobProcessor.job(), DelayedMessage.class);
 
-        listenerEndpoints.stream()
-            .filter(listenerEndpoint -> jobProcessor.job() == listenerEndpoint.getSecond().job() && processorName.equals(listenerEndpoint.getThird()))
+        processorEndpoints.stream()
+            .filter(processorEndpoint -> jobProcessor.job() == processorEndpoint.getSecond().job() && processorName.equals(processorEndpoint.getThird()))
             .findAny()
-            .ifPresent(listenerEndpoint -> log.message("任务处理器重复")
+            .ifPresent(processorEndpoint -> log.message("任务处理器重复")
                 .context(context -> {
-                    context.put("queue", listenerRouting);
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", processorName);
+                    context.put("queue", processorRouting);
+                    context.put("processor", bean.getClass().getName());
+                    context.put("processorName", processorName);
                     context.put("job", jobProcessor.job().getSimpleName());
                 })
             );
 
         SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
         endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setQueueNames(listenerRouting);
+        endpoint.setQueueNames(processorRouting);
         endpoint.setAdmin(amqpAdmin);
 
         declareExchangeAndQueue(jobProcessor, processorName);
@@ -141,9 +139,9 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
             log.message("接到任务")
                 .context(context -> {
                     context.put("queue", endpoint.getQueueNames());
-                    context.put("listener", bean.getClass().getName());
-                    context.put("listenerName", processorName);
-                    context.put("listenerId", endpoint.getId());
+                    context.put("processor", bean.getClass().getName());
+                    context.put("processorName", processorName);
+                    context.put("processorId", endpoint.getId());
                     context.put("job", job.getClass().getSimpleName());
                     context.put("message", message);
                 })
@@ -202,70 +200,50 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
             }
         });
 
-        listenerEndpoints.add(new Tuple<>(endpoint, jobProcessor, processorName));
+        processorEndpoints.add(new Tuple<>(endpoint, jobProcessor, processorName));
     }
 
-    public final static String DeadMark = "DEAD.";
-
     public static String getDeadRouting(String prefix, JobProcessor processor, String processorName) {
-        return AbstractAmqpNotificationPublisher.getRouting(
+        return AbstractAmqpJobArranger.getRouting(
             prefix,
-            suffix(DeadMark + AbstractAmqpNotificationPublisher.getNotificationSource(processor.job()), processorName));
+            suffix("DEAD." + AbstractAmqpJobArranger.getQueueSource(processor.job()), processorName));
+    }
+
+    public static String getRetryRouting(String prefix, JobProcessor processor, String processorName) {
+        return AbstractAmqpJobArranger.getRouting(
+            prefix,
+            suffix("RETRY." + AbstractAmqpJobArranger.getQueueSource(processor.job()), processorName));
     }
 
     private String getProcessorRouting(JobProcessor processor, String processorName) {
-        return suffix(AbstractAmqpNotificationPublisher.getRouting(amqpJobProperties.getNamePrefix(), processor.job()), processorName);
+        return suffix(AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), processor.job()), processorName);
     }
 
-    private String getProcessorName(JobProcessor listener, Method method) {
-        String listenerName = listener.name();
-        if (StringUtils.isEmpty(listenerName)) {
-            listenerName = method.getName();
+    private String getProcessorName(JobProcessor processor, Method method) {
+        String processorName = processor.name();
+        if (StringUtils.isEmpty(processorName)) {
+            processorName = method.getName();
         }
 
-        Assert.hasText(listenerName, "处理器的名称不能为空");
-        return listenerName;
+        Assert.hasText(processorName, "处理器的名称不能为空");
+        return processorName;
     }
 
-    public static String suffix(String routing, String listenerName) {
-        return routing + "#" + listenerName;
+    public static String suffix(String routing, String processorName) {
+        return routing + "#" + processorName;
     }
 
     private void declareExchangeAndQueue(JobProcessor processor, String processorName) {
-        String exchangeName = AbstractAmqpJobArranger.getExchange(amqpJobProperties.getNamePrefix(), processor.job());
-        String listenerRouting = getProcessorRouting(processor, processorName);
+        String routing = AbstractAmqpJobArranger.getRouting(amqpJobProperties.getNamePrefix(), processor.job());
+        String delayRouting = AbstractAmqpJobArranger.getDelayRouting(amqpJobProperties.getNamePrefix(), processor.job());
+        String processorRouting = getProcessorRouting(processor, processorName);
 
-        AMQP.Exchange.DeclareOk exchangeDeclare = rabbitTemplate.execute(channel -> {
-            try {
-                return channel.exchangeDeclarePassive(exchangeName);
-            }
-            catch (IOException e) {
-                log.message("准备新建任务处理器")
-                    .context("exchange", exchangeName)
-                    .context("queue", listenerRouting)
-                    .trace();
+        Exchange exchange = new FanoutExchange(routing, true, false);
+        Queue queue = new Queue(processorRouting);
 
-                return null;
-            }
-        });
-
-        Queue queue = new Queue(listenerRouting);
-
-        if (null == exchangeDeclare) {
-            Map<String, Object> exchangeArguments = new HashMap<>();
-            exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "fanout");
-            Exchange exchange = new CustomExchange(
-                exchangeName,
-                Constants.AMQP_DELAYED_EXCHANGE,
-                true,
-                false,
-                exchangeArguments
-            );
-
-            amqpAdmin.declareExchange(exchange);
-            amqpAdmin.declareQueue(queue);
-            amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(listenerRouting).noargs());
-        }
+        amqpAdmin.declareExchange(exchange);
+        amqpAdmin.declareQueue(queue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(processorRouting).noargs());
 
         Map<String, Object> deadQueueArgs = new HashMap<>();
         deadQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
@@ -273,6 +251,46 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
         Queue deadRouting = new Queue(getDeadRouting(amqpJobProperties.getNamePrefix(), processor, processorName), true, false, false, deadQueueArgs);
         amqpAdmin.declareQueue(deadRouting);
+
+        Map<String, Object> exchangeArguments = new HashMap<>();
+        exchangeArguments.put(Constants.AMQP_DELAYED_TYPE, "direct");
+        Exchange delayExchange = new CustomExchange(
+            delayRouting,
+            Constants.AMQP_DELAYED_EXCHANGE,
+            true,
+            false,
+            exchangeArguments
+        );
+
+        amqpAdmin.declareExchange(delayExchange);
+
+        Map<String, Object> retryQueueArgs = new HashMap<>();
+        retryQueueArgs.put(Constants.AMQP_DLX, Constants.AMQP_DEFAULT);
+        retryQueueArgs.put(Constants.AMQP_DLK, queue.getName());
+        retryQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1); //这里的硬编码是为了消息到达队列之后立即转发至相应的工作队列。下同。
+        Queue retryQueue = new Queue(
+            getRetryRouting(amqpJobProperties.getNamePrefix(), processor, processorName),
+            true,
+            false,
+            false,
+            retryQueueArgs
+        );
+        amqpAdmin.declareQueue(retryQueue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(retryQueue).to(delayExchange).with(retryQueue.getName()).noargs());
+
+        Map<String, Object> delayQueueArgs = new HashMap<>();
+        delayQueueArgs.put(Constants.AMQP_DLX, routing);
+        delayQueueArgs.put(Constants.AMQP_DLK, routing);
+        delayQueueArgs.put(Constants.AMQP_MESSAGE_TTL, 1);
+        Queue delayQueue = new Queue(
+            AbstractAmqpJobArranger.getDelayRouting(amqpJobProperties.getNamePrefix(), processor.job()),
+            true,
+            false,
+            false,
+            delayQueueArgs
+        );
+        amqpAdmin.declareQueue(delayQueue);
+        amqpAdmin.declareBinding(BindingBuilder.bind(delayQueue).to(delayExchange).with(delayQueue.getName()).noargs());
     }
 
     @Override

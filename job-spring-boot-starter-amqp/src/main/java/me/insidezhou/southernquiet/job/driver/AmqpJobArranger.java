@@ -32,8 +32,8 @@ public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Li
     public void arrange(J job, int delay) {
         String prefix = jobProperties.getNamePrefix();
         String source = getQueueSource(job.getClass());
-        String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
+        String delayedRouting = getDelayRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
@@ -47,8 +47,8 @@ public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Li
         };
 
         rabbitTemplate.convertAndSend(
-            exchange,
-            routing,
+            delay > 0 ? delayedRouting : routing,
+            delay > 0 ? delayedRouting : routing,
             job,
             messagePostProcessor
         );

@@ -2,6 +2,7 @@ package me.insidezhou.southernquiet.amqp.rabbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.insidezhou.southernquiet.util.GoldenRatioAmplifier;
+import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -117,6 +118,19 @@ public class AmqpAutoConfiguration {
     @SuppressWarnings("WeakerAccess")
     public static class Properties {
         /**
+         * 把优先队列的级别数设定为cpu核心数的倍数，并且受rabbitmq的上限控制。
+         */
+        public int getPriorityLevels(Metadata metadata) {
+            return Math.min(metadata.getCoreNumber() * 2, 255);
+        }
+
+        /**
+         * 预估的消息最大超时时间。
+         */
+        @DurationUnit(ChronoUnit.SECONDS)
+        private Duration estimatedMaxExpiration = Duration.ofHours(3);
+
+        /**
          * 消息的初始超时时间。
          */
         @DurationUnit(ChronoUnit.SECONDS)
@@ -149,6 +163,14 @@ public class AmqpAutoConfiguration {
          * @see RabbitProperties.Retry#getMaxAttempts()
          */
         private int maxDeliveryAttempts = 1;
+
+        public Duration getEstimatedMaxExpiration() {
+            return estimatedMaxExpiration;
+        }
+
+        public void setEstimatedMaxExpiration(Duration estimatedMaxExpiration) {
+            this.estimatedMaxExpiration = estimatedMaxExpiration;
+        }
 
         public long getPublisherConfirmTimeout() {
             return publisherConfirmTimeout;
