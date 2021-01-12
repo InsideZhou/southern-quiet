@@ -1,5 +1,6 @@
 package test.notification;
 
+import com.rabbitmq.client.*;
 import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
 import me.insidezhou.southernquiet.debounce.Debounce;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -8,10 +9,14 @@ import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguratio
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.QueueInformation;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -19,10 +24,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.annotation.Resource;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -41,6 +50,12 @@ public class NotificationTest {
     @Autowired
     private NotificationPublisher<Serializable> notificationPublisher;
 
+    @Resource
+    private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
+
+    @Resource
+    private CachingConnectionFactory cachingConnectionFactory;
+
     @Autowired
     private AmqpAdmin amqpAdmin;
 
@@ -56,6 +71,75 @@ public class NotificationTest {
     public void delay() {
         notificationPublisher.publish(new DelayedNotification(), 10000);
         notificationPublisher.publish(new DelayedNotification());
+    }
+
+    @Test
+    public void concurrent() {
+        for (int i = 0; i < 10000; i++)
+            notificationPublisher.publish(new ConcurrentNotification());
+
+        long concurrent = rabbitListenerEndpointRegistry.getListenerContainers().stream()
+            .filter(containers -> ((DirectMessageListenerContainer) containers).getQueueNames()[0].contains("concurrent")).count();
+
+        Assert.assertEquals(Listener.concurrency, concurrent);
+    }
+
+    private Channel channel;
+
+    @Before
+    public void setup() throws IOException, TimeoutException {
+        Connection connection = cachingConnectionFactory.getRabbitConnectionFactory().newConnection();
+        channel = connection.createChannel();
+    }
+
+    //验证同一个channel下 不同consumer 是阻塞的?
+    @Test
+    public void testTheSameChannelIsAsynchronous() throws IOException {
+
+        channel.basicQos(1000, true);
+
+        log.message("执行第一个下消费者时间").context("time", Instant.now()).info();
+        channel.basicConsume("NOTIFICATION.ConcurrentNotification#concurrent", true, "myConsumerTag", new DefaultConsumer(channel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+
+                log.message("[testTheSameChannelIsAsynchronous]睡眠1秒")
+                    .context("consumerTag", consumerTag)
+                    .context("envelope", envelope)
+                    .context("properties", properties)
+                    .context("body", new String(body, Charset.defaultCharset()))
+                    .context("ThreadName", Thread.currentThread().getName())
+                    .error();
+
+                try {
+                    Thread.sleep(1000L);
+                }
+                catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        log.message("执行第二个下消费者时间").context("time", Instant.now()).info();
+        channel.basicConsume("NOTIFICATION.ConcurrentNotification#concurrent", true, "myConsumerTag_0", new DefaultConsumer(channel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+
+                log.message("[testTheSameChannelIsAsynchronous] 没有睡眠")
+                    .context("consumerTag", consumerTag)
+                    .context("envelope", envelope)
+                    .context("properties", properties)
+                    .context("body", new String(body, Charset.defaultCharset()))
+                    .context("ThreadName", Thread.currentThread().getName())
+                    .error();
+
+            }
+        });
+
+
+        while (true) {
+            log.message("channel").context("是否处于打开状态", channel.isOpen()).info();
+        }
     }
 
     @Test
@@ -134,6 +218,15 @@ public class NotificationTest {
 
     public static class ConcurrentNotification implements Serializable {
         private UUID id = UUID.randomUUID();
+        private Instant time = Instant.now();
+
+        public Instant getTime() {
+            return time;
+        }
+
+        public void setTime(Instant time) {
+            this.time = time;
+        }
 
         public UUID getId() {
             return id;
