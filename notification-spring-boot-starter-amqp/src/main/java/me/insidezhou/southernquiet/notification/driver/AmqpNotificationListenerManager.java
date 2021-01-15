@@ -7,7 +7,6 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.util.Amplifier;
-import me.insidezhou.southernquiet.util.Tuple;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
@@ -17,7 +16,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
@@ -32,7 +30,7 @@ import org.springframework.util.StringUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 public class AmqpNotificationListenerManager extends AbstractNotificationListenerManager implements Lifecycle, RabbitListenerConfigurer {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AmqpNotificationListenerManager.class);
@@ -40,7 +38,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     private final SmartMessageConverter messageConverter;
     private final CachingConnectionFactory cachingConnectionFactory;
 
-    private final List<Tuple<RabbitListenerEndpoint, NotificationListener, String>> listenerEndpoints = new ArrayList<>();
+    private final List<ListenerEndpoint> listenerEndpoints = new ArrayList<>();
     private final AmqpAutoConfiguration.Properties amqpProperties;
     private final AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties;
     private final Amplifier amplifier;
@@ -75,11 +73,11 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     @Override
     public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
-        listenerEndpoints.forEach(tuple -> {
-            RabbitListenerEndpoint endpoint = tuple.getFirst();
-            String listenerName = tuple.getThird();
+        listenerEndpoints.stream().collect(Collectors.groupingBy(ListenerEndpoint::getRouting)).forEach((routing, group) -> {
+            ListenerEndpoint endpoint = group.get(0);
+            String listenerName = endpoint.getListenerName();
 
-            NotificationListener listenerAnnotation = tuple.getSecond();
+            NotificationListener listenerAnnotation = endpoint.getListenerAnnotation();
             Amplifier amplifier = this.amplifier;
 
             if (!StringUtils.isEmpty(listenerAnnotation.amplifierBeanName())) {
@@ -103,9 +101,16 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             DirectRabbitListenerContainerFactory factory = new DirectRabbitListenerContainerFactory();
             factory.setMessageConverter(messageConverter);
             factory.setAcknowledgeMode(amqpProperties.getAcknowledgeMode());
+            factory.setConsumersPerQueue(listenerAnnotation.concurrency());
             containerFactoryConfigurer.configure(factory, cachingConnectionFactory);
 
-            registrar.registerEndpoint(endpoint, factory);
+            SimpleRabbitListenerEndpoint rabbitListenerEndpoint = new SimpleRabbitListenerEndpoint();
+            rabbitListenerEndpoint.setId(UUID.randomUUID().toString());
+            rabbitListenerEndpoint.setQueueNames(endpoint.getRouting());
+            rabbitListenerEndpoint.setAdmin(amqpAdmin);
+            rabbitListenerEndpoint.setMessageListener(endpoint.getMessageListener());
+
+            registrar.registerEndpoint(rabbitListenerEndpoint, factory);
         });
     }
 
@@ -115,7 +120,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         String listenerRouting = getListenerRouting(listener, listenerName);
 
         listenerEndpoints.stream()
-            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getSecond().notification() && listenerName.equals(listenerEndpoint.getThird()))
+            .filter(listenerEndpoint -> listener.notification() == listenerEndpoint.getListenerAnnotation().notification() && listenerName.equals(listenerEndpoint.getListenerName()))
             .findAny()
             .ifPresent(listenerEndpoint -> log.message("监听器重复")
                 .context(context -> {
@@ -130,28 +135,25 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         DelayedMessage delayedAnnotation = AnnotatedElementUtils.findMergedAnnotation(listener.notification(), DelayedMessage.class);
 
-        IntStream.range(0, Math.min(listener.concurrency(), 1)).forEach(i -> {
-            SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-            endpoint.setId(UUID.randomUUID().toString());
-            endpoint.setQueueNames(listenerRouting);
-            endpoint.setAdmin(amqpAdmin);
+        ListenerEndpoint listenerEndpoint = new ListenerEndpoint();
+        listenerEndpoint.setListenerName(listenerName);
+        listenerEndpoint.setListenerAnnotation(listener);
+        listenerEndpoint.setRouting(listenerRouting);
+        listenerEndpoint.setMessageListener(generateMessageListener(
+            ParameterizedTypeReference.forType(listener.notification()),
+            listenerRouting,
+            listener,
+            bean,
+            method,
+            listenerName,
+            delayedAnnotation
+        ));
 
-            endpoint.setMessageListener(generateMessageListener(
-                ParameterizedTypeReference.forType(listener.notification()),
-                endpoint,
-                listener,
-                bean,
-                method,
-                listenerName,
-                delayedAnnotation
-            ));
-
-            listenerEndpoints.add(new Tuple<>(endpoint, listener, listenerName));
-        });
+        listenerEndpoints.add(listenerEndpoint);
     }
 
     protected MessageListener generateMessageListener(ParameterizedTypeReference<?> typeReference,
-                                                      SimpleRabbitListenerEndpoint endpoint,
+                                                      String routing,
                                                       NotificationListener listener,
                                                       Object bean,
                                                       Method method,
@@ -161,7 +163,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         return message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            onMessageReceived(endpoint, bean, listenerName, notification, message);
+            onMessageReceived(routing, bean, listenerName, notification, message);
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -217,7 +219,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     }
 
     protected void onMessageReceived(
-        SimpleRabbitListenerEndpoint endpoint,
+        String routing,
         Object bean,
         String listenerName,
         Object notification,
@@ -225,10 +227,9 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     ) {
         log.message("收到通知")
             .context(context -> {
-                context.put("queue", endpoint.getQueueNames());
+                context.put("queue", routing);
                 context.put("listener", bean.getClass().getName());
                 context.put("listenerName", listenerName);
-                context.put("listenerId", endpoint.getId());
                 context.put("notification", notification.getClass().getSimpleName());
                 context.put("message", message);
             })
@@ -338,5 +339,44 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
     @Override
     public boolean isRunning() {
         return rabbitTemplate.isRunning();
+    }
+
+    static class ListenerEndpoint {
+        private NotificationListener listenerAnnotation;
+        private String listenerName;
+        private String routing;
+        private MessageListener messageListener;
+
+        public NotificationListener getListenerAnnotation() {
+            return listenerAnnotation;
+        }
+
+        public void setListenerAnnotation(NotificationListener listenerAnnotation) {
+            this.listenerAnnotation = listenerAnnotation;
+        }
+
+        public String getListenerName() {
+            return listenerName;
+        }
+
+        public void setListenerName(String listenerName) {
+            this.listenerName = listenerName;
+        }
+
+        public String getRouting() {
+            return routing;
+        }
+
+        public void setRouting(String routing) {
+            this.routing = routing;
+        }
+
+        public MessageListener getMessageListener() {
+            return messageListener;
+        }
+
+        public void setMessageListener(MessageListener messageListener) {
+            this.messageListener = messageListener;
+        }
     }
 }
