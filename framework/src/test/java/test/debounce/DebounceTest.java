@@ -51,7 +51,7 @@ public class DebounceTest {
         private static int counter = 0;
 
         @EventListener
-        @Debounce(waitFor = 1000, name = "#root.getDefaultName() + '_' + #event.getId()", isSpELName = true)
+        @Debounce(waitFor = 1000, name = "#root.getDefaultName() + '_' + #event.getId()", isSpELName = true, executionTimeout = 10)
         public void work(WorkerEvent event) {
             ++counter;
             log.message("被debounce的worker正在工作中").context("worker", event.id).context("uuid", event.uuid).context("counter", counter).info();

@@ -1,12 +1,8 @@
 package me.insidezhou.southernquiet.debounce
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration.DebounceProperties
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory
-import me.insidezhou.southernquiet.util.Pair
-import me.insidezhou.southernquiet.util.Tuple
 import org.aopalliance.intercept.MethodInvocation
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.util.StringUtils
@@ -18,12 +14,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvider, DisposableBean {
-    private val debouncerAndInvocations = ConcurrentHashMap<String, Pair<Debouncer, MethodInvocation>>()
-    private val pendingInvocations = LinkedList<Tuple<String, Debouncer, MethodInvocation>>()
+    private val debouncerAndInvocations = ConcurrentHashMap<String, DebouncerMetadata>()
+    private val pendingInvocations = LinkedList<DebouncerMetadata>()
     private val reportDuration: Duration = properties.reportDuration
     private var reportTimer = System.currentTimeMillis()
-    private var checkCounter: Long = 0
-    private val workCounter = AtomicLong(0)
+
+    private val workingCounter = AtomicLong(0)
+    private val putCounter = AtomicLong(0)
 
     private val scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
         {
@@ -36,7 +33,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
 
     private val workCoroutineScope = CoroutineScope(Dispatchers.IO)
 
-    override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String): Debouncer {
+    override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String, executionTimeout: Long): Debouncer {
         var debouncerName = name
 
         val bean = invocation.getThis()
@@ -45,64 +42,76 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
             debouncerName = bean.javaClass.name + "#" + method.name + "_" + waitFor + "_" + maxWaitFor
         }
 
-        val pair = debouncerAndInvocations.computeIfAbsent(debouncerName) {
+        val metadata = debouncerAndInvocations.getOrPut(debouncerName) {
             log.message("准备生成debouncer")
                 .context("name", debouncerName)
                 .context("class", bean.javaClass.simpleName)
                 .context("method", method.name)
                 .context("waitFor", waitFor)
                 .context("maxWaitFor", maxWaitFor)
+                .context("timeout", executionTimeout)
                 .debug()
 
-            Pair(DefaultDebouncer(waitFor, maxWaitFor), invocation)
+            putCounter.incrementAndGet()
+
+            DebouncerMetadata(debouncerName, DefaultDebouncer(waitFor, maxWaitFor), invocation, executionTimeout)
         }
-        pair.second = invocation
-        debouncerAndInvocations[debouncerName] = pair
-        return pair.first
+
+        return metadata.debouncer
     }
 
     private fun checkDebouncer() {
-        debouncerAndInvocations.keys
-            .map {
-                val pair = debouncerAndInvocations[it] ?: return@map null
-                Tuple(it, pair.first, pair.second)
-            }
-            .filterNotNull()
-            .filter { it.second.isStable }
+        debouncerAndInvocations
+            .filter { it.value.debouncer.isStable }
             .forEach {
-                ++checkCounter
-                pendingInvocations.add(it)
-                debouncerAndInvocations.remove(it.first)
+                pendingInvocations.add(it.value)
+                debouncerAndInvocations.remove(it.key)
             }
+
+        workingCounter.addAndGet(pendingInvocations.size.toLong())
 
         val now = System.currentTimeMillis()
         val interval = Duration.ofMillis(now - reportTimer)
         if (interval >= reportDuration) {
-            val check = checkCounter
-            val work = workCounter.getAndSet(0)
-            val pending = pendingInvocations.size
+            val count = putCounter.getAndSet(0)
+            val unstable = debouncerAndInvocations.size
 
-            checkCounter = 0
             reportTimer = now
 
             log.message("debouncer计数器")
-                .context("check", check)
-                .context("work", work)
-                .context("pending", pending)
+                .context("count", count)
                 .context("interval", interval)
-                .debug()
+                .context("unstable", unstable)
+                .context("working", workingCounter.get())
+                .trace()
         }
     }
 
     private fun workDebouncer() {
         do {
-            val tuple = pendingInvocations.poll() ?: return
+            val metadata = pendingInvocations.poll() ?: return
 
             workCoroutineScope.launch {
-                val name = tuple.first
-                val invocation = tuple.third
+                val name = metadata.name
+                val invocation = metadata.invocation
+                val timeout = metadata.executionTimeout
+
                 try {
-                    invocation.proceed()
+                    if (timeout > 0) {
+                        val result = withTimeoutOrNull(timeout) {
+                            invocation.proceed()
+                            "DONE"
+                        }
+
+                        if (null == result) {
+                            log.message("施加了去抖动的方法执行超时")
+                                .context("debouncer", name)
+                                .warn()
+                        }
+                    }
+                    else {
+                        invocation.proceed()
+                    }
                 }
                 catch (throwable: Throwable) {
                     log.message("施加了去抖动的方法执行失败")
@@ -110,7 +119,9 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
                         .exception(throwable)
                         .error()
                 }
-                workCounter.incrementAndGet()
+                finally {
+                    workingCounter.decrementAndGet()
+                }
             }
         }
         while (true)
@@ -124,3 +135,5 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
         private val log = SouthernQuietLoggerFactory.getLogger(DefaultDebouncerProvider::class.java)
     }
 }
+
+private class DebouncerMetadata(val name: String, val debouncer: Debouncer, val invocation: MethodInvocation, val executionTimeout: Long)
