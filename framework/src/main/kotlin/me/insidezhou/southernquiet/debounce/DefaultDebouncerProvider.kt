@@ -9,18 +9,16 @@ import org.springframework.beans.factory.DisposableBean
 import org.springframework.util.StringUtils
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
-class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
-    constructor(properties: DebounceProperties, metadata: Metadata) : this(properties,
-        ThreadPoolExecutor(
-            metadata.coreNumber,
-            metadata.coreNumber * 8,
-            60L,
-            TimeUnit.SECONDS,
-            LinkedBlockingQueue<Runnable>()
-        ).asCoroutineDispatcher()
+class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
+    constructor(properties: DebounceProperties, metadata: Metadata) : this(
+        properties,
+        Executors.newFixedThreadPool(metadata.coreNumber * 2).asCoroutineDispatcher()
     )
 
     private val debouncerAndInvocations = ConcurrentHashMap<String, DebouncerMetadata>()
@@ -28,7 +26,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: Corou
     private val reportDuration: Duration = properties.reportDuration
     private var reportTimer = System.currentTimeMillis()
 
-    private val workingCounter = AtomicLong(0)
+    private val workCounter = AtomicLong(0)
     private val putCounter = AtomicLong(0)
 
     private val scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
@@ -77,7 +75,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: Corou
                 debouncerAndInvocations.remove(it.key)
             }
 
-        workingCounter.addAndGet(pendingInvocations.size.toLong())
+        workCounter.addAndGet(pendingInvocations.size.toLong())
 
         val now = System.currentTimeMillis()
         val interval = Duration.ofMillis(now - reportTimer)
@@ -88,10 +86,17 @@ class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: Corou
             reportTimer = now
 
             log.message("debouncer计数器")
-                .context("count", count)
-                .context("interval", interval)
-                .context("unstable", unstable)
-                .context("working", workingCounter.get())
+                .context {
+                    it["count"] = count
+                    it["interval"] = interval
+                    it["unstable"] = unstable
+                    it["work"] = workCounter.get()
+
+                    val executor = dispatcher.asExecutor()
+                    if (executor is ThreadPoolExecutor) {
+                        it["working"] = executor.activeCount
+                    }
+                }
                 .trace()
         }
     }
@@ -129,7 +134,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: Corou
                         .error()
                 }
                 finally {
-                    workingCounter.decrementAndGet()
+                    workCounter.decrementAndGet()
                 }
             }
         }
