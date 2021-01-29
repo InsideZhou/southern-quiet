@@ -105,8 +105,8 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean(DebouncerProvider.class)
-    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
-        return new DefaultDebouncerProvider(debounceProperties);
+    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, Metadata metadata) {
+        return new DefaultDebouncerProvider(debounceProperties, metadata);
     }
 
     @Bean

@@ -3,17 +3,26 @@ package me.insidezhou.southernquiet.debounce
 import kotlinx.coroutines.*
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration.DebounceProperties
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory
+import me.insidezhou.southernquiet.util.Metadata
 import org.aopalliance.intercept.MethodInvocation
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.util.StringUtils
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 
-class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvider, DisposableBean {
+class DefaultDebouncerProvider(properties: DebounceProperties, dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
+    constructor(properties: DebounceProperties, metadata: Metadata) : this(properties,
+        ThreadPoolExecutor(
+            metadata.coreNumber,
+            metadata.coreNumber * 8,
+            60L,
+            TimeUnit.SECONDS,
+            LinkedBlockingQueue<Runnable>()
+        ).asCoroutineDispatcher()
+    )
+
     private val debouncerAndInvocations = ConcurrentHashMap<String, DebouncerMetadata>()
     private val pendingInvocations = LinkedList<DebouncerMetadata>()
     private val reportDuration: Duration = properties.reportDuration
@@ -31,7 +40,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties) : DebouncerProvid
         1,
         TimeUnit.MILLISECONDS)
 
-    private val workCoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val workCoroutineScope = CoroutineScope(dispatcher)
 
     override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String, executionTimeout: Long): Debouncer {
         var debouncerName = name
