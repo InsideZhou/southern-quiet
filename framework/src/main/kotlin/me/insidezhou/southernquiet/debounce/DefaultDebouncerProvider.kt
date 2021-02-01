@@ -9,16 +9,19 @@ import org.springframework.beans.factory.DisposableBean
 import org.springframework.util.StringUtils
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 
 class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
     constructor(properties: DebounceProperties, metadata: Metadata) : this(
         properties,
-        Executors.newFixedThreadPool(metadata.coreNumber * 2).asCoroutineDispatcher()
+        ThreadPoolExecutor(
+            metadata.coreNumber,
+            Int.MAX_VALUE,
+            60L,
+            TimeUnit.SECONDS,
+            ArrayBlockingQueue<Runnable>(metadata.coreNumber * 10)
+        ).asCoroutineDispatcher()
     )
 
     private val debouncerAndInvocations = ConcurrentHashMap<String, DebouncerMetadata>()
