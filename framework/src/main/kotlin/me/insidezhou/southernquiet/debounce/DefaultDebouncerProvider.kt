@@ -11,6 +11,7 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.round
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
@@ -19,9 +20,9 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
         ThreadPoolExecutor(
             metadata.coreNumber,
             Int.MAX_VALUE,
-            60L,
+            maxOf(1L, round(metadata.coreNumber / 20.0).toLong()),
             TimeUnit.SECONDS,
-            ArrayBlockingQueue<Runnable>(metadata.coreNumber * 10)
+            ArrayBlockingQueue<Runnable>(metadata.coreNumber * 30)
         ).asCoroutineDispatcher()
     )
 
@@ -30,8 +31,9 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
     private val reportDuration: Duration = properties.reportDuration
     private var reportTimer = System.currentTimeMillis()
 
-    private val workCounter = AtomicLong(0)
+    private val pendingCounter = AtomicLong(0)
     private val putCounter = AtomicLong(0)
+    private val doneCounter = AtomicLong(0)
 
     private val scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
         {
@@ -79,26 +81,31 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
                 debouncerAndInvocations.remove(it.key)
             }
 
-        workCounter.addAndGet(pendingInvocations.size.toLong())
+        pendingCounter.addAndGet(pendingInvocations.size.toLong())
 
         val now = System.currentTimeMillis()
         val interval = Duration.ofMillis(now - reportTimer)
         if (interval >= reportDuration) {
-            val count = putCounter.getAndSet(0)
+            val put = putCounter.getAndSet(0)
+            val done = doneCounter.getAndSet(0)
             val unstable = debouncerAndInvocations.size
 
             reportTimer = now
 
+            val executor = dispatcher.asExecutor()
+
             log.message("debouncer计数器")
                 .context {
-                    it["count"] = count
+                    it["put"] = put
+                    it["done"] = done
                     it["interval"] = interval
                     it["unstable"] = unstable
-                    it["work"] = workCounter.get()
+                    it["pending"] = pendingCounter.get()
 
-                    val executor = dispatcher.asExecutor()
                     if (executor is ThreadPoolExecutor) {
                         it["working"] = executor.activeCount
+                        it["pool"] = executor.poolSize
+                        it["queue"] = executor.queue.size
                     }
                 }
                 .trace()
@@ -132,7 +139,8 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
                     onWorkException(throwable, metadata)
                 }
                 finally {
-                    workCounter.decrementAndGet()
+                    pendingCounter.decrementAndGet()
+                    doneCounter.incrementAndGet()
                 }
             }
         }

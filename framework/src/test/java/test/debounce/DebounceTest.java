@@ -35,6 +35,8 @@ public class DebounceTest {
 
     @Test
     public void debounce() throws Exception {
+        Assert.assertEquals(2.0, Math.round(64 / 30.0), 0.0);
+
         eventPublisher.publishEvent(new WorkerEvent(1));
         eventPublisher.publishEvent(new WorkerEvent(1));
         eventPublisher.publishEvent(new WorkerEvent(1));
