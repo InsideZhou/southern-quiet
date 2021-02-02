@@ -12,7 +12,8 @@ import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 
-class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
+@Suppress("MemberVisibilityCanBePrivate")
+open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
     constructor(properties: DebounceProperties, metadata: Metadata) : this(
         properties,
         ThreadPoolExecutor(
@@ -109,7 +110,6 @@ class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: C
             val metadata = pendingInvocations.poll() ?: return
 
             workCoroutineScope.launch {
-                val name = metadata.name
                 val invocation = metadata.invocation
                 val timeout = metadata.executionTimeout
 
@@ -121,9 +121,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: C
                         }
 
                         if (null == result) {
-                            log.message("施加了去抖动的方法执行超时")
-                                .context("debouncer", name)
-                                .warn()
+                            onWorkTimeout(metadata)
                         }
                     }
                     else {
@@ -131,10 +129,7 @@ class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: C
                     }
                 }
                 catch (throwable: Throwable) {
-                    log.message("施加了去抖动的方法执行失败")
-                        .context("debouncer", name)
-                        .exception(throwable)
-                        .error()
+                    onWorkException(throwable, metadata)
                 }
                 finally {
                     workCounter.decrementAndGet()
@@ -142,6 +137,19 @@ class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: C
             }
         }
         while (true)
+    }
+
+    protected open fun onWorkException(throwable: Throwable, metadata: DebouncerMetadata) {
+        log.message("施加了去抖动的方法执行失败")
+            .context("debouncer", metadata.name)
+            .exception(throwable)
+            .error()
+    }
+
+    protected open fun onWorkTimeout(metadata: DebouncerMetadata) {
+        log.message("施加了去抖动的方法执行超时")
+            .context("debouncer", metadata.name)
+            .warn()
     }
 
     override fun destroy() {
@@ -153,4 +161,4 @@ class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: C
     }
 }
 
-private class DebouncerMetadata(val name: String, val debouncer: Debouncer, val invocation: MethodInvocation, val executionTimeout: Long)
+class DebouncerMetadata(val name: String, val debouncer: Debouncer, val invocation: MethodInvocation, val executionTimeout: Long)
