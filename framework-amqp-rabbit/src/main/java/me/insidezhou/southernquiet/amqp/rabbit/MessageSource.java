@@ -15,8 +15,8 @@ import java.lang.annotation.*;
 @Documented
 public @interface MessageSource {
     @AliasFor("source")
-    String value();
+    String value() default "";
 
     @AliasFor("value")
-    String source();
+    String source() default "";
 }
