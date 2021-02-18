@@ -34,13 +34,37 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         AmqpAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
         RabbitConnectionFactoryBean factoryBean,
+        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    ) {
+        this(messageConverter, notificationProperties, properties, rabbitProperties, factoryBean, connectionNameStrategy, (correlationData, ack, cause) -> {
+            log.message("接到publisher confirm")
+                .context("correlationData", correlationData)
+                .context("ack", ack)
+                .context("cause", cause)
+                .debug();
+
+            if (!ack) {
+                log.message("通知发送确认失败")
+                    .context("correlationData", correlationData)
+                    .context("cause", cause)
+                    .warn();
+            }
+        });
+    }
+
+    public AmqpNotificationPublisher(
+        SmartMessageConverter messageConverter,
+        AmqpNotificationAutoConfiguration.Properties notificationProperties,
+        AmqpAutoConfiguration.Properties properties,
+        RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
-        boolean enablePublisherConfirm
+        RabbitTemplate.ConfirmCallback confirmCallback
     ) {
         this.messageConverter = messageConverter;
         this.notificationProperties = notificationProperties;
         this.properties = properties;
-        this.enablePublisherConfirm = enablePublisherConfirm;
+        this.enablePublisherConfirm = properties.isEnablePublisherConfirm() && null != confirmCallback;
 
         CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
         if (enablePublisherConfirm) {
@@ -51,21 +75,9 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         rabbitTemplate.setMessageConverter(messageConverter);
 
         if (enablePublisherConfirm) {
-            rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-                log.message("接到publisher confirm")
-                    .context("correlationData", correlationData)
-                    .context("ack", ack)
-                    .context("cause", cause)
-                    .debug();
-
-                if (!ack) {
-                    log.message("通知发送确认失败")
-                        .context("correlationData", correlationData)
-                        .context("cause", cause)
-                        .warn();
-                }
-            });
+            rabbitTemplate.setConfirmCallback(confirmCallback);
         }
+
         this.rabbitTemplate = rabbitTemplate;
     }
 

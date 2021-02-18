@@ -49,8 +49,7 @@ public class AmqpNotificationAutoConfiguration {
             properties,
             rabbitProperties,
             factoryBean,
-            connectionNameStrategy,
-            properties.isEnablePublisherConfirm()
+            connectionNameStrategy
         );
     }
 
