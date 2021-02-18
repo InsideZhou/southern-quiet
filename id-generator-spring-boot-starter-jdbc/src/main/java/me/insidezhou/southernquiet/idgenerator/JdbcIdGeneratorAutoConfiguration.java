@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -53,20 +54,8 @@ public class JdbcIdGeneratorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, Properties properties) {
-        return new JdbcIdGenerator(
-            metadata,
-            workerTable,
-            InstepSQL.INSTANCE,
-            properties.getTimestampBits(),
-            properties.getHighPaddingBits(),
-            properties.getWorkerIdBits(),
-            properties.getLowPaddingBits(),
-            properties.getEpoch(),
-            properties.getSequenceStartRange(),
-            properties.isRandomSequenceStart(),
-            properties.getTickAccuracy()
-        );
+    public JdbcIdGenerator jdbcIdGenerator(Metadata metadata, IdGeneratorWorkerTable workerTable, Properties properties, TaskScheduler taskScheduler) {
+        return new JdbcIdGenerator(metadata, workerTable, InstepSQL.INSTANCE, properties, taskScheduler);
     }
 
     @Bean

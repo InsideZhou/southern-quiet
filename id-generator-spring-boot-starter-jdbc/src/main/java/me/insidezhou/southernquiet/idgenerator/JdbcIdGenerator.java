@@ -8,7 +8,8 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.util.Assert;
 
 import javax.annotation.PreDestroy;
@@ -21,15 +22,23 @@ import java.util.stream.IntStream;
 public class JdbcIdGenerator implements IdGenerator {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JdbcIdGenerator.class);
 
+    private static CronTrigger reportTrigger;
+    private static boolean clockMovedBack = false;
+
+    private synchronized static void initReporter(JdbcIdGeneratorAutoConfiguration.Properties properties, TaskScheduler taskScheduler, JdbcIdGenerator jdbcIdGenerator) {
+        if (null == reportTrigger) {
+            reportTrigger = new CronTrigger(properties.getReportCron());
+            taskScheduler.schedule(jdbcIdGenerator::report, reportTrigger);
+        }
+    }
+
     private final IdGenerator idGenerator;
-    private final Metadata metadata;
+    private final String runtimeId;
     private final IdGeneratorWorkerTable workerTable;
     private final InstepSQL instepSQL;
     private final int workerIdInUse;
     private final int maxWorkerId;
-    private boolean clockMovedBack = false;
 
-    @SuppressWarnings("WeakerAccess")
     public JdbcIdGenerator(Metadata metadata,
                            IdGeneratorWorkerTable workerTable,
                            InstepSQL instepSQL,
@@ -42,7 +51,7 @@ public class JdbcIdGenerator implements IdGenerator {
                            boolean randomSequenceStart,
                            int tickAccuracy
     ) {
-        this.metadata = metadata;
+        this.runtimeId = metadata.getRuntimeId();
         this.workerTable = workerTable;
         this.instepSQL = instepSQL;
 
@@ -64,10 +73,32 @@ public class JdbcIdGenerator implements IdGenerator {
         );
     }
 
-    private int getWorkerId() {
-        String appId = metadata.getRuntimeId();
+    @SuppressWarnings("WeakerAccess")
+    public JdbcIdGenerator(Metadata metadata,
+                           IdGeneratorWorkerTable workerTable,
+                           InstepSQL instepSQL,
+                           JdbcIdGeneratorAutoConfiguration.Properties properties,
+                           TaskScheduler taskScheduler
+    ) {
+        this(
+            metadata,
+            workerTable,
+            instepSQL,
+            properties.getTimestampBits(),
+            properties.getHighPaddingBits(),
+            properties.getWorkerIdBits(),
+            properties.getLowPaddingBits(),
+            properties.getEpoch(),
+            properties.getSequenceStartRange(),
+            properties.isRandomSequenceStart(),
+            properties.getTickAccuracy()
+        );
 
-        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, appId)).orderBy(ColumnExtensionKt.desc(workerTable.workerTime));
+        initReporter(properties, taskScheduler, this);
+    }
+
+    private int getWorkerId() {
+        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, runtimeId)).orderBy(ColumnExtensionKt.desc(workerTable.workerTime));
         List<TableRow> rows;
         try {
             rows = instepSQL.executor().execute(plan, TableRow.class);
@@ -101,7 +132,7 @@ public class JdbcIdGenerator implements IdGenerator {
 
         for (Integer workerId : available) {
             SQLPlan<TableInsertPlan> insertPlan = workerTable.insert()
-                .addValue(workerTable.appId, metadata.getRuntimeId())
+                .addValue(workerTable.appId, runtimeId)
                 .addValue(workerTable.workerTime, Instant.now())
                 .addValue(workerTable.workerId, workerId)
                 .debug();
@@ -134,12 +165,9 @@ public class JdbcIdGenerator implements IdGenerator {
         throw new RuntimeException("无法从数据库中获取workerId");
     }
 
-    @SuppressWarnings("SpringElInspection")
-    @Scheduled(cron = "#{jdbcIdGeneratorProperties.reportCron}")
     @PreDestroy
-    public void report() {
+    public synchronized void report() {
         Instant now = Instant.now();
-        String runtimeId = metadata.getRuntimeId();
 
         try {
             SQLPlan<TableUpdatePlan> plan = workerTable.update()
@@ -147,7 +175,7 @@ public class JdbcIdGenerator implements IdGenerator {
                 .where(
                     ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
                         .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
-                        .and(ColumnExtensionKt.lt(workerTable.workerTime, now))
+                        .and(ColumnExtensionKt.lte(workerTable.workerTime, now))
                 ).debug();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
@@ -168,7 +196,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     @Override
-    public long generate() {
+    public synchronized long generate() {
         if (clockMovedBack) throw new RuntimeException("时钟已回退，无法发号。");
 
         return idGenerator.generate();
