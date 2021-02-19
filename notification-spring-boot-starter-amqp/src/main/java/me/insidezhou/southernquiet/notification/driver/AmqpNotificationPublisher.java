@@ -10,6 +10,7 @@ import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
@@ -87,6 +88,10 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
 
     @Override
     public void publish(N notification, int delay) {
+        publish(notification, delay, null);
+    }
+
+    public void publish(N notification, int delay, CorrelationData correlationData) {
         String prefix = notificationProperties.getNamePrefix();
         String source = getNotificationSource(notification.getClass());
         String routing = getRouting(prefix, source);
@@ -109,10 +114,11 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
                     delay > 0 ? delayedRouting : routing,
                     delay > 0 ? delayedRouting : routing,
                     notification,
-                    messagePostProcessor
+                    messagePostProcessor,
+                    correlationData
                 );
 
-                rabbitTemplate.waitForConfirmsOrDie(properties.getPublisherConfirmTimeout());
+                operations.waitForConfirmsOrDie(properties.getPublisherConfirmTimeout());
                 return null;
             });
         }
@@ -121,7 +127,8 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
                 delay > 0 ? delayedRouting : routing,
                 delay > 0 ? delayedRouting : routing,
                 notification,
-                messagePostProcessor
+                messagePostProcessor,
+                correlationData
             );
         }
     }
