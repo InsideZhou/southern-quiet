@@ -331,7 +331,7 @@ public class FileWebController {
         }
     }
 
-    private void saveSymbolicLink(String filename, ServerHttpRequest request, InputStream inputStream) {
+    protected void saveSymbolicLink(String filename, ServerHttpRequest request, InputStream inputStream) {
         MultiValueMap<String, String> queryParams = request.getQueryParams();
         if (queryParams.getFirst("link") == null || !"sha1".equals(queryParams.getFirst("link"))) return;
 
