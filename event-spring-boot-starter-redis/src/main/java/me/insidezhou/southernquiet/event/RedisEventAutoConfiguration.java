@@ -22,15 +22,15 @@ public class RedisEventAutoConfiguration {
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public RedisEventPubSub redisEventPublisher(RedisTemplateBuilder builder, ObjectMapper objectMapper, FrameworkAutoConfiguration.EventProperties properties, ApplicationContext applicationContext) {
-        return new RedisEventPubSub<>(builder, objectMapper, properties, applicationContext);
+    public RedisEventPubSub redisEventPublisher(RedisTemplateProvider provider, ObjectMapper objectMapper, FrameworkAutoConfiguration.EventProperties properties, ApplicationContext applicationContext) {
+        return new RedisEventPubSub<>(provider, objectMapper, properties, applicationContext);
     }
 
     @SuppressWarnings("unchecked")
     @Bean
     @ConditionalOnMissingBean
-    public RedisTemplateBuilder redisTemplateBuilder(JsonSerializationRedisSerializer eventSerializer, RedisConnectionFactory connectionFactory) {
-        return new RedisTemplateBuilder<>(eventSerializer, connectionFactory);
+    public RedisTemplateProvider redisTemplateProvider(JsonSerializationRedisSerializer eventSerializer, RedisConnectionFactory connectionFactory) {
+        return new RedisTemplateProvider<>(eventSerializer, connectionFactory);
     }
 
     @Bean
