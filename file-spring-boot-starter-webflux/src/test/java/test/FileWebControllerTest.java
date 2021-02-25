@@ -3,6 +3,7 @@ package test;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
+import me.insidezhou.southernquiet.file.web.model.IdHashAlgorithm;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -85,23 +86,19 @@ public class FileWebControllerTest {
         uploadAssert(builder, "upload");
     }
 
-    @Autowired
-    private FrameworkAutoConfiguration.LocalFileSystemProperties properties;
-
     @Test
     public void createSymbolicLink() throws IOException {
         //创建link
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("files", resource, MediaType.IMAGE_PNG);
         uploadAssert(builder, "upload?link=sha1");
-        String workingRoot = SystemPropertyUtils.resolvePlaceholders(properties.getWorkingRoot());
 
         InputStream inputStream = new ByteArrayInputStream(StreamUtils.copyToByteArray(resource.getInputStream()));
         String link = DigestUtils.sha1Hex(inputStream);
 
         //通过link获取文件
         EntityExchangeResult<byte[]> result = client.get()
-            .uri("/file/{id}", link)
+            .uri("/image/{id}/{hashAlgorithm}", link, IdHashAlgorithm.sha1)
             .exchange()
             .expectStatus().is2xxSuccessful()
             .expectHeader().contentLength(resource.contentLength())
@@ -113,10 +110,11 @@ public class FileWebControllerTest {
         ByteArrayInputStream resultInputStream = new ByteArrayInputStream(result.getResponseBody());
         Assert.assertEquals(resultInputStream.available(), inputStream.available());
 
-        //删除已创建link
-        File file = new File(workingRoot + FileSystem.PATH_SEPARATOR_STRING + FileWebController.getFilePath(link));
-        Assert.assertTrue(Files.isSymbolicLink(file.toPath()));
-        file.deleteOnExit();
+        //1.读取软链接和源文件,指纹一样
+        String hash1 = org.springframework.util.DigestUtils.md5DigestAsHex(inputStream);
+        String hash2 = org.springframework.util.DigestUtils.md5DigestAsHex(resultInputStream);
+        Assert.assertEquals(hash1, hash2);
+
     }
 
     @Test
