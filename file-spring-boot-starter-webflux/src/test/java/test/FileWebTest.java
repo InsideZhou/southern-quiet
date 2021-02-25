@@ -45,28 +45,28 @@ public class FileWebTest {
             return super.base64upload(files, request);
         }
 
-        @GetMapping("file/{id}")
+        @GetMapping(value = {"file/{id}", "file/{id}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<DataBuffer>> file(@PathVariable String id, ServerHttpRequest request) {
-            return super.file(id, request);
+        public Mono<ResponseEntity<DataBuffer>> file(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request) {
+            return super.file(id, hashAlgorithm, request);
         }
 
-        @GetMapping("base64file/{id}")
+        @GetMapping(value = {"base64file/{id}", "base64file/{id}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<String>> base64file(@PathVariable String id, ServerHttpRequest request) {
-            return super.base64file(id, request);
+        public Mono<ResponseEntity<String>> base64file(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request) {
+            return super.base64file(id, hashAlgorithm, request);
         }
 
         @SuppressWarnings("MVCPathVariableInspection")
-        @GetMapping(value = {"image/{id}/{scale}"})
+        @GetMapping(value = {"image/{id}/{scale}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ImageScale scale, ServerHttpRequest request, ServerHttpResponse response) {
-            return super.image(id, scale, request, response);
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ImageScale scale, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+            return super.image(id, scale, hashAlgorithm, request, response);
         }
 
-        @GetMapping(value = {"image/{id}"})
-        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ServerHttpRequest request, ServerHttpResponse response) {
-            return super.image(id, null, request, response);
+        @GetMapping(value = {"image/{id}", "image/{id}/{hashAlgorithm}"})
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+            return super.image(id, null, hashAlgorithm, request, response);
         }
 
         @ModelAttribute

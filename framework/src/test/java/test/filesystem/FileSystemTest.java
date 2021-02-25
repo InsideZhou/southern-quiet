@@ -199,4 +199,36 @@ public class FileSystemTest {
         }
     }
 
+    @Test
+    public void writeSymbolicLink() throws InvalidFileException, IOException {
+        String link = "hello/symbolicLink";
+        String target = "hello/target.txt";
+        fileSystem.put(target, "");
+        fileSystem.createSymbolicLink(link, target);
+
+        String content = "write symbolicLink";
+
+        try (OutputStream outputStream = fileSystem.openWriteStream(link)) {
+            outputStream.write(content.getBytes());
+            outputStream.flush();
+        }
+        catch (InvalidFileException e) {
+            e.printStackTrace();
+        }
+
+        try (InputStream inputStream = fileSystem.openReadStream(target)) {
+            byte[] bytes = inputStream.readAllBytes();
+            String result = new String(bytes);
+
+            //验证通过软链接 可以直接编辑源文件
+            Assert.assertEquals(content, result);
+        }
+        catch (InvalidFileException e) {
+            e.printStackTrace();
+        }
+
+        fileSystem.delete(link);
+        fileSystem.delete(target);
+    }
+
 }
