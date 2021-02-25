@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-
 @SpringBootApplication
 @ImportAutoConfiguration(FileWebFluxAutoConfiguration.class)
 public class FileWebTest {
@@ -49,29 +47,28 @@ public class FileWebTest {
 
         @GetMapping("file/{id}")
         @Override
-        public ResponseEntity<Flux<DataBuffer>> file(@PathVariable String id, ServerHttpRequest request) throws IOException {
+        public Mono<ResponseEntity<DataBuffer>> file(@PathVariable String id, ServerHttpRequest request) {
             return super.file(id, request);
         }
 
         @GetMapping("base64file/{id}")
         @Override
-        public ResponseEntity<Mono<String>> base64file(@PathVariable String id, ServerHttpRequest request) throws IOException {
+        public Mono<ResponseEntity<String>> base64file(@PathVariable String id, ServerHttpRequest request) {
             return super.base64file(id, request);
         }
 
         @SuppressWarnings("MVCPathVariableInspection")
         @GetMapping(value = {"image/{id}/{scale}"})
         @Override
-        public ResponseEntity<Flux<DataBuffer>> image(@PathVariable String id, ImageScale scale, ServerHttpRequest request, ServerHttpResponse response) throws IOException {
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ImageScale scale, ServerHttpRequest request, ServerHttpResponse response) {
             return super.image(id, scale, request, response);
         }
 
         @GetMapping(value = {"image/{id}"})
-        public ResponseEntity<Flux<DataBuffer>> image(@PathVariable String id, ServerHttpRequest request, ServerHttpResponse response) throws IOException {
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ServerHttpRequest request, ServerHttpResponse response) {
             return super.image(id, null, request, response);
         }
 
-        @SuppressWarnings("MVCPathVariableInspection")
         @ModelAttribute
         @Override
         protected ImageScale imageScale(@PathVariable(value = "scale", required = false) String scale) {

@@ -16,5 +16,5 @@ public interface JobArranger<J> {
      *
      * @param delay 要延迟的时间，单位：毫秒。
      */
-    void arrange(J job, long delay);
+    void arrange(J job, int delay);
 }

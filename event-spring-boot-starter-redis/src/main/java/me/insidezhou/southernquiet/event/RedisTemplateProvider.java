@@ -5,20 +5,21 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @SuppressWarnings("rawtypes")
-public class RedisTemplateBuilder<T extends Serializable> {
+public class RedisTemplateProvider<T extends Serializable> {
     private RedisTemplate redisTemplate;
     private RedisSerializer<T> eventSerializer;
     private RedisSerializer channelSerializer;
     private RedisConnectionFactory connectionFactory;
 
-    public RedisTemplateBuilder(RedisSerializer<T> eventSerializer, RedisConnectionFactory connectionFactory) {
+    public RedisTemplateProvider(RedisSerializer<T> eventSerializer, RedisConnectionFactory connectionFactory) {
         this(eventSerializer, null, connectionFactory);
     }
 
     @SuppressWarnings("unchecked")
-    public RedisTemplateBuilder(RedisSerializer<T> eventSerializer, RedisSerializer channelSerializer, RedisConnectionFactory connectionFactory) {
+    public RedisTemplateProvider(RedisSerializer<T> eventSerializer, RedisSerializer channelSerializer, RedisConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
 
         this.redisTemplate = new RedisTemplate();
@@ -27,12 +28,7 @@ public class RedisTemplateBuilder<T extends Serializable> {
         redisTemplate.afterPropertiesSet();
 
         this.eventSerializer = eventSerializer;
-        if (null == channelSerializer) {
-            this.channelSerializer = redisTemplate.getStringSerializer();
-        }
-        else {
-            this.channelSerializer = channelSerializer;
-        }
+        this.channelSerializer = Objects.requireNonNullElseGet(channelSerializer, redisTemplate::getStringSerializer);
     }
 
     public RedisTemplate getRedisTemplate() {

@@ -6,11 +6,9 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 public abstract class AbstractAmqpNotificationPublisher<N> implements NotificationPublisher<N> {
-    public final static String DelayMark = "DELAY.";
-
     @Override
     public void publish(N notification) {
-        long delay = 0;
+        int delay = 0;
 
         DelayedMessage annotation = AnnotatedElementUtils.findMergedAnnotation(notification.getClass(), DelayedMessage.class);
         if (null != annotation) {
@@ -25,14 +23,6 @@ public abstract class AbstractAmqpNotificationPublisher<N> implements Notificati
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getNotificationSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
     public static String getRouting(String prefix, Class<?> cls) {
         return getRouting(prefix, getNotificationSource(cls));
     }
@@ -41,11 +31,11 @@ public abstract class AbstractAmqpNotificationPublisher<N> implements Notificati
         return prefix + source;
     }
 
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getNotificationSource(cls));
+    public static String getDelayRouting(String prefix, Class<?> cls) {
+        return getDelayRouting(prefix, getNotificationSource(cls));
     }
 
-    public static String getDelayedRouting(String prefix, String source) {
-        return prefix + DelayMark + source;
+    public static String getDelayRouting(String prefix, String source) {
+        return prefix + "DELAY." + source;
     }
 }

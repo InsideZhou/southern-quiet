@@ -32,4 +32,9 @@ public @interface Debounce {
      * {@link #name()}是否SpEL字符串，默认false。
      */
     boolean isSpELName() default false;
+
+    /**
+     * 去抖动方法在执行时，最长执行时间，超时则强行终止。默认不限。单位：毫秒。
+     */
+    long executionTimeout() default -1;
 }

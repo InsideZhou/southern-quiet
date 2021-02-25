@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.job.driver;
 
-import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpJobArranger;
 import me.insidezhou.southernquiet.job.AmqpJobAutoConfiguration;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -30,27 +29,26 @@ public class AmqpJobArranger<J> extends AbstractAmqpJobArranger<J> implements Li
     }
 
     @Override
-    public void arrange(J job, long delay) {
+    public void arrange(J job, int delay) {
         String prefix = jobProperties.getNamePrefix();
         String source = getQueueSource(job.getClass());
-        String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
-        String delayRouting = getDelayedRouting(prefix, source);
+        String delayedRouting = getDelayRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
             properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (delay > 0) {
-                properties.setExpiration(String.valueOf(delay));
+                properties.setDelay(delay);
             }
 
             return message;
         };
 
         rabbitTemplate.convertAndSend(
-            delay > 0 ? Constants.AMQP_DEFAULT : exchange,
-            delay > 0 ? delayRouting : routing,
+            delay > 0 ? delayedRouting : routing,
+            delay > 0 ? delayedRouting : routing,
             job,
             messagePostProcessor
         );

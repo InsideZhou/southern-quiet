@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
     @Override
     public void arrange(J job) {
-        long delay = 0;
+        int delay = 0;
 
         DelayedMessage annotation = AnnotatedElementUtils.findMergedAnnotation(job.getClass(), DelayedMessage.class);
         if (null != annotation) {
@@ -23,14 +23,6 @@ public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
         return null == annotation || StringUtils.isEmpty(annotation.source()) ? cls.getSimpleName() : annotation.source();
     }
 
-    public static String getExchange(String prefix, Class<?> cls) {
-        return getExchange(prefix, getQueueSource(cls));
-    }
-
-    public static String getExchange(String prefix, String source) {
-        return prefix + "EXCHANGE." + source;
-    }
-
     public static String getRouting(String prefix, Class<?> cls) {
         return getRouting(prefix, getQueueSource(cls));
     }
@@ -39,11 +31,11 @@ public abstract class AbstractAmqpJobArranger<J> implements JobArranger<J> {
         return prefix + source;
     }
 
-    public static String getDelayedRouting(String prefix, Class<?> cls) {
-        return getDelayedRouting(prefix, getQueueSource(cls));
+    public static String getDelayRouting(String prefix, Class<?> cls) {
+        return getDelayRouting(prefix, getQueueSource(cls));
     }
 
-    public static String getDelayedRouting(String prefix, String source) {
+    public static String getDelayRouting(String prefix, String source) {
         return prefix + "DELAY." + source;
     }
 }

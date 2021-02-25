@@ -49,8 +49,7 @@ public class AmqpNotificationAutoConfiguration {
             properties,
             rabbitProperties,
             factoryBean,
-            connectionNameStrategy,
-            properties.isEnablePublisherConfirm()
+            connectionNameStrategy
         );
     }
 
@@ -93,25 +92,12 @@ public class AmqpNotificationAutoConfiguration {
          */
         private String namePrefix = "NOTIFICATION.";
 
-        /**
-         * 监听器并发上限
-         */
-        private int concurrencyLimit = 100;
-
         public String getNamePrefix() {
             return namePrefix;
         }
 
         public void setNamePrefix(String namePrefix) {
             this.namePrefix = namePrefix;
-        }
-
-        public int getConcurrencyLimit() {
-            return concurrencyLimit;
-        }
-
-        public void setConcurrencyLimit(int concurrencyLimit) {
-            this.concurrencyLimit = concurrencyLimit;
         }
     }
 }
