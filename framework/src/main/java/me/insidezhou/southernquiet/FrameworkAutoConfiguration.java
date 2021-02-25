@@ -105,8 +105,8 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean(DebouncerProvider.class)
-    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties) {
-        return new DefaultDebouncerProvider(debounceProperties);
+    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, Metadata metadata) {
+        return new DefaultDebouncerProvider(debounceProperties, metadata);
     }
 
     @Bean
@@ -155,9 +155,16 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean
     public Metadata metadata(Properties properties) {
         return new Metadata() {
+            final private int coreNumber = Runtime.getRuntime().availableProcessors();
+
             @Override
             public String getRuntimeId() {
                 return StringUtils.hasText(properties.getRuntimeId()) ? properties.getRuntimeId() : getIPWithProcessId();
+            }
+
+            @Override
+            public int getCoreNumber() {
+                return coreNumber > 0 ? coreNumber : 1;
             }
 
             private String getIPWithProcessId() {

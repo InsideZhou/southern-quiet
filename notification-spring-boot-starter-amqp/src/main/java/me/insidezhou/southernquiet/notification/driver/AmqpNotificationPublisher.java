@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.notification.driver;
 
-import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -11,6 +10,7 @@ import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
@@ -35,13 +35,37 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         AmqpAutoConfiguration.Properties properties,
         RabbitProperties rabbitProperties,
         RabbitConnectionFactoryBean factoryBean,
+        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    ) {
+        this(messageConverter, notificationProperties, properties, rabbitProperties, factoryBean, connectionNameStrategy, (correlationData, ack, cause) -> {
+            log.message("接到publisher confirm")
+                .context("correlationData", correlationData)
+                .context("ack", ack)
+                .context("cause", cause)
+                .debug();
+
+            if (!ack) {
+                log.message("通知发送确认失败")
+                    .context("correlationData", correlationData)
+                    .context("cause", cause)
+                    .warn();
+            }
+        });
+    }
+
+    public AmqpNotificationPublisher(
+        SmartMessageConverter messageConverter,
+        AmqpNotificationAutoConfiguration.Properties notificationProperties,
+        AmqpAutoConfiguration.Properties properties,
+        RabbitProperties rabbitProperties,
+        RabbitConnectionFactoryBean factoryBean,
         ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
-        boolean enablePublisherConfirm
+        RabbitTemplate.ConfirmCallback confirmCallback
     ) {
         this.messageConverter = messageConverter;
         this.notificationProperties = notificationProperties;
         this.properties = properties;
-        this.enablePublisherConfirm = enablePublisherConfirm;
+        this.enablePublisherConfirm = properties.isEnablePublisherConfirm() && null != confirmCallback;
 
         CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
         if (enablePublisherConfirm) {
@@ -52,21 +76,9 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         rabbitTemplate.setMessageConverter(messageConverter);
 
         if (enablePublisherConfirm) {
-            rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-                log.message("接到publisher confirm")
-                    .context("correlationData", correlationData)
-                    .context("ack", ack)
-                    .context("cause", cause)
-                    .debug();
-
-                if (!ack) {
-                    log.message("通知发送确认失败")
-                        .context("correlationData", correlationData)
-                        .context("cause", cause)
-                        .warn();
-                }
-            });
+            rabbitTemplate.setConfirmCallback(confirmCallback);
         }
+
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -75,19 +87,22 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
     }
 
     @Override
-    public void publish(N notification, long delay) {
+    public void publish(N notification, int delay) {
+        publish(notification, delay, null);
+    }
+
+    public void publish(N notification, int delay, CorrelationData correlationData) {
         String prefix = notificationProperties.getNamePrefix();
         String source = getNotificationSource(notification.getClass());
-        String exchange = getExchange(prefix, source);
         String routing = getRouting(prefix, source);
-        String delayRouting = getDelayedRouting(prefix, source);
+        String delayedRouting = getDelayRouting(prefix, source);
 
         MessagePostProcessor messagePostProcessor = message -> {
             MessageProperties properties = message.getMessageProperties();
             properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (delay > 0) {
-                properties.setExpiration(String.valueOf(delay));
+                properties.setDelay(delay);
             }
 
             return message;
@@ -96,22 +111,24 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         if (enablePublisherConfirm) {
             rabbitTemplate.invoke(operations -> {
                 operations.convertAndSend(
-                    delay > 0 ? Constants.AMQP_DEFAULT : exchange,
-                    delay > 0 ? delayRouting : routing,
+                    delay > 0 ? delayedRouting : routing,
+                    delay > 0 ? delayedRouting : routing,
                     notification,
-                    messagePostProcessor
+                    messagePostProcessor,
+                    correlationData
                 );
 
-                rabbitTemplate.waitForConfirmsOrDie(properties.getPublisherConfirmTimeout());
+                operations.waitForConfirmsOrDie(properties.getPublisherConfirmTimeout());
                 return null;
             });
         }
         else {
             rabbitTemplate.convertAndSend(
-                delay > 0 ? Constants.AMQP_DEFAULT : exchange,
-                delay > 0 ? delayRouting : routing,
+                delay > 0 ? delayedRouting : routing,
+                delay > 0 ? delayedRouting : routing,
                 notification,
-                messagePostProcessor
+                messagePostProcessor,
+                correlationData
             );
         }
     }

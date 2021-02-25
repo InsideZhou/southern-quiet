@@ -44,7 +44,7 @@ public class DebounceAdvice implements MethodInterceptor {
             debouncerName = annotation.name();
         }
 
-        Debouncer debouncer = debouncerProvider.getDebouncer(invocation, annotation.waitFor(), annotation.maxWaitFor(), debouncerName);
+        Debouncer debouncer = debouncerProvider.getDebouncer(invocation, annotation.waitFor(), annotation.maxWaitFor(), debouncerName, annotation.executionTimeout());
         debouncer.bounce();
         return null;
     }

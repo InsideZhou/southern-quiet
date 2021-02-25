@@ -45,7 +45,8 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
         map.put("parentId", getParentId());
         map.put("fileId", getFileId());
         map.put("fileData", getFileData());
-        map.put("symbolicLink", getSymbolicLink());
+        map.put("isSymbolicLink", isSymbolicLink());
+        map.put("originalId", getOriginalId());
         return map;
     }
 
@@ -55,7 +56,14 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
     private ObjectId fileId;
     private Binary fileData;
 
-    private String symbolicLink;
+    /**
+     * 为软链接时为true,否则false
+     */
+    private Boolean isSymbolicLink = false;
+    /**
+     * 为软链接时为执行源文件id
+     */
+    private String originalId;
 
     public String getId() {
         return id;
@@ -89,11 +97,19 @@ public class MongoPathMeta extends PathMeta implements Cloneable {
         this.fileData = fileData;
     }
 
-    public String getSymbolicLink() {
-        return symbolicLink;
+    public Boolean isSymbolicLink() {
+        return isSymbolicLink;
     }
 
-    public void setSymbolicLink(String symbolicLink) {
-        this.symbolicLink = symbolicLink;
+    public void setSymbolicLink(Boolean symbolicLink) {
+        isSymbolicLink = symbolicLink;
+    }
+
+    public String getOriginalId() {
+        return originalId;
+    }
+
+    public void setOriginalId(String originalId) {
+        this.originalId = originalId;
     }
 }

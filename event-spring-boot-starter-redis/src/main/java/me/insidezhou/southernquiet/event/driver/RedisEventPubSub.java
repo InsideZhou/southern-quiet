@@ -2,7 +2,7 @@ package me.insidezhou.southernquiet.event.driver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import me.insidezhou.southernquiet.event.RedisTemplateBuilder;
+import me.insidezhou.southernquiet.event.RedisTemplateProvider;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -32,7 +32,7 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
 
     private final RedisMessageListenerContainer container;
 
-    public RedisEventPubSub(RedisTemplateBuilder<E> builder,
+    public RedisEventPubSub(RedisTemplateProvider<E> provider,
                             ObjectMapper objectMapper,
                             FrameworkAutoConfiguration.EventProperties properties,
                             ApplicationContext applicationContext) {
@@ -40,12 +40,12 @@ public class RedisEventPubSub<E extends Serializable> extends AbstractEventPubSu
         super(properties, applicationContext);
 
         this.objectMapper = objectMapper;
-        this.redisTemplate = builder.getRedisTemplate();
-        this.eventSerializer = builder.getEventSerializer();
-        this.channelSerializer = builder.getChannelSerializer();
+        this.redisTemplate = provider.getRedisTemplate();
+        this.eventSerializer = provider.getEventSerializer();
+        this.channelSerializer = provider.getChannelSerializer();
 
         this.container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(builder.getConnectionFactory());
+        container.setConnectionFactory(provider.getConnectionFactory());
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})

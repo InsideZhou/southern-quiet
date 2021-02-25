@@ -55,7 +55,7 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
         Map<String, Object> xDeath = ((List<Map<String, Object>>) headers.getOrDefault("x-death", Collections.singletonList(Collections.emptyMap()))).get(0);
 
         long recoverCount = ((Number) xDeath.getOrDefault("count", 0)).longValue();
-        long expiration = amplifier.amplify(recoverCount);
+        int delay = (int) amplifier.amplify(recoverCount);
 
         if (null == messageProperties.getDeliveryMode()) {
             messageProperties.setDeliveryMode(getDeliveryMode());
@@ -66,23 +66,23 @@ public class AmqpMessageRecover extends RepublishMessageRecoverer {
             context.put("deadQueue", errorRoutingKey);
             context.put("retryExchange", retryExchange);
             context.put("retryQueue", retryRoutingKey);
-            context.put("expiration", expiration);
+            context.put("delay", delay);
             context.put("recoverCount", recoverCount);
             context.put("deliveryMode", messageProperties.getDeliveryMode());
             context.put("message", message);
             context.put("cause", cause);
         };
 
-        if (expiration < maxExpiration) {
+        if (delay < maxExpiration) {
             log.message("准备把消息送进重试队列").context(consumer).debug();
 
-            messageProperties.setExpiration(String.valueOf(expiration));
+            messageProperties.setDelay(delay);
             errorTemplate.send(retryExchange, retryRoutingKey, message);
         }
         else {
             log.message("准备把消息送进死信队列").context(consumer).warn();
 
-            messageProperties.setExpiration(null);
+            messageProperties.setDelay(null);
             super.recover(message, cause);
         }
     }

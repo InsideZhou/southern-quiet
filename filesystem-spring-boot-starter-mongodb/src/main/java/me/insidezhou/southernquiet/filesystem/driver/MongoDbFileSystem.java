@@ -77,6 +77,11 @@ public class MongoDbFileSystem implements FileSystem {
         NormalizedPath normalizedPath = new NormalizedPath(path);
 
         MongoPathMeta file = queryPathMeta(normalizedPath);
+
+        if (file != null && file.isSymbolicLink() != null && file.isSymbolicLink()) {
+            file = queryPathMeta(file.getOriginalId());
+        }
+
         if (null == file) {
             MongoPathMeta directory = createAndGetDirectory(normalizedPath.getParentPath());
             file = new MongoPathMeta(normalizedPath, stream);
@@ -125,11 +130,12 @@ public class MongoDbFileSystem implements FileSystem {
     @Override
     public InputStream openReadStream(String path) throws InvalidFileException {
         MongoPathMeta pathMeta = meta(path);
-        if (pathMeta == null) {
-            pathMeta = metaBySymbolicLink(path);
-        }
 
         if (null == pathMeta) throw new InvalidFileException(path);
+
+        if (pathMeta.isSymbolicLink() != null && pathMeta.isSymbolicLink()) {
+            pathMeta = queryPathMeta(pathMeta.getOriginalId());
+        }
 
         if (null == pathMeta.getFileId()) {
             return new ByteArrayInputStream(pathMeta.getFileData().getData());
@@ -147,12 +153,42 @@ public class MongoDbFileSystem implements FileSystem {
     }
 
     @Override
-    public void createSymbolicLink(String linkPath, String targetPath) {
+    public void createSymbolicLink(String linkPath, String targetPath) throws InvalidFileException {
+
         NormalizedPath normalizedPath = new NormalizedPath(targetPath);
-        MongoPathMeta file = queryPathMeta(normalizedPath);
+        MongoPathMeta originalFile = queryPathMeta(normalizedPath);
+
+        if (originalFile == null) return;
+
+        NormalizedPath normalizedLinkPath = new NormalizedPath(linkPath);
+        MongoPathMeta linkFile = queryPathMeta(normalizedLinkPath);
+
+        if (null == linkFile) {
+            MongoPathMeta linkDirectory = createAndGetDirectory(normalizedPath.getParentPath());
+            linkFile = new MongoPathMeta(normalizedLinkPath, null);
+
+            linkFile.setDirectory(false);
+            linkFile.setSize(originalFile.getSize());
+            linkFile.setId(ObjectId.get().toString());
+            linkFile.setParentId(linkDirectory.getId());
+
+            Instant now = Instant.now();
+            linkFile.setCreationTime(now);
+            linkFile.setLastModifiedTime(now);
+            linkFile.setLastAccessTime(now);
+        }
+        else if (linkFile.isDirectory()) {
+            throw new InvalidFileException(normalizedPath.toString());
+        }
+        else {
+            linkFile.setLastModifiedTime(Instant.now());
+            linkFile.setSize(originalFile.getSize());
+        }
+        linkFile.setSymbolicLink(true);
+        linkFile.setOriginalId(originalFile.getId());
 
         //更新保存软链接,获取文件时判断是否存在软链接,有则直接返回
-        mongoOperations.updateFirst(newPathQuery(file), Update.update("symbolicLink",linkPath), MongoPathMeta.class, pathCollection);
+        mongoOperations.upsert(newPathQuery(linkFile), Update.fromDocument(new Document(linkFile.toMap())), MongoPathMeta.class, pathCollection);
     }
 
     @Override
@@ -162,6 +198,13 @@ public class MongoDbFileSystem implements FileSystem {
         if (null == pathMeta) {
             pathMeta = new MongoPathMeta(path);
             pathMeta.setDirectory(false);
+        }
+
+        if (pathMeta.isSymbolicLink()) {
+            MongoPathMeta originalMeta = queryPathMeta(pathMeta.getOriginalId());
+            if (originalMeta != null) {
+                pathMeta = originalMeta;
+            }
         }
 
         if (pathMeta.isDirectory()) throw new InvalidFileException(path);
@@ -273,11 +316,6 @@ public class MongoDbFileSystem implements FileSystem {
         return (M) queryPathMeta(new NormalizedPath(path));
     }
 
-    @SuppressWarnings("unchecked")
-    public <M extends PathMeta> M metaBySymbolicLink(String symbolicLink) {
-        return (M) queryPathMetaBySymbolicLink(symbolicLink);
-    }
-
     @Override
     public Stream<MongoPathMeta> directories(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException {
         NormalizedPath normalizePath = new NormalizedPath(path);
@@ -348,16 +386,8 @@ public class MongoDbFileSystem implements FileSystem {
         return Query.query(Criteria.where("name").is(normalizedPath.getName()).and("parent").is(normalizedPath.getParent()));
     }
 
-    private Query newPathQuery(String symbolicLink) {
-        return Query.query(Criteria.where("symbolicLink").is(symbolicLink));
-    }
-
     private MongoPathMeta queryPathMeta(NormalizedPath normalizedPath) {
         return mongoOperations.findOne(newPathQuery(normalizedPath), MongoPathMeta.class, pathCollection);
-    }
-
-    private MongoPathMeta queryPathMetaBySymbolicLink(String symbolicLink) {
-        return mongoOperations.findOne(newPathQuery(symbolicLink), MongoPathMeta.class, pathCollection);
     }
 
     private MongoPathMeta queryPathMeta(String pathName, String parentId) {

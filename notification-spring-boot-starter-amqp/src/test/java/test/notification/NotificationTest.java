@@ -1,6 +1,5 @@
 package test.notification;
 
-import me.insidezhou.southernquiet.amqp.rabbit.AbstractAmqpNotificationPublisher;
 import me.insidezhou.southernquiet.amqp.rabbit.DelayedMessage;
 import me.insidezhou.southernquiet.debounce.Debounce;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
@@ -24,9 +23,6 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-
-import static me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager.DeadMark;
-import static me.insidezhou.southernquiet.notification.driver.AmqpNotificationListenerManager.RetryMark;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -58,24 +54,18 @@ public class NotificationTest {
 
     @Test
     public void delay() {
+        notificationPublisher.publish(new DelayedNotification(), 10000);
         notificationPublisher.publish(new DelayedNotification());
     }
 
     @Test
     public void queueDeclared() {
-        String deadRouting = properties.getNamePrefix() + DeadMark + StandardNotification.class.getSimpleName() + "#a";
+        String deadRouting = properties.getNamePrefix() + "DEAD." + StandardNotification.class.getSimpleName() + "#a";
         QueueInformation deadQueue = amqpAdmin.getQueueInfo(deadRouting);
         Assert.assertNotNull(deadQueue);
-
-        String retryRouting = properties.getNamePrefix() + RetryMark + StandardNotification.class.getSimpleName() + "#a";
-        QueueInformation retryQueue = amqpAdmin.getQueueInfo(retryRouting);
-        Assert.assertNotNull(retryQueue);
-
-        String delayRouting = AbstractAmqpNotificationPublisher.getDelayedRouting(properties.getNamePrefix(), StandardNotification.class);
-        QueueInformation delayQueue = amqpAdmin.getQueueInfo(delayRouting);
-        Assert.assertNotNull(delayQueue);
     }
 
+    @SuppressWarnings("unused")
     public static class Listener {
         @NotificationListener(notification = StandardNotification.class, name = "a")
         @NotificationListener(notification = StandardNotification.class, name = "b")
@@ -98,7 +88,21 @@ public class NotificationTest {
             log.message("使用监听器接到延迟通知")
                 .context("listenerName", listener.name())
                 .context("delay", delayedAnnotation)
+                .context("publishedAt", notification.publishedAt)
                 .context("duration", Duration.between(notification.publishedAt, Instant.now()))
+                .info();
+        }
+
+        public static final int concurrency = 2;
+
+        @NotificationListener(notification = ConcurrentNotification.class, concurrency = Listener.concurrency)
+        public void concurrent(ConcurrentNotification notification, NotificationListener listener) {
+
+            log.message("使用并发监听器接到通知")
+                .context("listenerName", listener.name())
+                .context("listenerConcurrent", listener.concurrency())
+                .context("notificationId", notification.getId())
+                .context("currentThreadName", Thread.currentThread().getName())
                 .info();
         }
     }
@@ -125,6 +129,18 @@ public class NotificationTest {
 
         public void setPublishedAt(Instant publishedAt) {
             this.publishedAt = publishedAt;
+        }
+    }
+
+    public static class ConcurrentNotification implements Serializable {
+        private UUID id = UUID.randomUUID();
+
+        public UUID getId() {
+            return id;
+        }
+
+        public void setId(UUID id) {
+            this.id = id;
         }
     }
 }

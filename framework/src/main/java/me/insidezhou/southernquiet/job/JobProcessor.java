@@ -11,6 +11,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Repeatable(JobProcessor.List.class)
 public @interface JobProcessor {
     /**
+     * 处理器并发量
+     */
+    int concurrency() default 1;
+
+    /**
      * 要处理的任务类。
      */
     Class<?> job();
