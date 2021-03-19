@@ -177,12 +177,12 @@ public class FileWebController {
             });
     }
 
-    public Mono<ResponseEntity<DataBuffer>> file(String id, String hashAlgorithm, ServerHttpRequest request) {
+    public Mono<ResponseEntity<DataBuffer>> file(String id, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
                 String path;
-                if (IdHashAlgorithm.sha1.equals(IdHashAlgorithm.getAlgorithm(hashAlgorithm))) {
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
                     path = getFileLinkPath(id);
                 }
                 else {
@@ -230,12 +230,12 @@ public class FileWebController {
             });
     }
 
-    public Mono<ResponseEntity<String>> base64file(String id, String hashAlgorithm, ServerHttpRequest request) {
+    public Mono<ResponseEntity<String>> base64file(String id, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
                 String path;
-                if (IdHashAlgorithm.sha1.equals(IdHashAlgorithm.getAlgorithm(hashAlgorithm))) {
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
                     path = getFileLinkPath(id);
                 }
                 else {
@@ -275,17 +275,17 @@ public class FileWebController {
             });
     }
 
-    public Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, String hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+    public Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
         return image(id, scale, hashAlgorithm, Scalr.Method.AUTOMATIC, request, response);
     }
 
     @SuppressWarnings({"SameParameterValue", "unused"})
-    protected Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, String hashAlgorithm, Scalr.Method scaleMethod, ServerHttpRequest request, ServerHttpResponse response) {
+    protected Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, IdHashAlgorithm hashAlgorithm, Scalr.Method scaleMethod, ServerHttpRequest request, ServerHttpResponse response) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
                 String path;
-                if (IdHashAlgorithm.sha1.equals(IdHashAlgorithm.getAlgorithm(hashAlgorithm))) {
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
                     path = getFileLinkPath(id);
                 }
                 else {

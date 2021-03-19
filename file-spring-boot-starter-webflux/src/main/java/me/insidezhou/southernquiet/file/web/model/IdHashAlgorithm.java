@@ -2,6 +2,8 @@ package me.insidezhou.southernquiet.file.web.model;
 
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+
 public enum IdHashAlgorithm {
 
     sha256,
@@ -14,6 +16,15 @@ public enum IdHashAlgorithm {
         }
         catch (IllegalArgumentException e) {
             return sha256;
+        }
+    }
+
+    public static boolean isIdHashAlgorithm(String name) {
+        try {
+            return Arrays.stream(values()).anyMatch(idHashAlgorithm -> idHashAlgorithm.name().equals(name));
+        }
+        catch (Exception e) {
+            return false;
         }
     }
 }

@@ -3,6 +3,7 @@ package test;
 import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
+import me.insidezhou.southernquiet.file.web.model.IdHashAlgorithm;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.springframework.boot.SpringApplication;
@@ -15,6 +16,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.codec.multipart.Part;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,28 +49,39 @@ public class FileWebTest {
 
         @GetMapping(value = {"file/{id}", "file/{id}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<DataBuffer>> file(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request) {
+        public Mono<ResponseEntity<DataBuffer>> file(@PathVariable String id, @PathVariable(required = false) IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
             return super.file(id, hashAlgorithm, request);
         }
 
         @GetMapping(value = {"base64file/{id}", "base64file/{id}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<String>> base64file(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request) {
+        public Mono<ResponseEntity<String>> base64file(@PathVariable String id, @PathVariable(required = false) IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
             return super.base64file(id, hashAlgorithm, request);
         }
 
         @SuppressWarnings("MVCPathVariableInspection")
         @GetMapping(value = {"image/{id}/{scale}/{hashAlgorithm}"})
         @Override
-        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ImageScale scale, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, ImageScale scale, @PathVariable IdHashAlgorithm hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
             return super.image(id, scale, hashAlgorithm, request, response);
         }
 
-        @GetMapping(value = {"image/{id}", "image/{id}/{hashAlgorithm}"})
-        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, @PathVariable(required = false) String hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
-            return super.image(id, null, hashAlgorithm, request, response);
+        @GetMapping(value = {"image/{id}", "image/{id}/{scaleOrHashAlgorithm}"})
+        public Mono<ResponseEntity<DataBuffer>> image(@PathVariable String id, @PathVariable(required = false) String scaleOrHashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+            ImageScale imageScale = null;
+            IdHashAlgorithm hashAlgorithm = null;
+            if (StringUtils.hasText(scaleOrHashAlgorithm)) {
+                if (IdHashAlgorithm.isIdHashAlgorithm(scaleOrHashAlgorithm)) {
+                    hashAlgorithm = IdHashAlgorithm.getAlgorithm(scaleOrHashAlgorithm);
+                }
+                else {
+                    imageScale = super.imageScale(scaleOrHashAlgorithm);
+                }
+            }
+            return super.image(id, imageScale, hashAlgorithm, request, response);
         }
 
+        @SuppressWarnings("MVCPathVariableInspection")
         @ModelAttribute
         @Override
         protected ImageScale imageScale(@PathVariable(value = "scale", required = false) String scale) {
