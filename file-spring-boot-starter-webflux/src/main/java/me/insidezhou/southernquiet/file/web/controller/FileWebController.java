@@ -22,7 +22,6 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.codec.multipart.Part;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
@@ -34,9 +33,10 @@ import reactor.core.scheduler.Schedulers;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -85,96 +85,15 @@ public class FileWebController {
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
         return files
             .publishOn(reactorScheduler)
-            .map(part -> {
-                Path tmpPath;
-                try {
-                    tmpPath = Files.createTempFile("", "");
-                }
-                catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                File file = tmpPath.toFile();
-                part.transferTo(file);
-
-                return file;
-            })
-            .map(file -> {
-                UriComponentsBuilder builder = UriComponentsBuilder.fromUri(request.getURI()).replaceQuery("");
-                String hash;
-                String mediaType;
-
-                InputStream inputStream;
-
-                try {
-                    inputStream = new ByteArrayInputStream(FileCopyUtils.copyToByteArray(file));
-                    mediaType = tika.detect(inputStream);
-                    inputStream.reset();
-                    hash = DigestUtils.sha256Hex(inputStream);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-                saveFile(hash, inputStream);
-                saveSymbolicLink(hash, request, inputStream);
-
-                FileInfo info = new FileInfo();
-                info.setId(hash);
-                info.setContentType(mediaType);
-
-                if (mediaType.startsWith("image")) {
-                    info.setUrl(builder.replacePath(contextPath + "/image/{hash}").build(hash).toString());
-                }
-                else {
-                    info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
-                }
-
-                return info;
-            });
+            .map(part -> partToInputStream(part, false))
+            .map(inputStream -> processUploadStream(inputStream, request));
     }
 
     public Flux<FileInfo> base64upload(Flux<Part> files, ServerHttpRequest request) {
         return files
             .publishOn(reactorScheduler)
-            .flatMap(Part::content)
-            .map(dataBuffer -> {
-                try {
-                    return new ByteArrayInputStream(Base64.decodeBase64(StreamUtils.copyToByteArray(dataBuffer.asInputStream())));
-                }
-                catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            })
-            .map(inputStream -> {
-                UriComponentsBuilder builder = UriComponentsBuilder.fromUri(request.getURI()).replaceQuery("");
-                String hash;
-                String mediaType;
-
-                try {
-                    mediaType = tika.detect(inputStream);
-                    hash = DigestUtils.sha256Hex(inputStream);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-                saveFile(hash, inputStream);
-                saveSymbolicLink(hash, request, inputStream);
-
-                FileInfo info = new FileInfo();
-                info.setId(hash);
-                info.setContentType(mediaType);
-
-                if (mediaType.startsWith("image")) {
-                    info.setUrl(builder.replacePath(contextPath + "/image/{hash}").build(hash).toString());
-                }
-                else {
-                    info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
-                }
-
-                return info;
-            });
+            .map(part -> partToInputStream(part, true))
+            .map(inputStream -> processUploadStream(inputStream, request));
     }
 
     public Mono<ResponseEntity<DataBuffer>> file(String id, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
@@ -408,5 +327,52 @@ public class FileWebController {
         imageScale.setHeight(height);
 
         return imageScale;
+    }
+
+    protected InputStream partToInputStream(Part part, boolean base64Decode) {
+        var stream = part.content().map(DataBuffer::asInputStream).toStream();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        stream.forEach(inputStream -> {
+            try {
+                outputStream.writeBytes(inputStream.readAllBytes());
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return new ByteArrayInputStream(base64Decode ? Base64.decodeBase64(outputStream.toByteArray()) : outputStream.toByteArray());
+    }
+
+    protected FileInfo processUploadStream(InputStream inputStream, ServerHttpRequest request) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUri(request.getURI()).replaceQuery("");
+        String hash;
+        String mediaType;
+
+        try {
+            mediaType = tika.detect(inputStream);
+            inputStream.reset();
+            hash = DigestUtils.sha256Hex(inputStream);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        saveFile(hash, inputStream);
+        saveSymbolicLink(hash, request, inputStream);
+
+        FileInfo info = new FileInfo();
+        info.setId(hash);
+        info.setContentType(mediaType);
+
+        if (mediaType.startsWith("image")) {
+            info.setUrl(builder.replacePath(contextPath + "/image/{hash}").build(hash).toString());
+        }
+        else {
+            info.setUrl(builder.replacePath(contextPath + "/file/{hash}").build(hash).toString());
+        }
+
+        return info;
     }
 }
