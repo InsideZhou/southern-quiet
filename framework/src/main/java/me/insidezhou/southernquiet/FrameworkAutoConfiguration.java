@@ -19,14 +19,16 @@ import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.AntPathMatcher;
@@ -44,7 +46,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 @EnableAsync
 @EnableScheduling
 @EnableConfigurationProperties
-@AutoConfigureOrder(Constants.AutoConfigLevel_Lowest)
+@ImportAutoConfiguration(TaskSchedulingAutoConfiguration.class)
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
@@ -105,8 +107,8 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean(DebouncerProvider.class)
-    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, Metadata metadata) {
-        return new DefaultDebouncerProvider(debounceProperties, metadata);
+    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") TaskScheduler taskScheduler, Metadata metadata) {
+        return new DefaultDebouncerProvider(debounceProperties, taskScheduler, metadata);
     }
 
     @Bean

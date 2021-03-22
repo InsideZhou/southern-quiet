@@ -1,6 +1,5 @@
 package me.insidezhou.southernquiet.job;
 
-import me.insidezhou.southernquiet.Constants;
 import me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration;
 import me.insidezhou.southernquiet.job.driver.AmqpJobArranger;
 import me.insidezhou.southernquiet.job.driver.AmqpJobProcessorManager;
@@ -14,7 +13,6 @@ import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -33,7 +31,6 @@ import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.Reco
 @Configuration
 @EnableConfigurationProperties
 @AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
-@AutoConfigureOrder(Constants.AutoConfigLevel_Highest)
 public class AmqpJobAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean

@@ -68,18 +68,24 @@ public class FileWebController implements DisposableBean {
                              FileWebFluxAutoConfiguration.Properties fileWebProperties,
                              Metadata metadata,
                              ServerProperties serverProperties) {
-
-        this.fileSystem = fileSystem;
-        this.contextPath = serverProperties.getServlet().getContextPath();
-        this.fileWebProperties = fileWebProperties;
-
-        reactorScheduler = Schedulers.fromExecutorService(new ThreadPoolExecutor(
+        this(fileSystem, fileWebProperties, serverProperties, Schedulers.fromExecutorService(new ThreadPoolExecutor(
             metadata.getCoreNumber(),
             Integer.MAX_VALUE,
             Math.max(1L, Math.round(metadata.getCoreNumber() / 20.0)),
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(metadata.getCoreNumber() * 30)
-        ));
+        )));
+    }
+
+    public FileWebController(FileSystem fileSystem,
+                             FileWebFluxAutoConfiguration.Properties fileWebProperties,
+                             ServerProperties serverProperties,
+                             Scheduler scheduler) {
+
+        this.fileSystem = fileSystem;
+        this.contextPath = serverProperties.getServlet().getContextPath();
+        this.fileWebProperties = fileWebProperties;
+        this.reactorScheduler = scheduler;
     }
 
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {

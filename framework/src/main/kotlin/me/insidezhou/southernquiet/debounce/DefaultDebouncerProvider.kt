@@ -6,6 +6,7 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory
 import me.insidezhou.southernquiet.util.Metadata
 import org.aopalliance.intercept.MethodInvocation
 import org.springframework.beans.factory.DisposableBean
+import org.springframework.scheduling.TaskScheduler
 import org.springframework.util.StringUtils
 import java.time.Duration
 import java.util.*
@@ -13,10 +14,11 @@ import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.round
 
-@Suppress("MemberVisibilityCanBePrivate")
-open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
-    constructor(properties: DebounceProperties, metadata: Metadata) : this(
+@Suppress("SpringJavaAutowiredMembersInspection", "MemberVisibilityCanBePrivate")
+open class DefaultDebouncerProvider(properties: DebounceProperties, val taskScheduler: TaskScheduler, val dispatcher: CoroutineDispatcher) : DebouncerProvider, DisposableBean {
+    constructor(properties: DebounceProperties, taskScheduler: TaskScheduler, metadata: Metadata) : this(
         properties,
+        taskScheduler,
         ThreadPoolExecutor(
             metadata.coreNumber,
             Int.MAX_VALUE,
@@ -36,21 +38,18 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
     private val doneCounter = AtomicLong(0)
 
     private val workCoroutineScope = CoroutineScope(dispatcher)
-
-    private val executorService = Executors.newSingleThreadScheduledExecutor()
     private var scheduledFuture: ScheduledFuture<*>? = null
 
     override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String, executionTimeout: Long): Debouncer {
         if (null == scheduledFuture) {
             reportTimer = System.currentTimeMillis()
-            scheduledFuture = executorService.scheduleAtFixedRate(
+            scheduledFuture = taskScheduler.scheduleAtFixedRate(
                 {
                     checkDebouncer()
                     workDebouncer()
                 },
-                0,
-                1,
-                TimeUnit.MILLISECONDS)
+                Duration.ofMillis(1)
+            )
         }
 
         var debouncerName = name
@@ -167,7 +166,6 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
     }
 
     override fun destroy() {
-        executorService.shutdownNow()
         if (dispatcher is ExecutorCoroutineDispatcher) {
             dispatcher.close()
         }
