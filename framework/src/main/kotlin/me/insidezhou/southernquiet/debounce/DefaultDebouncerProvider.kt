@@ -29,24 +29,30 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
     private val debouncerAndInvocations = ConcurrentHashMap<String, DebouncerMetadata>()
     private val pendingInvocations = LinkedList<DebouncerMetadata>()
     private val reportDuration: Duration = properties.reportDuration
-    private var reportTimer = System.currentTimeMillis()
+    private var reportTimer = 0L
 
     private val pendingCounter = AtomicLong(0)
     private val putCounter = AtomicLong(0)
     private val doneCounter = AtomicLong(0)
 
-    private val scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
-        {
-            checkDebouncer()
-            workDebouncer()
-        },
-        1,
-        1,
-        TimeUnit.MILLISECONDS)
-
     private val workCoroutineScope = CoroutineScope(dispatcher)
 
+    private val executorService = Executors.newSingleThreadScheduledExecutor()
+    private var scheduledFuture: ScheduledFuture<*>? = null
+
     override fun getDebouncer(invocation: MethodInvocation, waitFor: Long, maxWaitFor: Long, name: String, executionTimeout: Long): Debouncer {
+        if (null == scheduledFuture) {
+            reportTimer = System.currentTimeMillis()
+            scheduledFuture = executorService.scheduleAtFixedRate(
+                {
+                    checkDebouncer()
+                    workDebouncer()
+                },
+                0,
+                1,
+                TimeUnit.MILLISECONDS)
+        }
+
         var debouncerName = name
 
         val bean = invocation.getThis()
@@ -161,7 +167,10 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val dispatch
     }
 
     override fun destroy() {
-        scheduledFuture.cancel(true)
+        executorService.shutdownNow()
+        if (dispatcher is ExecutorCoroutineDispatcher) {
+            dispatcher.close()
+        }
     }
 
     companion object {

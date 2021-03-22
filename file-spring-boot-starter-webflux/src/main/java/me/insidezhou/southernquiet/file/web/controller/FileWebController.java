@@ -6,10 +6,12 @@ import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.InvalidFileException;
+import me.insidezhou.southernquiet.util.Metadata;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tika.Tika;
 import org.imgscalr.Scalr;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -36,11 +38,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SuppressWarnings({"DuplicatedCode", "BlockingMethodInNonBlockingContext"})
-public class FileWebController {
+public class FileWebController implements DisposableBean {
     public static String getFilePath(String filename) {
         int size = 3;
         String hash = DigestUtils.md5Hex(filename);
@@ -57,15 +62,24 @@ public class FileWebController {
     protected final FileWebFluxAutoConfiguration.Properties fileWebProperties;
 
     protected DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory(true);
-    protected Scheduler reactorScheduler = Schedulers.boundedElastic();
+    protected Scheduler reactorScheduler;
 
     public FileWebController(FileSystem fileSystem,
                              FileWebFluxAutoConfiguration.Properties fileWebProperties,
+                             Metadata metadata,
                              ServerProperties serverProperties) {
 
         this.fileSystem = fileSystem;
         this.contextPath = serverProperties.getServlet().getContextPath();
         this.fileWebProperties = fileWebProperties;
+
+        reactorScheduler = Schedulers.fromExecutorService(new ThreadPoolExecutor(
+            metadata.getCoreNumber(),
+            Integer.MAX_VALUE,
+            Math.max(1L, Math.round(metadata.getCoreNumber() / 20.0)),
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(metadata.getCoreNumber() * 30)
+        ));
     }
 
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
@@ -340,5 +354,10 @@ public class FileWebController {
         }
 
         return info;
+    }
+
+    @Override
+    public void destroy() {
+        reactorScheduler.dispose();
     }
 }
