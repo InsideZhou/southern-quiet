@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.31"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:0.9.17"
     }
 }
@@ -16,8 +16,8 @@ plugins {
     id 'maven-publish'
     id 'signing'
 
-    id "org.jetbrains.kotlin.jvm" version "1.4.21"
-    id "org.jetbrains.kotlin.plugin.spring" version "1.4.21"
+    id "org.jetbrains.kotlin.jvm" version "1.4.31"
+    id "org.jetbrains.kotlin.plugin.spring" version "1.4.31"
     id 'org.jetbrains.dokka' version '0.9.17'
 
     id 'org.springframework.boot' version '2.3.1.RELEASE'
@@ -76,6 +76,10 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_11
 
         options.encoding = "UTF-8"
+    }
+
+    compileKotlin {
+        kotlinOptions.useIR = true
     }
 
     jar {
