@@ -379,6 +379,10 @@ public class LocalFileSystem implements FileSystem {
 
         try {
             createDirectories(linkPath.getParent());
+
+            if (Files.exists(linkPath)) {
+                Files.delete(linkPath);
+            }
             Files.createSymbolicLink(linkPath, workingPath);
         }
         catch (IOException e) {

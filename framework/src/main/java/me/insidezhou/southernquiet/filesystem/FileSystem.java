@@ -315,7 +315,7 @@ public interface FileSystem {
     Stream<? extends PathMeta> files(String path, String search, boolean recursive, int offset, int limit, PathMetaSort sort) throws PathNotFoundException;
 
     /**
-     * 创建文件软链接
+     * 创建文件软链接,软链接文件不存在则创建,否则替换
      *
      * @param linkPath   软链接路径
      * @param targetPath 目标路径

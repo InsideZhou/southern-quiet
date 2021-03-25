@@ -3,6 +3,7 @@ package me.insidezhou.southernquiet.file.web.controller;
 import me.insidezhou.southernquiet.file.web.FileWebFluxAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.exception.NotFoundException;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
+import me.insidezhou.southernquiet.file.web.model.IdHashAlgorithm;
 import me.insidezhou.southernquiet.file.web.model.ImageScale;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.InvalidFileException;
@@ -88,6 +89,19 @@ public class FileWebController implements DisposableBean {
         this.reactorScheduler = scheduler;
     }
 
+    public String getFileLinkPath(String filename) {
+        String linkPathPrefix = fileWebProperties.getLinkPathPrefix();
+        if (StringUtils.isEmpty(linkPathPrefix)) {
+            return getFilePath(filename);
+        }
+        else {
+            if (!linkPathPrefix.endsWith(FileSystem.PATH_SEPARATOR_STRING)) {
+                linkPathPrefix = linkPathPrefix + FileSystem.PATH_SEPARATOR_STRING;
+            }
+            return linkPathPrefix + getFilePath(filename);
+        }
+    }
+
     public Flux<FileInfo> upload(Flux<FilePart> files, ServerHttpRequest request) {
         return files
             .publishOn(reactorScheduler)
@@ -102,11 +116,18 @@ public class FileWebController implements DisposableBean {
             .map(inputStream -> processUploadStream(inputStream, request));
     }
 
-    public Mono<ResponseEntity<DataBuffer>> file(String id, ServerHttpRequest request) {
+    public Mono<ResponseEntity<DataBuffer>> file(String id, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
-                String path = getFilePath(id);
+                String path;
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
+                    path = getFileLinkPath(id);
+                }
+                else {
+                    path = getFilePath(id);
+                }
+
                 if (!fileSystem.exists(path)) {
                     sink.error(new NotFoundException());
                     return;
@@ -148,11 +169,18 @@ public class FileWebController implements DisposableBean {
             });
     }
 
-    public Mono<ResponseEntity<String>> base64file(String id, ServerHttpRequest request) {
+    public Mono<ResponseEntity<String>> base64file(String id, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
-                String path = getFilePath(id);
+                String path;
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
+                    path = getFileLinkPath(id);
+                }
+                else {
+                    path = getFilePath(id);
+                }
+
                 if (!fileSystem.exists(path)) {
                     sink.error(new NotFoundException());
                     return;
@@ -186,16 +214,22 @@ public class FileWebController implements DisposableBean {
             });
     }
 
-    public Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, ServerHttpRequest request, ServerHttpResponse response) {
-        return image(id, scale, Scalr.Method.AUTOMATIC, request, response);
+    public Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, IdHashAlgorithm hashAlgorithm, ServerHttpRequest request, ServerHttpResponse response) {
+        return image(id, scale, hashAlgorithm, Scalr.Method.AUTOMATIC, request, response);
     }
 
     @SuppressWarnings({"SameParameterValue", "unused"})
-    protected Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, Scalr.Method scaleMethod, ServerHttpRequest request, ServerHttpResponse response) {
+    protected Mono<ResponseEntity<DataBuffer>> image(String id, ImageScale scale, IdHashAlgorithm hashAlgorithm, Scalr.Method scaleMethod, ServerHttpRequest request, ServerHttpResponse response) {
         return Mono.just(ResponseEntity.ok())
             .publishOn(reactorScheduler)
             .handle((okResponseBuilder, sink) -> {
-                String path = getFilePath(id);
+                String path;
+                if (IdHashAlgorithm.sha1.equals(hashAlgorithm)) {
+                    path = getFileLinkPath(id);
+                }
+                else {
+                    path = getFilePath(id);
+                }
                 if (!fileSystem.exists(path)) {
                     sink.error(new NotFoundException());
                     return;
@@ -277,7 +311,7 @@ public class FileWebController implements DisposableBean {
         try {
             inputStream.reset();
             String link = DigestUtils.sha1Hex(inputStream);
-            fileSystem.createSymbolicLink(getFilePath(link), getFilePath(filename));
+            fileSystem.createSymbolicLink(getFileLinkPath(link), getFilePath(filename));
         }
         catch (Exception e) {
             throw new RuntimeException(e);

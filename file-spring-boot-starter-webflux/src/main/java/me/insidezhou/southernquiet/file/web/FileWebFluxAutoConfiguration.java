@@ -46,10 +46,24 @@ public class FileWebFluxAutoConfiguration {
     }
 
     public static class Properties {
+
+        /**
+         * 软链接路径前缀
+         */
+        private String linkPathPrefix = "link";
+
         /**
          * IO的buffer。
          */
         private DataSize BufferSize = DataSize.ofKilobytes(64);
+
+        public String getLinkPathPrefix() {
+            return linkPathPrefix;
+        }
+
+        public void setLinkPathPrefix(String linkPathPrefix) {
+            this.linkPathPrefix = linkPathPrefix;
+        }
 
         public DataSize getBufferSize() {
             return BufferSize;
