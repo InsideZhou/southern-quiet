@@ -185,7 +185,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                             .warn();
 
                         try {
-                            return parameterClass.newInstance();
+                            return parameterClass.getDeclaredConstructor().newInstance();
                         }
                         catch (Exception e) {
                             return null;

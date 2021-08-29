@@ -98,7 +98,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     private int getWorkerId() {
-        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionKt.eq(workerTable.appId, runtimeId)).orderBy(ColumnExtensionKt.desc(workerTable.workerTime));
+        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionsKt.eq(workerTable.appId, runtimeId)).orderBy(ColumnExtensionsKt.desc(workerTable.workerTime));
         List<TableRow> rows;
         try {
             rows = instepSQL.executor().execute(plan, TableRow.class);
@@ -173,9 +173,9 @@ public class JdbcIdGenerator implements IdGenerator {
             SQLPlan<TableUpdatePlan> plan = workerTable.update()
                 .set(workerTable.workerTime, now)
                 .where(
-                    ColumnExtensionKt.eq(workerTable.workerId, workerIdInUse)
-                        .and(ColumnExtensionKt.eq(workerTable.appId, runtimeId))
-                        .and(ColumnExtensionKt.lte(workerTable.workerTime, now))
+                    ColumnExtensionsKt.eq(workerTable.workerId, workerIdInUse)
+                        .and(ColumnExtensionsKt.eq(workerTable.appId, runtimeId))
+                        .and(ColumnExtensionsKt.lte(workerTable.workerTime, now))
                 ).debug();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);

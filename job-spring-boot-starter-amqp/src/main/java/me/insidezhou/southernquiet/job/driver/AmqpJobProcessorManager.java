@@ -182,7 +182,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
                             .warn();
 
                         try {
-                            return parameterClass.newInstance();
+                            return parameterClass.getDeclaredConstructor().newInstance();
                         }
                         catch (Exception e) {
                             return null;
