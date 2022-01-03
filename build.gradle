@@ -16,11 +16,11 @@ buildscript {
 
 allprojects {
     group = 'me.insidezhou.southernquiet'
-    version = '4.7.1'
+    version = '4.7.2-SNAPSHOT'
 
     ext {
         jsonpathVersion = '2.4.0'
-        instepVersion = '2.1.0'
+        instepVersion = '3.0.0-SNAPSHOT'
     }
 
     repositories {
@@ -28,7 +28,17 @@ allprojects {
         mavenCentral()
         google()
         maven { url "https://repo.spring.io/milestone" }
-        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
+        maven {
+            url 'https://pkgs.dev.azure.com/insidezhou/_packaging/insidezhou/maven/v1'
+            name 'azure'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = project.findProperty("azureUsername")
+                password = project.findProperty("azurePassword")
+            }
+        }
     }
 }
 
@@ -38,6 +48,7 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
+    apply plugin: 'kotlin'
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'org.jetbrains.kotlin.plugin.spring'
     apply plugin: 'org.jetbrains.dokka'
@@ -66,7 +77,10 @@ subprojects {
     }
 
     compileKotlin {
-        kotlinOptions.useIR = true
+        kotlinOptions {
+            useIR = true
+            jvmTarget = "11"
+        }
     }
 
     jar {
@@ -158,6 +172,18 @@ subprojects {
                 credentials {
                     username = project.hasProperty('ossrhUsername') ? ossrhUsername : ''
                     password = project.hasProperty('ossrhPassword') ? ossrhPassword : ''
+                }
+            }
+
+            maven {
+                url 'https://pkgs.dev.azure.com/insidezhou/_packaging/insidezhou/maven/v1'
+                name 'azure'
+                authentication {
+                    basic(BasicAuthentication)
+                }
+                credentials {
+                    username = project.findProperty("azureUsername")
+                    password = project.findProperty("azurePassword")
                 }
             }
         }

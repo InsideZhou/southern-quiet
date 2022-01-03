@@ -1,6 +1,6 @@
 dependencies {
     api("org.springframework.boot:spring-boot-starter")
-    api "me.insidezhou.instep:instep-core:${instepVersion}"
+    implementation "me.insidezhou.instep:instep-core:${instepVersion}"
 
     testImplementation "org.springframework.boot:spring-boot-starter-web"
 }
