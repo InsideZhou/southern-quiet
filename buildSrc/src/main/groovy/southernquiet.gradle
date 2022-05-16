@@ -31,8 +31,8 @@ repositories {
             basic(BasicAuthentication)
         }
         credentials {
-            username = 'insidezhou'
-            password = 'lmf7h6u5wg6rqtl6curihhusnabectzzbcwbwwm7qzbxtcvi63za'
+            username = project.findProperty("azureUsername")
+            password = project.findProperty("azurePassword")
         }
     }
 }
