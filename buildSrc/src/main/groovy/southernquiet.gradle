@@ -1,0 +1,176 @@
+plugins {
+    id 'java'
+    id 'java-library'
+
+    id 'maven-publish'
+    id 'signing'
+
+    id "org.jetbrains.kotlin.jvm"
+    id "org.jetbrains.kotlin.plugin.spring"
+    id 'org.jetbrains.dokka'
+
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+group = 'me.insidezhou.southernquiet'
+version = '4.7.2-SNAPSHOT'
+
+ext {
+    jsonpathVersion = '2.4.0'
+    instepVersion = '3.0.0-SNAPSHOT'
+}
+
+repositories {
+    mavenLocal()
+    maven { url "https://maven.aliyun.com/repository/public" }
+    maven {
+        url 'https://pkgs.dev.azure.com/insidezhou/_packaging/insidezhou/maven/v1'
+        name 'azure'
+        authentication {
+            basic(BasicAuthentication)
+        }
+        credentials {
+            username = 'insidezhou'
+            password = 'lmf7h6u5wg6rqtl6curihhusnabectzzbcwbwwm7qzbxtcvi63za'
+        }
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core'
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
+
+compileJava.dependsOn(processResources)
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
+    options.encoding = "UTF-8"
+}
+
+compileKotlin {
+    kotlinOptions {
+        useIR = true
+        jvmTarget = "11"
+    }
+}
+
+jar {
+    enabled = true
+
+    manifest {
+        attributes 'Implementation-Version': archiveVersion
+    }
+}
+
+javadoc {
+    options.encoding = 'UTF-8'
+    failOnError = false
+}
+
+bootJar {
+    archiveClassifier.set('boot')
+
+    manifest {
+        attributes 'Implementation-Version': archiveVersion
+    }
+}
+
+task sourceJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+task docJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        full(MavenPublication) {
+            artifactId jar.archiveBaseName.get()
+
+            from components.java
+
+            artifact sourceJar
+            artifact docJar
+
+            pom {
+                name = 'SouthernQuiet'
+                description = '这是一个基于Spring Boot，为了提供一些基础设施抽象，减少重复劳动而存在的库。'
+                url = 'https://github.com/InsideZhou/southern-quiet'
+
+                scm {
+                    connection = 'scm:git:git://github.com/InsideZhou/southern-quiet.git'
+                    developerConnection = 'scm:git:ssh://github.com/InsideZhou/southern-quiet.git'
+                    url = 'https://github.com/InsideZhou/southern-quiet'
+
+                }
+
+                licenses {
+                    license {
+                        name = 'The 3-Clause BSD License'
+                        url = 'https://opensource.org/licenses/BSD-3-Clause'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = 'Inside Zhou'
+                        email = 'inside@insidezhou.me'
+                    }
+                }
+            }
+        }
+
+        simple(MavenPublication) {
+            artifactId jar.archiveBaseName.get()
+
+            from components.java
+
+            artifact sourceJar
+        }
+    }
+
+    repositories {
+        maven {
+            def isSnapshot = version.endsWith("SNAPSHOT")
+            def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+            url isSnapshot ? snapshotsRepoUrl : releasesRepoUrl
+            name 'sonatype'
+            credentials {
+                username = project.hasProperty('ossrhUsername') ? ossrhUsername : ''
+                password = project.hasProperty('ossrhPassword') ? ossrhPassword : ''
+            }
+        }
+
+        maven {
+            url 'https://pkgs.dev.azure.com/insidezhou/_packaging/insidezhou/maven/v1'
+            name 'azure'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = project.findProperty("azureUsername")
+                password = project.findProperty("azurePassword")
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.full
+}

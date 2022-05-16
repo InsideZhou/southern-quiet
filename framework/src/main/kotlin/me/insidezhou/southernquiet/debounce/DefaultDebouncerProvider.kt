@@ -54,9 +54,9 @@ open class DefaultDebouncerProvider(properties: DebounceProperties, val taskSche
 
         var debouncerName = name
 
-        val bean = invocation.getThis()
+        val bean = invocation.getThis()!!
         val method = invocation.method
-        if (StringUtils.isEmpty(debouncerName)) {
+        if (!StringUtils.hasText(debouncerName)) {
             debouncerName = bean.javaClass.name + "#" + method.name + "_" + waitFor + "_" + maxWaitFor
         }
 

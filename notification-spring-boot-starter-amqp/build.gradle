@@ -1,3 +1,7 @@
+plugins {
+    id 'southernquiet'
+}
+
 dependencies {
     api project(':framework-amqp-rabbit')
 

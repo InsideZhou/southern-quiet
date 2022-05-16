@@ -1,3 +1,7 @@
+plugins {
+    id 'southernquiet'
+}
+
 dependencies {
     api project(':framework')
     api "me.insidezhou.instep:instep-dao:${instepVersion}"
@@ -6,7 +10,7 @@ dependencies {
 
     testImplementation "org.springframework.boot:spring-boot-starter-web"
 
-    testRuntimeOnly 'org.postgresql:postgresql:42.2.2'
-    testRuntimeOnly 'mysql:mysql-connector-java:8.0.11'
-    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:7.4.1.jre8'
+    testRuntimeOnly 'org.postgresql:postgresql:42.3.4'
+    testRuntimeOnly 'mysql:mysql-connector-java:8.0.29'
+    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:10.2.0.jre8'
 }

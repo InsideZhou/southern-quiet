@@ -3,22 +3,22 @@ package test.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
 @org.springframework.boot.test.autoconfigure.json.JsonTest
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 public class JsonTest {
     private static final SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JsonTest.class);
 
@@ -32,7 +32,6 @@ public class JsonTest {
         }
     }
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private ObjectMapper mapper;
 
@@ -93,8 +92,8 @@ public class JsonTest {
             String json = mapper.writeValueAsString(account);
             Account other = mapper.readValue(json, Account.class);
             Role otherRole = (Role) other.getRoles().toArray()[0];
-            Assert.assertEquals(role.getId(), otherRole.getId());
-            Assert.assertEquals(role.getName(), otherRole.getName());
+            Assertions.assertEquals(role.getId(), otherRole.getId());
+            Assertions.assertEquals(role.getName(), otherRole.getName());
         }
         catch (IOException e) {
             throw new RuntimeException(e);

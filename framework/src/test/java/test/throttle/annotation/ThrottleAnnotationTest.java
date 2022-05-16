@@ -1,19 +1,19 @@
 package test.throttle.annotation;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Service;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @SpringBootTest(classes = {
     FrameworkAutoConfiguration.class,
     ThrottleAnnotationTestAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @Service
 public class ThrottleAnnotationTest {
 
@@ -36,7 +36,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertNull(count);
+        Assertions.assertNull(count);
 
         try {
             count = throttleAnnotationTestProcessor.countBaseReturnObj(1);
@@ -44,8 +44,8 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertNotNull(count);
-        Assert.assertEquals(1, count.intValue());
+        Assertions.assertNotNull(count);
+        Assertions.assertEquals(1, count.intValue());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
+        Assertions.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
 
         try {
             throttleAnnotationTestProcessor.countBaseVoid(1);
@@ -66,7 +66,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
+        Assertions.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertNull(count);
+        Assertions.assertNull(count);
 
         Thread.sleep(1100);
 
@@ -90,8 +90,8 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertNotNull(count);
-        Assert.assertEquals(1, count.intValue());
+        Assertions.assertNotNull(count);
+        Assertions.assertEquals(1, count.intValue());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
+        Assertions.assertEquals(0, throttleAnnotationTestProcessor.getCountVoid());
 
         Thread.sleep(1100);
 
@@ -114,7 +114,7 @@ public class ThrottleAnnotationTest {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
+        Assertions.assertEquals(1, throttleAnnotationTestProcessor.getCountVoid());
     }
 
 }

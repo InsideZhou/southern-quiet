@@ -5,18 +5,20 @@ import me.insidezhou.southernquiet.throttle.Throttle;
 import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.assertj.core.internal.bytebuddy.utility.RandomString;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.UUID;
 
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, ThrottleTestApp.class})
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ThrottleTest {
     @Autowired
     protected ThrottleManager throttleManager;
@@ -27,7 +29,7 @@ public class ThrottleTest {
     @Autowired
     private ThrottleAdvice throttleAdvice;
 
-    @Before
+    @BeforeAll
     public void before() {
         scheduledThrottleBean.scheduledThrottleMethod1();
         scheduledThrottleBean.scheduledThrottleMethod2();
@@ -38,46 +40,46 @@ public class ThrottleTest {
     public void countDelay() throws Exception {
         Throttle throttle = throttleManager.getTimeBased(RandomString.make(), 3);
 
-        Assert.assertTrue(throttle.open(999999999));
-        Assert.assertTrue(throttle.open(100000000));
-        Assert.assertTrue(throttle.open(100));
-        Assert.assertFalse(throttle.open(100));
+        Assertions.assertTrue(throttle.open(999999999));
+        Assertions.assertTrue(throttle.open(100000000));
+        Assertions.assertTrue(throttle.open(100));
+        Assertions.assertFalse(throttle.open(100));
 
 
         throttle = throttleManager.getTimeBased(RandomString.make(), 3);
 
-        Assert.assertTrue(throttle.open(999999999));
-        Assert.assertTrue(throttle.open(100000000));
-        Assert.assertTrue(throttle.open(100));
+        Assertions.assertTrue(throttle.open(999999999));
+        Assertions.assertTrue(throttle.open(100000000));
+        Assertions.assertTrue(throttle.open(100));
 
         Thread.sleep(100);
-        Assert.assertTrue(throttle.open(100));
+        Assertions.assertTrue(throttle.open(100));
     }
 
     @Test
     public void advisingCount() {
-        Assert.assertEquals(1, throttleAdvice.advisingCount());
+        Assertions.assertEquals(1, throttleAdvice.advisingCount());
     }
 
     @Test
     public void countBased() {
         Throttle throttle = throttleManager.getCountBased(RandomString.make());
 
-        Assert.assertFalse(throttle.open(1));
-        Assert.assertTrue(throttle.open(1));
-        Assert.assertFalse(throttle.open(2));
-        Assert.assertFalse(throttle.open(2));
-        Assert.assertTrue(throttle.open(2));
+        Assertions.assertFalse(throttle.open(1));
+        Assertions.assertTrue(throttle.open(1));
+        Assertions.assertFalse(throttle.open(2));
+        Assertions.assertFalse(throttle.open(2));
+        Assertions.assertTrue(throttle.open(2));
     }
 
     @Test
     public void countBasedForZero() {
         Throttle throttle = throttleManager.getCountBased(RandomString.make());
 
-        Assert.assertFalse(throttle.open(3));
-        Assert.assertTrue(throttle.open(0));
-        Assert.assertFalse(throttle.open(1));
-        Assert.assertTrue(throttle.open(1));
+        Assertions.assertFalse(throttle.open(3));
+        Assertions.assertTrue(throttle.open(0));
+        Assertions.assertFalse(throttle.open(1));
+        Assertions.assertTrue(throttle.open(1));
     }
 
     @Test
@@ -95,7 +97,7 @@ public class ThrottleTest {
             }
             Thread.sleep(600);
         }
-        Assert.assertEquals(1, count);
+        Assertions.assertEquals(1, count);
     }
 
     private static int timeBasedSameKeysMultipleThreadsCount = 0;
@@ -140,7 +142,7 @@ public class ThrottleTest {
             thread.start();
             thread.join();
         }
-        Assert.assertEquals(0, timeBasedSameKeysMultipleThreadsCount);
+        Assertions.assertEquals(0, timeBasedSameKeysMultipleThreadsCount);
         timeBasedSameKeysMultipleThreadsCount = 0;
 
         Thread.sleep(1000);
@@ -153,7 +155,7 @@ public class ThrottleTest {
             thread.start();
             thread.join();
         }
-        Assert.assertEquals(1, timeBasedSameKeysMultipleThreadsCount);
+        Assertions.assertEquals(1, timeBasedSameKeysMultipleThreadsCount);
         timeBasedSameKeysMultipleThreadsCount = 0;
     }
 
@@ -178,8 +180,8 @@ public class ThrottleTest {
             }
             Thread.sleep(600);
         }
-        Assert.assertEquals(1, count1);
-        Assert.assertEquals(1, count2);
+        Assertions.assertEquals(1, count1);
+        Assertions.assertEquals(1, count2);
     }
 
     @Test
@@ -198,7 +200,7 @@ public class ThrottleTest {
                 openTimes++;
             }
         }
-        Assert.assertEquals(5, openTimes);
+        Assertions.assertEquals(5, openTimes);
 
         throttleName = UUID.randomUUID().toString();
         throttle = throttleManager.getCountBased(throttleName);
@@ -210,7 +212,7 @@ public class ThrottleTest {
                 openTimes++;
             }
         }
-        Assert.assertEquals(5, openTimes);
+        Assertions.assertEquals(5, openTimes);
     }
 
     @Test
@@ -234,8 +236,8 @@ public class ThrottleTest {
                 count2++;
             }
         }
-        Assert.assertEquals(3, count1);
-        Assert.assertEquals(2, count2);
+        Assertions.assertEquals(3, count1);
+        Assertions.assertEquals(2, count2);
     }
 
     private static int openTimesCountBaseBySameKeyMultipleThread = 0;
@@ -263,7 +265,7 @@ public class ThrottleTest {
             thread.join();
         }
 
-        Assert.assertEquals(5, openTimesCountBaseBySameKeyMultipleThread);
+        Assertions.assertEquals(5, openTimesCountBaseBySameKeyMultipleThread);
 
         openTimesCountBaseBySameKeyMultipleThread = 0;
     }
@@ -292,21 +294,21 @@ public class ThrottleTest {
 
         Throttle throttle = throttleManager.getTimeBased(throttleName);
 
-        Assert.assertFalse(throttle.open(1000));
+        Assertions.assertFalse(throttle.open(1000));
 
         boolean open = throttle.open(0);
-        Assert.assertTrue(open);
+        Assertions.assertTrue(open);
 
         open = throttle.open(1000);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
 
         open = throttle.open(500);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
 
         Thread.sleep(200);
 
         open = throttle.open(200);
-        Assert.assertTrue(open);
+        Assertions.assertTrue(open);
     }
 
     @Test
@@ -314,26 +316,26 @@ public class ThrottleTest {
         String throttleName1 = UUID.randomUUID().toString();
         Throttle throttle1 = throttleManager.getCountBased(throttleName1);
         boolean open = throttle1.open(3);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
         open = throttle1.open(3);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
         open = throttle1.open(3);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
         open = throttle1.open(3);
-        Assert.assertTrue(open);
+        Assertions.assertTrue(open);
 
         String throttleName2 = UUID.randomUUID().toString();
         Throttle throttle2 = throttleManager.getCountBased(throttleName2);
         open = throttle2.open(3);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
         open = throttle2.open(3);
-        Assert.assertFalse(open);
+        Assertions.assertFalse(open);
         open = throttle2.open(2);
-        Assert.assertTrue(open);
+        Assertions.assertTrue(open);
 
         Throttle throttle3 = throttleManager.getCountBased(UUID.randomUUID().toString());
-        Assert.assertFalse(throttle3.open(3));
-        Assert.assertTrue(throttle3.open(0));
-        Assert.assertFalse(throttle3.open(2));
+        Assertions.assertFalse(throttle3.open(3));
+        Assertions.assertTrue(throttle3.open(0));
+        Assertions.assertFalse(throttle3.open(2));
     }
 }

@@ -1,20 +1,20 @@
 package test;
 
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
+@ExtendWith(SpringExtension.class)
 public class IdGeneratorTest {
     @SpringBootConfiguration
     public static class Config {}
@@ -34,7 +34,7 @@ public class IdGeneratorTest {
         long sequence = idGenerator.getSequenceFromId(id);
         int worker = idGenerator.getWorkerFromId(id);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             Duration.between(LocalDateTime.ofInstant(Instant.ofEpochSecond(EPOCH), ZoneOffset.UTC.normalized()), LocalDateTime.now()).toDays(),
             Duration.between(Instant.ofEpochSecond(EPOCH), Instant.ofEpochMilli(timestamp)).toDays()
         );
@@ -71,10 +71,10 @@ public class IdGeneratorTest {
     }
 
     private void commonAsserts(long id, int worker, long timestamp, long sequence, long ticks, int tickAccuracy) {
-        Assert.assertTrue(id > 0);
-        Assert.assertEquals(WORKER, worker);
-        Assert.assertTrue(timestamp > EPOCH * 1000);
-        Assert.assertTrue(sequence <= SEQUENCE_START_RANGE);
-        Assert.assertEquals(ticks * tickAccuracy + EPOCH * 1000, timestamp);
+        Assertions.assertTrue(id > 0);
+        Assertions.assertEquals(WORKER, worker);
+        Assertions.assertTrue(timestamp > EPOCH * 1000);
+        Assertions.assertTrue(sequence <= SEQUENCE_START_RANGE);
+        Assertions.assertEquals(ticks * tickAccuracy + EPOCH * 1000, timestamp);
     }
 }

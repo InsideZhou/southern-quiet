@@ -7,9 +7,9 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.notification.AmqpNotificationAutoConfiguration;
 import me.insidezhou.southernquiet.notification.NotificationListener;
 import me.insidezhou.southernquiet.notification.NotificationPublisher;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,14 +17,14 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class NotificationTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(NotificationTest.class);
@@ -62,7 +62,7 @@ public class NotificationTest {
     public void queueDeclared() {
         String deadRouting = properties.getNamePrefix() + "DEAD." + StandardNotification.class.getSimpleName() + "#a";
         QueueInformation deadQueue = amqpAdmin.getQueueInfo(deadRouting);
-        Assert.assertNotNull(deadQueue);
+        Assertions.assertNotNull(deadQueue);
     }
 
     @SuppressWarnings("unused")

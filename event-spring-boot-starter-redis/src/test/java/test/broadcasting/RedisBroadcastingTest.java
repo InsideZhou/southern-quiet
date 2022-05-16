@@ -3,13 +3,13 @@ package test.broadcasting;
 import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.event.EventListener;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static me.insidezhou.southernquiet.event.EventPubSub.CustomApplicationEventChannel;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class RedisBroadcastingTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(RedisBroadcastingTest.class);
@@ -35,16 +35,18 @@ public class RedisBroadcastingTest {
         eventPubSub.publish(new ChildBroadcastingDone());
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
     public void sendFailure() {
-        eventPubSub.publish(new NonSerializableEvent());
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            eventPubSub.publish(new NonSerializableEvent());
+        });
     }
 
     @Test
     public void channels() {
         Set<String> channels = eventPubSub.getListeningChannels();
 
-        Assert.assertTrue(channels.containsAll(Arrays.asList(CustomApplicationEventChannel, "haha", "TEST.CHANNEL")));
+        Assertions.assertTrue(channels.containsAll(Arrays.asList(CustomApplicationEventChannel, "haha", "TEST.CHANNEL")));
     }
 
     @Test
@@ -53,8 +55,8 @@ public class RedisBroadcastingTest {
         eventPubSub.publish(broadcastingCustomChannel);
         Thread.sleep(1000);
         Integer count = testCustomChannelListenerMap.get(broadcastingCustomChannel.getId().toString());
-        Assert.assertNotNull(count);
-        Assert.assertEquals(1, count.intValue());
+        Assertions.assertNotNull(count);
+        Assertions.assertEquals(1, count.intValue());
     }
 
     public static class Listener {

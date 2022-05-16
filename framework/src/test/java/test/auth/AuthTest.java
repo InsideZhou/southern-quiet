@@ -5,15 +5,15 @@ import me.insidezhou.southernquiet.auth.*;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.PathMatcher;
 
 import java.lang.reflect.UndeclaredThrowableException;
@@ -24,7 +24,7 @@ import java.util.UUID;
 import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQualifier;
 
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, AuthTest.Config.class})
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 public class AuthTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AuthTest.class);
 
@@ -59,7 +59,7 @@ public class AuthTest {
             noAuthProviderExistsException = (NoAuthProviderExistsException) e.getCause();
         }
 
-        Assert.assertNotNull(noAuthProviderExistsException);
+        Assertions.assertNotNull(noAuthProviderExistsException);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class AuthTest {
             authorizationFailException = (AuthorizationFailException) e.getCause();
         }
 
-        Assert.assertNotNull(authorizationFailException);
+        Assertions.assertNotNull(authorizationFailException);
 
         authAdvice.setAuthProvider(context -> new Authentication() {
             @NotNull
@@ -127,11 +127,11 @@ public class AuthTest {
 
     @Test
     public void antPath() {
-        Assert.assertTrue(pathMatcher.match("security/*", "security/allCredentials"));
-        Assert.assertTrue(pathMatcher.match("security/*", "security/"));
+        Assertions.assertTrue(pathMatcher.match("security/*", "security/allCredentials"));
+        Assertions.assertTrue(pathMatcher.match("security/*", "security/"));
 
-        Assert.assertFalse(pathMatcher.match("security/*", "security"));
-        Assert.assertFalse(pathMatcher.match("security/*", "allCredentials"));
+        Assertions.assertFalse(pathMatcher.match("security/*", "security"));
+        Assertions.assertFalse(pathMatcher.match("security/*", "allCredentials"));
     }
 
     public static class SecurityTarget {

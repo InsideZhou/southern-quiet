@@ -1,16 +1,16 @@
 package test;
 
-import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.file.web.controller.FileWebController;
 import me.insidezhou.southernquiet.file.web.model.FileInfo;
 import me.insidezhou.southernquiet.file.web.model.IdHashAlgorithm;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -25,26 +25,24 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.SystemPropertyUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 
 @SuppressWarnings("ConstantConditions")
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = FileWebTest.class)
 @AutoConfigureWebFlux
 @AutoConfigureWebTestClient
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FileWebControllerTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration
@@ -69,7 +67,7 @@ public class FileWebControllerTest {
     private String base64EncodedFile;
     private String contextPath;
 
-    @Before
+    @BeforeAll
     public void before() throws Exception {
         contextPath = serverProperties.getServlet().getContextPath();
         client = WebTestClient.bindToApplicationContext(applicationContext).configureClient().responseTimeout(Duration.ofMillis(300000)).build();
@@ -108,12 +106,12 @@ public class FileWebControllerTest {
 
         inputStream.reset();
         ByteArrayInputStream resultInputStream = new ByteArrayInputStream(result.getResponseBody());
-        Assert.assertEquals(resultInputStream.available(), inputStream.available());
+        Assertions.assertEquals(resultInputStream.available(), inputStream.available());
 
         //1.读取软链接和源文件,指纹一样
         String hash1 = org.springframework.util.DigestUtils.md5DigestAsHex(inputStream);
         String hash2 = org.springframework.util.DigestUtils.md5DigestAsHex(resultInputStream);
-        Assert.assertEquals(hash1, hash2);
+        Assertions.assertEquals(hash1, hash2);
 
     }
 
@@ -138,8 +136,8 @@ public class FileWebControllerTest {
             .returnResult();
 
         FileInfo fileInfo = result.getResponseBody().get(0);
-        Assert.assertEquals(MediaType.IMAGE_PNG_VALUE, fileInfo.getContentType());
-        Assert.assertEquals(contextPath + "/image/" + fileInfo.getId(), fileInfo.getUrl());
+        Assertions.assertEquals(MediaType.IMAGE_PNG_VALUE, fileInfo.getContentType());
+        Assertions.assertEquals(contextPath + "/image/" + fileInfo.getId(), fileInfo.getUrl());
 
         return fileInfo;
     }
@@ -180,7 +178,7 @@ public class FileWebControllerTest {
             .expectBody()
             .returnResult();
 
-        Assert.assertEquals(base64EncodedFile, new String(result.getResponseBody(), StandardCharsets.UTF_8));
+        Assertions.assertEquals(base64EncodedFile, new String(result.getResponseBody(), StandardCharsets.UTF_8));
     }
 
     @Test
@@ -204,7 +202,7 @@ public class FileWebControllerTest {
         String filePath = FileWebController.getFilePath(fileInfo.getId());
 
         fileSystem.put(filePath + "_image.png", new ByteArrayInputStream(result.getResponseBody()));
-        Assert.assertTrue(result.getResponseHeaders().getContentLength() > 0);
+        Assertions.assertTrue(result.getResponseHeaders().getContentLength() > 0);
     }
 
     @Test

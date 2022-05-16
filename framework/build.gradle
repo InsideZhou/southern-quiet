@@ -1,6 +1,22 @@
+plugins {
+    id 'southernquiet'
+}
+
 dependencies {
     api("org.springframework.boot:spring-boot-starter")
     implementation "me.insidezhou.instep:instep-core:${instepVersion}"
 
     testImplementation "org.springframework.boot:spring-boot-starter-web"
+}
+
+task testJar(type: Jar) {
+    from sourceSets.test.output
+}
+
+configurations {
+    testArtifacts
+}
+
+artifacts {
+    testArtifacts testJar
 }

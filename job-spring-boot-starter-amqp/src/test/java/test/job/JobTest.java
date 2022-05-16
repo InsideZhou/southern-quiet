@@ -4,18 +4,19 @@ import me.insidezhou.southernquiet.job.JobArranger;
 import me.insidezhou.southernquiet.job.JobProcessor;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class JobTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(JobTest.class);
@@ -33,10 +34,12 @@ public class JobTest {
     }
 
     @Transactional()
-    @Test(expected = RuntimeException.class)
+    @Test
     public void tx() {
         jobArranger.arrange(new AmqpJob());
-        throw new RuntimeException("tx");
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            throw new RuntimeException("tx");
+        });
     }
 
     public static class Listener {

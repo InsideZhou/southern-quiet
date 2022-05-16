@@ -4,7 +4,7 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.util.Amplifier;
 import me.insidezhou.southernquiet.util.GoldenRatioAmplifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 

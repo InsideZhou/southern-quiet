@@ -1,9 +1,13 @@
+plugins {
+    id 'southernquiet'
+}
+
 dependencies {
     api project(':framework')
     api "org.springframework.boot:spring-boot-starter-webflux"
 
     api 'commons-codec:commons-codec'
-    api 'org.apache.tika:tika-core:1.18'
+    api 'org.apache.tika:tika-core:1.22'
     api 'org.imgscalr:imgscalr-lib:4.2'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"

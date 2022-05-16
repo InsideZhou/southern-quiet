@@ -1,7 +1,11 @@
+plugins {
+    id 'southernquiet'
+}
+
 dependencies {
     api project(':framework')
 
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 
-    testImplementation project(':framework').sourceSets.test.output
+    testImplementation project(path: ':framework', configuration: 'testArtifacts')
 }

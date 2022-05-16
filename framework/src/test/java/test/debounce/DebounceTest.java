@@ -4,21 +4,21 @@ import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.debounce.Debounce;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.UUID;
 
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, DebounceTest.Config.class})
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 public class DebounceTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(DebounceTest.class);
 
@@ -35,7 +35,7 @@ public class DebounceTest {
 
     @Test
     public void debounce() throws Exception {
-        Assert.assertEquals(2.0, Math.round(64 / 30.0), 0.0);
+        Assertions.assertEquals(2.0, Math.round(64 / 30.0), 0.0);
 
         eventPublisher.publishEvent(new WorkerEvent(1));
         eventPublisher.publishEvent(new WorkerEvent(1));
@@ -46,7 +46,7 @@ public class DebounceTest {
         eventPublisher.publishEvent(new WorkerEvent(2));
 
         Thread.sleep(2000);
-        Assert.assertEquals(2, WorkerEventListener.counter);
+        Assertions.assertEquals(2, WorkerEventListener.counter);
     }
 
     public static class WorkerEventListener {

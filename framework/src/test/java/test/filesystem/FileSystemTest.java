@@ -2,13 +2,14 @@ package test.filesystem;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.filesystem.*;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StreamUtils;
 
@@ -21,81 +22,82 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @SpringBootTest(classes = FrameworkAutoConfiguration.class)
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FileSystemTest {
     @Autowired
     private FileSystem fileSystem;
 
-    @Before
+    @BeforeAll
     public void before() {}
 
     @Test
     public void arrayCopyOf() {
-        Assert.assertArrayEquals(new String[0], Arrays.copyOf(new String[]{"name"}, 0));
+        Assertions.assertArrayEquals(new String[0], Arrays.copyOf(new String[]{"name"}, 0));
     }
 
     @Test
     public void splitString() {
-        Assert.assertArrayEquals(new String[]{"name"}, "name".split("/"));
-        Assert.assertArrayEquals(new String[]{}, "/".split("/"));
-        Assert.assertArrayEquals(new String[]{""}, "".split("/"));
+        Assertions.assertArrayEquals(new String[]{"name"}, "name".split("/"));
+        Assertions.assertArrayEquals(new String[]{}, "/".split("/"));
+        Assertions.assertArrayEquals(new String[]{""}, "".split("/"));
     }
 
     @Test
     public void joinString() {
-        Assert.assertEquals("name", String.join("/", "name"));
-        Assert.assertEquals("/", String.join("/", "/"));
-        Assert.assertEquals("//", String.join("/", "/", ""));
-        Assert.assertEquals("//name", String.join("/", "/", "name"));
+        Assertions.assertEquals("name", String.join("/", "name"));
+        Assertions.assertEquals("/", String.join("/", "/"));
+        Assertions.assertEquals("//", String.join("/", "/", ""));
+        Assertions.assertEquals("//name", String.join("/", "/", "name"));
     }
 
     @Test
     public void path() {
         NormalizedPath normalizedPath = new NormalizedPath("hello.text");
-        Assert.assertEquals("/hello.text", normalizedPath.toString());
+        Assertions.assertEquals("/hello.text", normalizedPath.toString());
 
         normalizedPath = new NormalizedPath("");
-        Assert.assertEquals("/", normalizedPath.toString());
+        Assertions.assertEquals("/", normalizedPath.toString());
 
         normalizedPath = new NormalizedPath("/");
-        Assert.assertEquals("/", normalizedPath.toString());
+        Assertions.assertEquals("/", normalizedPath.toString());
 
         normalizedPath = new NormalizedPath("//test////hello.text/");
-        Assert.assertEquals("/test/hello.text", normalizedPath.toString());
+        Assertions.assertEquals("/test/hello.text", normalizedPath.toString());
 
-        Assert.assertEquals(0, "/".split("/").length);
-        Assert.assertEquals(2, "/abc".split("/").length);
-        Assert.assertEquals(1, "abc/".split("/").length);
+        Assertions.assertEquals(0, "/".split("/").length);
+        Assertions.assertEquals(2, "/abc".split("/").length);
+        Assertions.assertEquals(1, "abc/".split("/").length);
 
         normalizedPath = new NormalizedPath("hello.text");
-        Assert.assertEquals("/", normalizedPath.getParent());
-        Assert.assertEquals("hello.text", normalizedPath.getName());
+        Assertions.assertEquals("/", normalizedPath.getParent());
+        Assertions.assertEquals("hello.text", normalizedPath.getName());
 
         normalizedPath = new NormalizedPath("/");
-        Assert.assertEquals("", normalizedPath.getParent());
-        Assert.assertEquals("/", normalizedPath.getName());
+        Assertions.assertEquals("", normalizedPath.getParent());
+        Assertions.assertEquals("/", normalizedPath.getName());
 
         normalizedPath = new NormalizedPath("/hello.text");
-        Assert.assertEquals("/", normalizedPath.getParent());
-        Assert.assertEquals("hello.text", normalizedPath.getName());
+        Assertions.assertEquals("/", normalizedPath.getParent());
+        Assertions.assertEquals("hello.text", normalizedPath.getName());
 
         normalizedPath = new NormalizedPath("/test/hello.text");
-        Assert.assertEquals("/test", normalizedPath.getParent());
-        Assert.assertEquals("hello.text", normalizedPath.getName());
+        Assertions.assertEquals("/test", normalizedPath.getParent());
+        Assertions.assertEquals("hello.text", normalizedPath.getName());
     }
 
     @Test
     public void simpleIO() {
         try {
             fileSystem.put("hello/world.txt", "你好，Spring Boot。");
-            Assert.assertEquals("你好，Spring Boot。", fileSystem.read("hello/world.txt"));
+            Assertions.assertEquals("你好，Spring Boot。", fileSystem.read("hello/world.txt"));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
         }
 
         fileSystem.delete("hello/world.txt");
-        Assert.assertFalse(fileSystem.exists("hello/world.txt"));
+        Assertions.assertFalse(fileSystem.exists("hello/world.txt"));
     }
 
     @Test
@@ -126,7 +128,7 @@ public class FileSystemTest {
             throw new RuntimeException(e);
         }
 
-        Assert.assertEquals("你好，Spring Boot。", result);
+        Assertions.assertEquals("你好，Spring Boot。", result);
     }
 
     @Test
@@ -139,9 +141,9 @@ public class FileSystemTest {
             throw new RuntimeException(e);
         }
 
-        Assert.assertTrue(fileSystem.exists(file));
+        Assertions.assertTrue(fileSystem.exists(file));
         try {
-            Assert.assertTrue(fileSystem.files("/", file).anyMatch(meta -> meta.getName().equals(file)));
+            Assertions.assertTrue(fileSystem.files("/", file).anyMatch(meta -> meta.getName().equals(file)));
         }
         catch (PathNotFoundException e) {
             throw new RuntimeException(e);
@@ -156,10 +158,10 @@ public class FileSystemTest {
 
             List<? extends PathMeta> files = fileSystem.files("hello", true).collect(Collectors.toList());
 
-            Assert.assertEquals(2, files.size());
+            Assertions.assertEquals(2, files.size());
 
-            Assert.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/world.txt")).count());
-            Assert.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/girl/lily.txt")).count());
+            Assertions.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/world.txt")).count());
+            Assertions.assertEquals(1, files.stream().filter(f -> f.getPath().equals("/hello/girl/lily.txt")).count());
         }
         catch (InvalidFileException | PathNotFoundException e) {
             throw new RuntimeException(e);
@@ -180,7 +182,7 @@ public class FileSystemTest {
                 String hash1 = DigestUtils.md5DigestAsHex(inputStream1);
                 String hash2 = DigestUtils.md5DigestAsHex(inputStream2);
 
-                Assert.assertEquals(hash1, hash2);
+                Assertions.assertEquals(hash1, hash2);
             }
             catch (InvalidFileException | IOException e) {
                 throw new RuntimeException(e);
@@ -188,11 +190,11 @@ public class FileSystemTest {
 
             //2.删掉软链接,源文件不受影响
             fileSystem.delete(link);
-            Assert.assertTrue(fileSystem.exists(target));
+            Assertions.assertTrue(fileSystem.exists(target));
 
             //3.删掉源文件,软链接失效
             fileSystem.delete(target);
-            Assert.assertFalse(fileSystem.exists(link));
+            Assertions.assertFalse(fileSystem.exists(link));
         }
         catch (InvalidFileException e) {
             throw new RuntimeException(e);
@@ -221,7 +223,7 @@ public class FileSystemTest {
             String result = new String(bytes);
 
             //验证通过软链接 可以直接编辑源文件
-            Assert.assertEquals(content, result);
+            Assertions.assertEquals(content, result);
         }
         catch (InvalidFileException e) {
             e.printStackTrace();
