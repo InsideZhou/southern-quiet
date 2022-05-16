@@ -9,13 +9,13 @@ import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer;
 import org.springframework.context.Lifecycle;
 
 @SuppressWarnings("WeakerAccess")
@@ -33,11 +33,11 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
-        RabbitProperties rabbitProperties,
+        CachingConnectionFactoryConfigurer factoryConfigurer,
         RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+        ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers
     ) {
-        this(messageConverter, notificationProperties, properties, rabbitProperties, factoryBean, connectionNameStrategy, (correlationData, ack, cause) -> {
+        this(messageConverter, notificationProperties, properties, factoryConfigurer, factoryBean, factoryCustomizers, (correlationData, ack, cause) -> {
             log.message("接到publisher confirm")
                 .context("correlationData", correlationData)
                 .context("ack", ack)
@@ -57,9 +57,9 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
-        RabbitProperties rabbitProperties,
+        CachingConnectionFactoryConfigurer factoryConfigurer,
         RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
+        ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers,
         RabbitTemplate.ConfirmCallback confirmCallback
     ) {
         this.messageConverter = messageConverter;
@@ -67,7 +67,7 @@ public class AmqpNotificationPublisher<N> extends AbstractAmqpNotificationPublis
         this.properties = properties;
         this.enablePublisherConfirm = properties.isEnablePublisherConfirm() && null != confirmCallback;
 
-        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
+        CachingConnectionFactory connectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(factoryConfigurer, factoryBean, factoryCustomizers);
         if (enablePublisherConfirm) {
             connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         }

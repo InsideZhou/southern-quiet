@@ -13,12 +13,13 @@ import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
@@ -53,8 +54,9 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
                                            AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
                                            AmqpAutoConfiguration.Properties amqpProperties,
                                            RabbitProperties rabbitProperties,
+                                           CachingConnectionFactoryConfigurer factoryConfigurer,
                                            RabbitConnectionFactoryBean factoryBean,
-                                           ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
+                                           ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers,
                                            ApplicationContext applicationContext
     ) {
         super(applicationContext);
@@ -67,7 +69,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
         this.messageConverter = publisher.getMessageConverter();
 
-        this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy);
+        this.cachingConnectionFactory = AmqpAutoConfiguration.rabbitConnectionFactory(factoryConfigurer, factoryBean, factoryCustomizers);
         this.rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
     }
 
@@ -80,7 +82,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             NotificationListener listenerAnnotation = endpoint.getListenerAnnotation();
             Amplifier amplifier = this.amplifier;
 
-            if (!StringUtils.isEmpty(listenerAnnotation.amplifierBeanName())) {
+            if (StringUtils.hasText(listenerAnnotation.amplifierBeanName())) {
                 amplifier = applicationContext.getBean(listenerAnnotation.amplifierBeanName(), Amplifier.class);
             }
 
@@ -124,12 +126,14 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
             .findAny()
             .ifPresent(listenerEndpoint -> log.message("监听器重复")
                 .context(context -> {
+                    context.put("bean", bean.getClass().getName());
+                    context.put("method", method.getName());
                     context.put("queue", listenerRouting);
-                    context.put("listener", bean.getClass().getName());
                     context.put("listenerName", listenerName);
                     context.put("notification", listener.notification().getSimpleName());
                 })
-                .warn());
+                .warn()
+            );
 
         declareExchangeAndQueue(listener, listenerName);
 
@@ -163,7 +167,7 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
         return message -> {
             Object notification = messageConverter.fromMessage(message, typeReference);
 
-            onMessageReceived(routing, bean, listenerName, notification, message);
+            onMessageReceived(routing, listenerName, notification, message, bean, method);
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -220,15 +224,17 @@ public class AmqpNotificationListenerManager extends AbstractNotificationListene
 
     protected void onMessageReceived(
         String routing,
-        Object bean,
         String listenerName,
         Object notification,
-        Message message
+        Message message,
+        Object bean,
+        Method method
     ) {
         log.message("收到通知")
             .context(context -> {
+                context.put("bean", bean.getClass().getName());
+                context.put("method", method.getName());
                 context.put("queue", routing);
-                context.put("listener", bean.getClass().getName());
                 context.put("listenerName", listenerName);
                 context.put("notification", notification.getClass().getSimpleName());
                 context.put("message", message);

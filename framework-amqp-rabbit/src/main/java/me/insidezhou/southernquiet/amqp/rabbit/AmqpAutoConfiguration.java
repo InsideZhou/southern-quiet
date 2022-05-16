@@ -6,17 +6,18 @@ import me.insidezhou.southernquiet.util.Metadata;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer;
+import org.springframework.boot.autoconfigure.amqp.RabbitConnectionFactoryBeanConfigurer;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,72 +37,34 @@ public class AmqpAutoConfiguration {
         return new GoldenRatioAmplifier(amqpProperties.getInitialExpiration().toMillis());
     }
 
-    @SuppressWarnings({"ConstantConditions", "Duplicates"})
-    public static CachingConnectionFactory rabbitConnectionFactory(
-        RabbitProperties rabbitProperties,
-        RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
-    ) {
-        PropertyMapper map = PropertyMapper.get();
-        CachingConnectionFactory factory;
+    @SuppressWarnings("ConstantConditions")
+    public static CachingConnectionFactory rabbitConnectionFactory(CachingConnectionFactoryConfigurer configurer,
+                                                                   RabbitConnectionFactoryBean factoryBean,
+                                                                   ObjectProvider<ConnectionFactoryCustomizer> connectionFactoryCustomizers) {
+        com.rabbitmq.client.ConnectionFactory connectionFactory;
         try {
-            factory = new CachingConnectionFactory(factoryBean.getObject());
+            connectionFactory = factoryBean.getObject();
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        map.from(rabbitProperties::determineAddresses).to(factory::setAddresses);
-        map.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(factory::setPublisherConfirmType);
-        map.from(rabbitProperties::isPublisherReturns).to(factory::setPublisherReturns);
-        RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
-        map.from(channel::getSize).whenNonNull().to(factory::setChannelCacheSize);
-        map.from(channel::getCheckoutTimeout).whenNonNull().as(Duration::toMillis)
-            .to(factory::setChannelCheckoutTimeout);
-        RabbitProperties.Cache.Connection connection = rabbitProperties.getCache()
-            .getConnection();
-        map.from(connection::getMode).whenNonNull().to(factory::setCacheMode);
-        map.from(connection::getSize).whenNonNull()
-            .to(factory::setConnectionCacheSize);
-        map.from(connectionNameStrategy::getIfUnique).whenNonNull()
-            .to(factory::setConnectionNameStrategy);
+        connectionFactoryCustomizers.orderedStream().forEach((customizer) -> customizer.customize(connectionFactory));
+
+        CachingConnectionFactory factory = new CachingConnectionFactory(connectionFactory);
+        configurer.configure(factory);
         return factory;
     }
 
-    @SuppressWarnings({"Duplicates", "SpringJavaInjectionPointsAutowiringInspection"})
     @Bean
     @ConditionalOnMissingBean
-    public RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitProperties rabbitProperties) {
-        PropertyMapper map = PropertyMapper.get();
+    public RabbitConnectionFactoryBean getRabbitConnectionFactoryBean(RabbitConnectionFactoryBeanConfigurer configurer) {
         RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
-        map.from(rabbitProperties::determineHost).whenNonNull().to(factory::setHost);
-        map.from(rabbitProperties::determinePort).to(factory::setPort);
-        map.from(rabbitProperties::determineUsername).whenNonNull().to(factory::setUsername);
-        map.from(rabbitProperties::determinePassword).whenNonNull().to(factory::setPassword);
-        map.from(rabbitProperties::determineVirtualHost).whenNonNull().to(factory::setVirtualHost);
-        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds)
-            .to(factory::setRequestedHeartbeat);
-        RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
-        if (null != ssl.getEnabled() && ssl.getEnabled()) {
-            factory.setUseSSL(true);
-            map.from(ssl::getAlgorithm).whenNonNull().to(factory::setSslAlgorithm);
-            map.from(ssl::getKeyStoreType).to(factory::setKeyStoreType);
-            map.from(ssl::getKeyStore).to(factory::setKeyStore);
-            map.from(ssl::getKeyStorePassword).to(factory::setKeyStorePassphrase);
-            map.from(ssl::getTrustStoreType).to(factory::setTrustStoreType);
-            map.from(ssl::getTrustStore).to(factory::setTrustStore);
-            map.from(ssl::getTrustStorePassword).to(factory::setTrustStorePassphrase);
-            map.from(ssl::isValidateServerCertificate)
-                .to((validate) -> factory.setSkipServerCertificateValidation(!validate));
-            map.from(ssl::getVerifyHostname).to(factory::setEnableHostnameVerification);
-        }
-        map.from(rabbitProperties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis)
-            .to(factory::setConnectionTimeout);
+        configurer.configure(factory);
         factory.afterPropertiesSet();
         return factory;
     }
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @ConditionalOnMissingBean
     public SmartMessageConverter messageConverter(ObjectMapper objectMapper) {

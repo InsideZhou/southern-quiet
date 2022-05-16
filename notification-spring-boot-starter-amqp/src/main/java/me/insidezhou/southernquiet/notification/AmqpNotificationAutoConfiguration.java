@@ -6,12 +6,13 @@ import me.insidezhou.southernquiet.notification.driver.AmqpNotificationPublisher
 import me.insidezhou.southernquiet.util.Amplifier;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,30 +24,29 @@ import org.springframework.context.annotation.Configuration;
 
 import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.RecoverAmplifierQualifier;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties
 @AutoConfigureAfter({RabbitAutoConfiguration.class, AmqpAutoConfiguration.class})
 public class AmqpNotificationAutoConfiguration {
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Bean
     @ConditionalOnMissingBean
     public AmqpNotificationPublisher amqpNotificationPublisher(
         SmartMessageConverter messageConverter,
         AmqpNotificationAutoConfiguration.Properties notificationProperties,
         AmqpAutoConfiguration.Properties properties,
-        RabbitProperties rabbitProperties,
+        CachingConnectionFactoryConfigurer factoryConfigurer,
         RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+        ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers
     ) {
         return new AmqpNotificationPublisher(
             messageConverter,
             notificationProperties,
             properties,
-            rabbitProperties,
+            factoryConfigurer,
             factoryBean,
-            connectionNameStrategy
+            factoryCustomizers
         );
     }
 
@@ -59,8 +59,9 @@ public class AmqpNotificationAutoConfiguration {
         AmqpNotificationAutoConfiguration.Properties amqpNotificationProperties,
         AmqpAutoConfiguration.Properties amqpProperties,
         RabbitProperties rabbitProperties,
+        CachingConnectionFactoryConfigurer factoryConfigurer,
         RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy,
+        ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers,
         ApplicationContext applicationContext
     ) {
         return new AmqpNotificationListenerManager(
@@ -70,8 +71,9 @@ public class AmqpNotificationAutoConfiguration {
             amqpNotificationProperties,
             amqpProperties,
             rabbitProperties,
+            factoryConfigurer,
             factoryBean,
-            connectionNameStrategy,
+            factoryCustomizers,
             applicationContext
         );
     }

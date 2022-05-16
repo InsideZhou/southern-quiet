@@ -55,7 +55,7 @@ public class JobTest {
 
         @JobProcessor(job = AmqpJob.class, name = "e")
         public void exception(AmqpJob job, JobProcessor processor) {
-            throw new RuntimeException("在任务中抛出异常通知：listener=" + processor.name() + ", job=" + job.getId());
+            throw new RuntimeException("在任务中抛出异常：listener=" + processor.name() + ", job=" + job.getId());
         }
     }
 }

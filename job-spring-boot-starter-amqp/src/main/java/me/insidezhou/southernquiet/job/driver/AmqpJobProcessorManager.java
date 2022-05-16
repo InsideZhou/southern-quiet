@@ -77,7 +77,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
             JobProcessor processorAnnotation = endpoint.getProcessorAnnotation();
             Amplifier amplifier = this.amplifier;
 
-            if (!StringUtils.isEmpty(processorAnnotation.amplifierBeanName())) {
+            if (StringUtils.hasText(processorAnnotation.amplifierBeanName())) {
                 amplifier = applicationContext.getBean(processorAnnotation.amplifierBeanName(), Amplifier.class);
             }
 
@@ -121,11 +121,13 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
             .findAny()
             .ifPresent(processorEndpoint -> log.message("任务处理器重复")
                 .context(context -> {
+                    context.put("bean", bean.getClass().getName());
+                    context.put("method", method.getName());
                     context.put("queue", processorRouting);
-                    context.put("processor", bean.getClass().getName());
                     context.put("processorName", processorName);
                     context.put("job", processor.job().getSimpleName());
                 })
+                .warn()
             );
 
         declareExchangeAndQueue(processor, processorName);
@@ -160,7 +162,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
         return message -> {
             Object job = messageConverter.fromMessage(message, typeReference);
 
-            onMessageReceived(routing, bean, processorName, job, message);
+            onMessageReceived(routing, processorName, job, message, bean, method);
 
             Object[] parameters = Arrays.stream(method.getParameters())
                 .map(parameter -> {
@@ -217,15 +219,17 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
     protected void onMessageReceived(
         String routing,
-        Object bean,
         String listenerName,
         Object job,
-        Message message
+        Message message,
+        Object bean,
+        Method method
     ) {
         log.message("接到任务")
             .context(context -> {
+                context.put("bean", bean.getClass().getName());
+                context.put("method", method.getName());
                 context.put("queue", routing);
-                context.put("processor", bean.getClass().getName());
                 context.put("processorName", listenerName);
                 context.put("job", job.getClass().getSimpleName());
                 context.put("message", message);
@@ -251,7 +255,7 @@ public class AmqpJobProcessorManager extends AbstractJobProcessorManager impleme
 
     private String getProcessorName(JobProcessor processor, Method method) {
         String processorName = processor.name();
-        if (StringUtils.isEmpty(processorName)) {
+        if (!StringUtils.hasText(processorName)) {
             processorName = method.getName();
         }
 

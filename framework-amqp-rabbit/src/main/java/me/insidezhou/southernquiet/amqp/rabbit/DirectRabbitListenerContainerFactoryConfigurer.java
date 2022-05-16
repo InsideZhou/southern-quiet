@@ -14,9 +14,9 @@ public class DirectRabbitListenerContainerFactoryConfigurer extends AbstractRabb
     public DirectRabbitListenerContainerFactoryConfigurer(RabbitProperties rabbitProperties,
                                                           MessageRecoverer messageRecoverer,
                                                           AmqpAutoConfiguration.Properties properties) {
+        super(rabbitProperties);
         this.properties = properties;
 
-        setRabbitProperties(rabbitProperties);
         setMessageRecoverer(messageRecoverer);
     }
 

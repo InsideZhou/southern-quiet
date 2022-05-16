@@ -6,13 +6,14 @@ import me.insidezhou.southernquiet.job.driver.AmqpJobProcessorManager;
 import me.insidezhou.southernquiet.util.Amplifier;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -25,7 +26,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.RecoverAmplifierQualifier;
 
-@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "WeakerAccess"})
+@SuppressWarnings("WeakerAccess")
 @EnableRabbit
 @EnableTransactionManagement
 @Configuration
@@ -34,12 +35,11 @@ import static me.insidezhou.southernquiet.amqp.rabbit.AmqpAutoConfiguration.Reco
 public class AmqpJobAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
-    public RabbitTransactionManager rabbitTransactionManager(
-        RabbitProperties rabbitProperties,
-        RabbitConnectionFactoryBean factoryBean,
-        ObjectProvider<ConnectionNameStrategy> connectionNameStrategy
+    public RabbitTransactionManager rabbitTransactionManager(CachingConnectionFactoryConfigurer factoryConfigurer,
+                                                             RabbitConnectionFactoryBean factoryBean,
+                                                             ObjectProvider<ConnectionFactoryCustomizer> factoryCustomizers
     ) {
-        return new RabbitTransactionManager(AmqpAutoConfiguration.rabbitConnectionFactory(rabbitProperties, factoryBean, connectionNameStrategy));
+        return new RabbitTransactionManager(AmqpAutoConfiguration.rabbitConnectionFactory(factoryConfigurer, factoryBean, factoryCustomizers));
     }
 
     @SuppressWarnings("rawtypes")
