@@ -6,9 +6,11 @@ import instep.InstepLoggerFactory;
 import instep.dao.sql.ConnectionProvider;
 import instep.dao.sql.Dialect;
 import instep.dao.sql.InstepSQL;
-import instep.dao.sql.TransactionContext;
+import instep.dao.sql.TransactionRunner;
+import instep.dao.sql.impl.DefaultConnectionProvider;
 import instep.servicecontainer.ServiceNotFoundException;
 import kotlin.jvm.functions.Function0;
+import me.insidezhou.southernquiet.instep.dao.TemplateTransactionRunner;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +21,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 
@@ -86,7 +89,6 @@ public class InstepAutoConfiguration {
         };
     }
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @ConditionalOnMissingBean
     public Dialect dialect(DataSourceProperties dataSourceProperties, Instep instep) {
@@ -102,11 +104,11 @@ public class InstepAutoConfiguration {
         return dialect;
     }
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @ConditionalOnMissingBean
-    public InstepSQL instepSQL(DataSource dataSource, Dialect dialect, Instep instep) {
-        instep.bind(ConnectionProvider.class, new TransactionContext.ConnectionProvider(dataSource, dialect), "");
+    public InstepSQL instepSQL(DataSource dataSource, Dialect dialect, Instep instep, PlatformTransactionManager transactionManager) {
+        instep.bind(ConnectionProvider.class, new DefaultConnectionProvider(dataSource, dialect));
+        instep.bind(TransactionRunner.class, new TemplateTransactionRunner(transactionManager));
 
         return InstepSQL.INSTANCE;
     }

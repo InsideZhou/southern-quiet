@@ -14,11 +14,15 @@ plugins {
 }
 
 group = 'me.insidezhou.southernquiet'
-version = '4.7.2-SNAPSHOT'
+version = '4.7.2.000-SNAPSHOT'
 
 ext {
     jsonpathVersion = '2.4.0'
-    instepVersion = '3.0.0-SNAPSHOT'
+    instepVersion = '3.0.0.000-SNAPSHOT'
+}
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 repositories {
@@ -60,7 +64,7 @@ tasks.withType(JavaCompile) {
 compileKotlin {
     kotlinOptions {
         useIR = true
-        jvmTarget = "11"
+        jvmTarget = JavaVersion.VERSION_11
     }
 }
 
