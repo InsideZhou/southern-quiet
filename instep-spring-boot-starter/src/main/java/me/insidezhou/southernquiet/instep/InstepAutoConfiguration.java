@@ -7,9 +7,9 @@ import instep.dao.sql.ConnectionProvider;
 import instep.dao.sql.Dialect;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.TransactionRunner;
-import instep.dao.sql.impl.DefaultConnectionProvider;
 import instep.servicecontainer.ServiceNotFoundException;
 import kotlin.jvm.functions.Function0;
+import me.insidezhou.southernquiet.instep.dao.TemplateConnectionProvider;
 import me.insidezhou.southernquiet.instep.dao.TemplateTransactionRunner;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
@@ -106,10 +106,20 @@ public class InstepAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public InstepSQL instepSQL(DataSource dataSource, Dialect dialect, Instep instep, PlatformTransactionManager transactionManager) {
-        instep.bind(ConnectionProvider.class, new DefaultConnectionProvider(dataSource, dialect));
-        instep.bind(TransactionRunner.class, new TemplateTransactionRunner(transactionManager));
+    public TransactionRunner transactionRunner(PlatformTransactionManager transactionManager) {
+        return new TemplateTransactionRunner(transactionManager);
+    }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, Instep instep, TransactionRunner transactionRunner) {
+        return new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public InstepSQL instepSQL(Instep instep, ConnectionProvider connectionProvider) {
+        instep.bind(ConnectionProvider.class, connectionProvider);
         return InstepSQL.INSTANCE;
     }
 }
