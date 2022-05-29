@@ -13,12 +13,6 @@ public class ThrottlePointcut implements Pointcut {
     private final ComposablePointcut pointcut = new ComposablePointcut(AnnotationMatchingPointcut.forMethodAnnotation(Throttle.class))
         .union(AnnotationMatchingPointcut.forMethodAnnotation(ThrottledSchedule.class));
 
-    public ThrottlePointcut() { }
-
-    public ThrottlePointcut(Pointcut pointcut) {
-        this.pointcut.union(pointcut);
-    }
-
     @NotNull
     @Override
     public ClassFilter getClassFilter() {

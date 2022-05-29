@@ -5,7 +5,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.expression.AnnotatedElementKey;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.context.expression.CachedExpressionEvaluator;
@@ -13,33 +12,48 @@ import org.springframework.context.expression.MethodBasedEvaluationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.expression.Expression;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.support.CronSequenceGenerator;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.util.StringUtils;
 import org.springframework.util.StringValueResolver;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static me.insidezhou.southernquiet.throttle.annotation.Throttle.DefaultThreshold;
 
-public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
-    private final ThrottleManager throttleManager;
-    private StringValueResolver embeddedValueResolver;
-    private final NameEvaluator nameEvaluator;
-
+public class ThrottleAdvice implements MethodInterceptor {
+    private final BeanFactory beanFactory;
+    private final StringValueResolver stringValueResolver;
     private final Map<String, Tuple<String, Boolean, Long>> methodThrottle = new ConcurrentHashMap<>();
 
-    public ThrottleAdvice(ThrottleManager throttleManager, BeanFactory beanFactory) {
-        this.throttleManager = throttleManager;
-        this.nameEvaluator = new NameEvaluator(beanFactory);
+    private ThrottleManager throttleManager;
+    private NameEvaluator nameEvaluator;
+    private boolean initialized = false;
+
+    public ThrottleAdvice(BeanFactory beanFactory, StringValueResolver stringValueResolver) {
+        this.beanFactory = beanFactory;
+        this.stringValueResolver = stringValueResolver;
+    }
+
+    protected void initOnceBeforeWork() {
+        throttleManager = beanFactory.getBean(ThrottleManager.class);
+        nameEvaluator = new NameEvaluator(beanFactory);
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
+    public Object invoke(@NotNull MethodInvocation invocation) throws Throwable {
+        if (!initialized) {
+            initOnceBeforeWork();
+            initialized = true;
+        }
+
         Tuple<String, Boolean, Long> throttleValues = getThrottleValues(invocation);
         Throttle throttle = throttleValues.getSecond() ? throttleManager.getTimeBased(throttleValues.getFirst(), 1) : throttleManager.getCountBased(throttleValues.getFirst());
         long threshold = throttleValues.getThird();
@@ -58,11 +72,12 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
 
         String throttleName;
         if (annotation.isSpELName()) {
+            //noinspection ConstantConditions
             throttleName = nameEvaluator.evalName(
                 annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
             );
         }
-        else if (StringUtils.isEmpty(annotation.name())) {
+        else if (!StringUtils.hasText(annotation.name())) {
             throttleName = getDefaultThrottleName(invocation);
         }
         else {
@@ -80,24 +95,24 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
         if (DefaultThreshold == threshold && null != scheduledAnnotation) {
             Long thresholdFromSchedule = null;
 
-            if (!StringUtils.isEmpty(scheduledAnnotation.cron())) {
-                String cron = embeddedValueResolver.resolveStringValue(scheduledAnnotation.cron());
-                CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(Objects.requireNonNull(cron));
-                Instant start = cronSequenceGenerator.next(Date.from(Instant.now())).toInstant();
-                Instant end = cronSequenceGenerator.next(Date.from(start)).toInstant();
+            if (StringUtils.hasText(scheduledAnnotation.cron())) {
+                String cron = stringValueResolver.resolveStringValue(scheduledAnnotation.cron());
+                var cronExp = CronExpression.parse(Objects.requireNonNull(cron));
+                var start = Objects.requireNonNull(cronExp.next(LocalDateTime.now()));
+                var end = Objects.requireNonNull(cronExp.next(start));
 
-                thresholdFromSchedule = end.toEpochMilli() - start.toEpochMilli();
+                thresholdFromSchedule = Duration.between(start, end).toMillis();
             }
             else if (scheduledAnnotation.fixedRate() > 0) {
                 thresholdFromSchedule = scheduledAnnotation.fixedRate();
             }
-            else if (!StringUtils.isEmpty(scheduledAnnotation.fixedRateString())) {
+            else if (StringUtils.hasText(scheduledAnnotation.fixedRateString())) {
                 thresholdFromSchedule = Duration.parse(scheduledAnnotation.fixedRateString()).toMillis();
             }
 
             if (null != thresholdFromSchedule) {
                 optionalTimeUnit = Optional.of(TimeUnit.MILLISECONDS);
-                threshold = (long) (thresholdFromSchedule * 0.98); //只要节流的时间达到调度计划时间间隔的0.98倍就算节流成功。
+                threshold = (long) (thresholdFromSchedule * 0.98); //只要节流的时间达到调度计划时间间隔的0.98倍就算节流成功，暂时妥协一下，这个值需要考虑是否值得配置。
             }
         }
 
@@ -113,12 +128,8 @@ public class ThrottleAdvice implements MethodInterceptor, EmbeddedValueResolverA
     }
 
     private static String getDefaultThrottleName(MethodInvocation invocation) {
+        //noinspection ConstantConditions
         return invocation.getThis().getClass().getName() + "#" + invocation.getMethod().getName();
-    }
-
-    @Override
-    public void setEmbeddedValueResolver(@NotNull StringValueResolver resolver) {
-        this.embeddedValueResolver = resolver;
     }
 
     public static class NameEvaluator extends CachedExpressionEvaluator {

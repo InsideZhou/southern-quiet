@@ -2,6 +2,7 @@ package me.insidezhou.southernquiet.debounce;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.expression.AnnotatedElementKey;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -13,19 +14,31 @@ import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DebounceAdvice implements MethodInterceptor {
-    private final DebouncerProvider debouncerProvider;
-    private final NameEvaluator nameEvaluator;
+    private final BeanFactory beanFactory;
+    private DebouncerProvider debouncerProvider;
+    private NameEvaluator nameEvaluator;
+    private boolean initialized = false;
 
-    public DebounceAdvice(DebouncerProvider debouncerProvider, BeanFactory beanFactory) {
-        this.debouncerProvider = debouncerProvider;
-        this.nameEvaluator = new NameEvaluator(beanFactory);
+    public DebounceAdvice(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
+
+    protected void initOnceBeforeWork() {
+        debouncerProvider = beanFactory.getBean(DebouncerProvider.class);
+        nameEvaluator = new NameEvaluator(beanFactory);
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) {
+    public Object invoke(@NotNull MethodInvocation invocation) {
+        if (!initialized) {
+            initOnceBeforeWork();
+            initialized = true;
+        }
+
         Method method = invocation.getMethod();
 
         Debounce annotation = AnnotatedElementUtils.findMergedAnnotation(method, Debounce.class);
@@ -34,10 +47,10 @@ public class DebounceAdvice implements MethodInterceptor {
         String debouncerName;
         if (annotation.isSpELName()) {
             debouncerName = nameEvaluator.evalName(
-                annotation.name(), invocation, annotation, new AnnotatedElementKey(method, invocation.getThis().getClass())
+                annotation.name(), invocation, annotation, new AnnotatedElementKey(method, Objects.requireNonNull(invocation.getThis()).getClass())
             );
         }
-        else if (StringUtils.isEmpty(annotation.name())) {
+        else if (!StringUtils.hasText(annotation.name())) {
             debouncerName = getDefaultDebouncerName(invocation, annotation);
         }
         else {
@@ -50,7 +63,7 @@ public class DebounceAdvice implements MethodInterceptor {
     }
 
     private static String getDefaultDebouncerName(MethodInvocation invocation, Debounce annotation) {
-        return invocation.getThis().getClass().getName() + "#" + invocation.getMethod().getName() + "_" + annotation.waitFor() + "_" + annotation.maxWaitFor();
+        return Objects.requireNonNull(invocation.getThis()).getClass().getName() + "#" + invocation.getMethod().getName() + "_" + annotation.waitFor() + "_" + annotation.maxWaitFor();
     }
 
     public static class NameEvaluator extends CachedExpressionEvaluator {

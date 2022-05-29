@@ -45,13 +45,14 @@ public class DebounceTest {
         eventPublisher.publishEvent(new WorkerEvent(2));
         eventPublisher.publishEvent(new WorkerEvent(2));
 
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         Assertions.assertEquals(2, WorkerEventListener.counter);
     }
 
     public static class WorkerEventListener {
-        private static int counter = 0;
+        private static volatile int counter = 0;
 
+        @SuppressWarnings("NonAtomicOperationOnVolatileField")
         @EventListener
         @Debounce(waitFor = 1000, name = "#root.getDefaultName() + '_' + #event.getId()", isSpELName = true, executionTimeout = 10)
         public void work(WorkerEvent event) {

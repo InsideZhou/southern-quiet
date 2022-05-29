@@ -5,7 +5,8 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.MethodBeforeAdvice;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -25,16 +26,43 @@ public class AuthAdvice implements MethodBeforeAdvice {
 
     public final static String AuthorizationMatcherQualifier = "AuthAdvice.AuthorizationMatcherQualifier";
 
-    private final PathMatcher pathMatcher;
+    private final BeanFactory beanFactory;
 
+    private PathMatcher pathMatcher;
     private AuthProvider authProvider;
+    private boolean initialized = false;
 
-    public AuthAdvice(PathMatcher pathMatcher) {
-        this.pathMatcher = pathMatcher;
+    public AuthAdvice(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
+
+    public AuthProvider getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    protected void initOnceBeforeWork() throws AuthException {
+        pathMatcher = BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PathMatcher.class, AuthorizationMatcherQualifier);
+        try {
+            if (null == authProvider) {
+                authProvider = beanFactory.getBean(AuthProvider.class);
+            }
+        }
+        catch (Exception e) {
+            throw new NoAuthProviderExistsException();
+        }
     }
 
     @Override
     public void before(@NotNull Method method, @NotNull Object[] args, Object target) throws AuthException {
+        if (!initialized) {
+            initOnceBeforeWork();
+            initialized = true;
+        }
+
         Assert.notNull(target, "身份及权限验证时目标对象不该为null");
 
         Auth methodAuthorization = AnnotatedElementUtils.findMergedAnnotation(method, Auth.class);
@@ -92,15 +120,5 @@ public class AuthAdvice implements MethodBeforeAdvice {
                 Stream.concat(allPermissions.stream(), anyPermissions.stream()).collect(Collectors.toSet())
             );
         }
-    }
-
-    public AuthProvider getAuthProvider() {
-        return authProvider;
-    }
-
-    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-    @Autowired(required = false)
-    public void setAuthProvider(AuthProvider authProvider) {
-        this.authProvider = authProvider;
     }
 }

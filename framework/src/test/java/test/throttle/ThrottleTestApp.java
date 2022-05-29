@@ -47,7 +47,7 @@ public class ThrottleTestApp {
     public static class ScheduledThrottleBean {
         private final long begin = System.currentTimeMillis();
 
-        @ThrottledSchedule(cron = "#{properties.cron}", name = "scheduledThrottleMethod")
+        @ThrottledSchedule(cron = "#{properties.cron}", name = "scheduledThrottleMethod1")
         public void scheduledThrottleMethod1() {
             log.message("scheduledThrottleMethod1 working ...")
                 .context("begin", begin)
@@ -55,17 +55,17 @@ public class ThrottleTestApp {
                 .info();
         }
 
-        //        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+//        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod2")
         public void scheduledThrottleMethod2() {
-            log.message("scheduledThrottleMethod1 working ...")
+            log.message("scheduledThrottleMethod2 working ...")
                 .context("begin", begin)
                 .context("elapsed", Duration.ofMillis(System.currentTimeMillis() - begin))
                 .info();
         }
 
-        //        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod")
+//        @ThrottledSchedule(fixedRate = 1000, name = "scheduledThrottleMethod3")
         public void scheduledThrottleMethod3() {
-            log.message("scheduledThrottleMethod1 working ...")
+            log.message("scheduledThrottleMethod3 working ...")
                 .context("begin", begin)
                 .context("elapsed", Duration.ofMillis(System.currentTimeMillis() - begin))
                 .info();

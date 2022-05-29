@@ -14,7 +14,7 @@ plugins {
 }
 
 group = 'me.insidezhou.southernquiet'
-version = '4.7.2.001-SNAPSHOT'
+version = '4.7.2.002-SNAPSHOT'
 
 ext {
     jsonpathVersion = '2.4.0'

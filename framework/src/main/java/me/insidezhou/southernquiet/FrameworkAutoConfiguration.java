@@ -1,9 +1,5 @@
 package me.insidezhou.southernquiet;
 
-import me.insidezhou.southernquiet.auth.AuthAdvice;
-import me.insidezhou.southernquiet.auth.AuthPointcut;
-import me.insidezhou.southernquiet.debounce.DebounceAdvice;
-import me.insidezhou.southernquiet.debounce.DebouncePointcut;
 import me.insidezhou.southernquiet.debounce.DebouncerProvider;
 import me.insidezhou.southernquiet.debounce.DefaultDebouncerProvider;
 import me.insidezhou.southernquiet.event.EventPubSub;
@@ -11,28 +7,23 @@ import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
-import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
-import me.insidezhou.southernquiet.throttle.ThrottlePointcut;
 import me.insidezhou.southernquiet.util.AsyncRunner;
 import me.insidezhou.southernquiet.util.Metadata;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
@@ -47,6 +38,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 @EnableScheduling
 @EnableConfigurationProperties
 @ImportAutoConfiguration(TaskSchedulingAutoConfiguration.class)
+@ComponentScan
 public class FrameworkAutoConfiguration {
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
@@ -71,27 +63,6 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public AuthAdvice authAdvice(@Qualifier(AuthorizationMatcherQualifier) PathMatcher pathMatcher) {
-        return new AuthAdvice(pathMatcher);
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public AuthPointcut authPointcut() {
-        return new AuthPointcut();
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-    @ConditionalOnBean({AuthAdvice.class, AuthPointcut.class})
-    public AnnotationAdvisingBeanPostProcessor authAnnotationAdvisingBeanPostProcessor(AuthAdvice authAdvice, AuthPointcut authPointcut) {
-        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(authPointcut, authAdvice)) {};
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
     @Qualifier(AuthorizationMatcherQualifier)
     public AntPathMatcher authorizationMatcher() {
         return new AntPathMatcher();
@@ -99,44 +70,9 @@ public class FrameworkAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public DebounceAdvice debounceAdvice(DebouncerProvider provider, BeanFactory beanFactory) {
-        return new DebounceAdvice(provider, beanFactory);
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
     @ConditionalOnMissingBean(DebouncerProvider.class)
-    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") TaskScheduler taskScheduler, Metadata metadata) {
+    public DefaultDebouncerProvider defaultDebouncerProvider(DebounceProperties debounceProperties, TaskScheduler taskScheduler, Metadata metadata) {
         return new DefaultDebouncerProvider(debounceProperties, taskScheduler, metadata);
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public DebouncePointcut debouncePointcut() {
-        return new DebouncePointcut();
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-    @ConditionalOnBean({DebounceAdvice.class, DebouncePointcut.class})
-    public AnnotationAdvisingBeanPostProcessor debounceAnnotationAdvisingBeanPostProcessor(DebounceAdvice advice, DebouncePointcut pointcut) {
-        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(pointcut, advice)) {};
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public ThrottlePointcut throttlePointcut() {
-        return new ThrottlePointcut();
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnMissingBean
-    public ThrottleAdvice throttleAdvice(ThrottleManager throttleManager, BeanFactory beanFactory) {
-        return new ThrottleAdvice(throttleManager, beanFactory);
     }
 
     @Bean
@@ -144,13 +80,6 @@ public class FrameworkAutoConfiguration {
     @ConditionalOnMissingBean(ThrottleManager.class)
     public DefaultThrottleManager defaultThrottleManager() {
         return new DefaultThrottleManager();
-    }
-
-    @Bean
-    @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Throttle, matchIfMissing = true)
-    @ConditionalOnBean({ThrottleAdvice.class, ThrottlePointcut.class})
-    public AnnotationAdvisingBeanPostProcessor throttleAnnotationAdvisingBeanPostProcessor(ThrottleAdvice advice, ThrottlePointcut pointcut) {
-        return new AnnotationAdvisingBeanPostProcessor(new DefaultPointcutAdvisor(pointcut, advice)) {};
     }
 
     @Bean

@@ -2,7 +2,7 @@ package test.throttle;
 
 import me.insidezhou.southernquiet.FrameworkAutoConfiguration;
 import me.insidezhou.southernquiet.throttle.Throttle;
-import me.insidezhou.southernquiet.throttle.ThrottleAdvice;
+import me.insidezhou.southernquiet.throttle.ThrottleBeanPostProcessor;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import org.assertj.core.internal.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +27,7 @@ public class ThrottleTest {
     private ThrottleTestApp.ScheduledThrottleBean scheduledThrottleBean;
 
     @Autowired
-    private ThrottleAdvice throttleAdvice;
+    private ThrottleBeanPostProcessor throttleBeanPostProcessor;
 
     @BeforeAll
     public void before() {
@@ -58,7 +58,7 @@ public class ThrottleTest {
 
     @Test
     public void advisingCount() {
-        Assertions.assertEquals(1, throttleAdvice.advisingCount());
+        Assertions.assertEquals(1, throttleBeanPostProcessor.getAdvice().advisingCount());
     }
 
     @Test

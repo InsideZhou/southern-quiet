@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "rawtypes"})
+@SuppressWarnings("rawtypes")
 @Configuration
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 public class RedisEventAutoConfiguration {

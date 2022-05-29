@@ -6,7 +6,9 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,6 +27,7 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 
 @SpringBootTest(classes = {FrameworkAutoConfiguration.class, AuthTest.Config.class})
 @ExtendWith(SpringExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AuthTest {
     private final static SouthernQuietLogger log = SouthernQuietLoggerFactory.getLogger(AuthTest.class);
 
@@ -40,11 +43,18 @@ public class AuthTest {
     private SecurityTarget securityTarget;
 
     @Autowired
-    private AuthAdvice authAdvice;
+    private AuthBeanPostProcessor authBeanPostProcessor;
 
     @Autowired
     @Qualifier(AuthorizationMatcherQualifier)
     private PathMatcher pathMatcher;
+
+    private static AuthAdvice authAdvice;
+
+    @BeforeAll
+    public void beforeAll() {
+        authAdvice = authBeanPostProcessor.getAuthAdvice();
+    }
 
     @Test
     public void noAuthProvider() {
