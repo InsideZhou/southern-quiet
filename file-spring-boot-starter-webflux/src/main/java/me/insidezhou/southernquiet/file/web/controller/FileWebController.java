@@ -71,10 +71,10 @@ public class FileWebController implements DisposableBean {
                              ServerProperties serverProperties) {
         this(fileSystem, fileWebProperties, serverProperties, Schedulers.fromExecutorService(new ThreadPoolExecutor(
             metadata.getCoreNumber(),
-            Integer.MAX_VALUE,
-            Math.max(1L, Math.round(metadata.getCoreNumber() / 20.0)),
+            metadata.getCoreNumber() * 8,
+            Math.min(30, metadata.getCoreNumber()),
             TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(metadata.getCoreNumber() * 30)
+            new ArrayBlockingQueue<>(metadata.getCoreNumber() * 8)
         )));
     }
 
@@ -91,14 +91,14 @@ public class FileWebController implements DisposableBean {
 
     public String getFileLinkPath(String filename) {
         String linkPathPrefix = fileWebProperties.getLinkPathPrefix();
-        if (StringUtils.isEmpty(linkPathPrefix)) {
-            return getFilePath(filename);
-        }
-        else {
+        if (StringUtils.hasText(linkPathPrefix)) {
             if (!linkPathPrefix.endsWith(FileSystem.PATH_SEPARATOR_STRING)) {
                 linkPathPrefix = linkPathPrefix + FileSystem.PATH_SEPARATOR_STRING;
             }
             return linkPathPrefix + getFilePath(filename);
+        }
+        else {
+            return getFilePath(filename);
         }
     }
 
