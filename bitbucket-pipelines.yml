@@ -1,4 +1,4 @@
-image: inside/publish-to-sonatype
+image: inside/gradle:7
 
 pipelines:
   tags:
