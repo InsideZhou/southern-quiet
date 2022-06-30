@@ -9,7 +9,7 @@ import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionDefinition;
 
 import java.sql.Connection;
 
@@ -26,56 +26,47 @@ public class TemplateTransactionRunner implements TransactionRunner {
 
     @Override
     public <R> R run(@Nullable Integer level, @NotNull Function1<? super TransactionContext, ? extends R> func) {
-        var transactionTemplate = new TransactionTemplate(transactionManager);
-        if (null != level) {
-            transactionTemplate.setIsolationLevel(level);
+        var status = transactionManager.getTransaction(null);
+        var transactionContext = transactionContextThreadLocal.get();
+
+        if (null == transactionContext) {
+            transactionContext = new TemplateTransactionContext(null == level ? TransactionDefinition.ISOLATION_DEFAULT : level);
+        }
+        else {
+            if (null != level && level < transactionContext.getIsolationLevel()) {
+                logger.message("nested transaction isolation level is lesser than outer.")
+                    .context("nested", level)
+                    .context("outer", transactionContext.getIsolationLevel())
+                    .warn();
+            }
         }
 
-        transactionTemplate.execute(status -> {
-            var transactionContext = transactionContextThreadLocal.get();
+        transactionContextThreadLocal.set(transactionContext);
 
-            if (null == transactionContext) {
-                transactionContext = new TemplateTransactionContext(transactionTemplate.getIsolationLevel());
+        try {
+            return func.invoke(transactionContext);
+        }
+        catch (TransactionAbortException e) {
+            transactionManager.rollback(status);
+
+            if (null == e.getCause()) {
+                return null;
             }
             else {
-                if (null != level && level < transactionContext.getIsolationLevel()) {
-                    logger.message("nested transaction isolation level is lesser than outer.")
-                        .context("nested", level)
-                        .context("outer", transactionContext.getIsolationLevel())
-                        .warn();
-                }
+                throw e;
             }
+        }
+        catch (Exception e) {
+            transactionManager.rollback(status);
+            throw new TransactionAbortException(e);
+        }
+        finally {
+            transactionManager.commit(status);
 
-            transactionContextThreadLocal.set(transactionContext);
-            var sp = status.createSavepoint();
-
-            try {
-                var result = func.invoke(transactionContext);
-                status.releaseSavepoint(sp);
-                return result;
+            if (status.isCompleted()) {
+                transactionContextThreadLocal.set(null);
             }
-            catch (TransactionAbortException e) {
-                status.rollbackToSavepoint(sp);
-
-                if (null == e.getCause()) {
-                    return null;
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch (Exception e) {
-                status.rollbackToSavepoint(sp);
-                throw new TransactionAbortException(e);
-            }
-            finally {
-                if (!status.hasSavepoint()) {
-                    transactionContextThreadLocal.set(null);
-                }
-            }
-        });
-
-        return null;
+        }
     }
 
     @Override
