@@ -7,3 +7,9 @@ southern-quiet:
       file-system:
         working-root: TMP_KEY_VALUE
         name-separator: _|_
+
+
+logging:
+  level:
+    test: trace
+    me.insidezhou: trace

@@ -1,29 +1,24 @@
 package me.insidezhou.southernquiet.debounce;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
-import org.springframework.beans.factory.BeanFactory;
+import me.insidezhou.southernquiet.AbstractBeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 import static me.insidezhou.southernquiet.FrameworkAutoConfiguration.ConfigRoot_Debounce;
 
 @Component
 @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Debounce, matchIfMissing = true)
-public class DebounceBeanPostProcessor extends AbstractBeanFactoryAwareAdvisingPostProcessor {
-    private DebounceAdvice advice;
-
+public class DebounceBeanPostProcessor extends AbstractBeanPostProcessor<DebounceAdvice, DebouncePointcut> {
     @Override
-    public void setBeanFactory(@NotNull BeanFactory beanFactory) {
-        super.setBeanFactory(beanFactory);
-
-        var pointcut = new DebouncePointcut();
-        advice = new DebounceAdvice(beanFactory);
-        this.advisor = new DefaultPointcutAdvisor(pointcut, advice);
+    protected DebounceAdvice createAdvice() {
+        Objects.requireNonNull(beanFactory);
+        return new DebounceAdvice(beanFactory);
     }
 
-    public DebounceAdvice getAdvice() {
-        return advice;
+    @Override
+    protected DebouncePointcut createPointcut() {
+        return new DebouncePointcut();
     }
 }

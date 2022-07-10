@@ -7,14 +7,15 @@ import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 
+import java.util.Arrays;
+
 public class AuthPointcut implements Pointcut {
-    private final ComposablePointcut pointcut = new ComposablePointcut(AnnotationMatchingPointcut.forMethodAnnotation(Auth.class))
-        .union(AnnotationMatchingPointcut.forClassAnnotation(Auth.class));
+    private final ComposablePointcut pointcut = new ComposablePointcut(AnnotationMatchingPointcut.forMethodAnnotation(Auth.class)).union(AnnotationMatchingPointcut.forClassAnnotation(Auth.class));
 
-    public AuthPointcut() { }
+    public AuthPointcut() {}
 
-    public AuthPointcut(Pointcut pointcut) {
-        this.pointcut.union(pointcut);
+    public AuthPointcut(Pointcut... pointcuts) {
+        Arrays.stream(pointcuts).forEach(pointcut::union);
     }
 
     @NotNull

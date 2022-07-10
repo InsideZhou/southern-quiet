@@ -1,29 +1,24 @@
 package me.insidezhou.southernquiet.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
-import org.springframework.beans.factory.BeanFactory;
+import me.insidezhou.southernquiet.AbstractBeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 import static me.insidezhou.southernquiet.FrameworkAutoConfiguration.ConfigRoot_Auth;
 
 @Component
 @ConditionalOnProperty(value = "enable", prefix = ConfigRoot_Auth, matchIfMissing = true)
-public class AuthBeanPostProcessor extends AbstractBeanFactoryAwareAdvisingPostProcessor {
-    private AuthAdvice authAdvice;
-
+public class AuthBeanPostProcessor extends AbstractBeanPostProcessor<AuthAdvice, AuthPointcut> {
     @Override
-    public void setBeanFactory(@NotNull BeanFactory beanFactory) {
-        super.setBeanFactory(beanFactory);
-
-        var pointcut = new AuthPointcut();
-        this.authAdvice = new AuthAdvice(beanFactory);
-        this.advisor = new DefaultPointcutAdvisor(pointcut, authAdvice);
+    protected AuthAdvice createAdvice() {
+        Objects.requireNonNull(beanFactory);
+        return new AuthAdvice(beanFactory);
     }
 
-    public AuthAdvice getAuthAdvice() {
-        return authAdvice;
+    @Override
+    protected AuthPointcut createPointcut() {
+        return new AuthPointcut();
     }
 }

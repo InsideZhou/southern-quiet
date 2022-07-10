@@ -41,6 +41,8 @@ public class DebounceTest {
         eventPublisher.publishEvent(new WorkerEvent(1));
         eventPublisher.publishEvent(new WorkerEvent(1));
         eventPublisher.publishEvent(new WorkerEvent(1));
+
+        eventPublisher.publishEvent(new WorkerEvent(2));
         eventPublisher.publishEvent(new WorkerEvent(2));
         eventPublisher.publishEvent(new WorkerEvent(2));
         eventPublisher.publishEvent(new WorkerEvent(2));
