@@ -35,6 +35,11 @@ public class TemplateConnectionProvider implements ConnectionProvider {
     @NotNull
     @Override
     public Connection getConnection() {
-        return DataSourceUtils.getConnection(this.dataSource);
+        return DataSourceUtils.getConnection(dataSource);
+    }
+
+    @Override
+    public void releaseConnection(@NotNull Connection connection) {
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }

@@ -18,7 +18,7 @@ version = '4.7.3-SNAPSHOT'
 
 ext {
     jsonpathVersion = '2.4.0'
-    instepVersion = '3.0.0'
+    instepVersion = '3.1.0-SNAPSHOT'
 }
 
 configurations.all {
