@@ -40,7 +40,7 @@ public class IdGeneratorWorkerTable extends Table {
         @PostConstruct
         @PreDestroy
         public void clearConsiderDowned() {
-            SQLPlan plan = workerTable.delete().where(lastWorkerTimePlusIntervalLesserThanNow()).debug();
+            SQLPlan plan = workerTable.delete().where(lastWorkerTimePlusIntervalLesserThanNow()).trace();
             int rowAffected;
             try {
                 rowAffected = instepSQL.executor().executeUpdate(plan);

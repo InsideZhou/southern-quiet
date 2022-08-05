@@ -3,9 +3,11 @@ package me.insidezhou.southernquiet.idgenerator;
 import instep.dao.DaoException;
 import instep.dao.sql.InstepSQL;
 import instep.dao.sql.SQLPlan;
+import me.insidezhou.southernquiet.instep.InstepAutoConfiguration;
 import me.insidezhou.southernquiet.util.IdGenerator;
 import me.insidezhou.southernquiet.util.Metadata;
 import me.insidezhou.southernquiet.util.SnowflakeIdGenerator;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -19,11 +21,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableConfigurationProperties
 @EnableTransactionManagement
 @EnableScheduling
+@AutoConfigureAfter(InstepAutoConfiguration.class)
 @ConditionalOnMissingBean(IdGenerator.class)
 public class JdbcIdGeneratorAutoConfiguration {
     @SuppressWarnings("rawtypes")
@@ -32,7 +34,7 @@ public class JdbcIdGeneratorAutoConfiguration {
     public IdGeneratorWorkerTable idGeneratorWorkerTable(Properties properties, InstepSQL instepSQL) {
         IdGeneratorWorkerTable table = new IdGeneratorWorkerTable(properties.getWorkerTable());
 
-        SQLPlan plan = table.create().debug();
+        SQLPlan plan = table.create().trace();
         try {
             instepSQL.executor().execute(plan);
         }

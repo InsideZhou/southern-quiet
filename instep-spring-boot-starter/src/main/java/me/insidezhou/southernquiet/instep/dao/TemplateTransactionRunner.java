@@ -25,7 +25,7 @@ public class TemplateTransactionRunner implements TransactionRunner {
     }
 
     @Override
-    public <R> R run(@Nullable Integer level, @NotNull Function1<? super TransactionContext, ? extends R> func) {
+    public <R> R with(@Nullable Integer level, @NotNull Function1<? super TransactionContext, ? extends R> func) {
         var status = transactionManager.getTransaction(null);
         var transactionContext = transactionContextThreadLocal.get();
 
@@ -67,30 +67,5 @@ public class TemplateTransactionRunner implements TransactionRunner {
                 transactionContextThreadLocal.set(null);
             }
         }
-    }
-
-    @Override
-    public <R> R committed(@NotNull Function1<? super TransactionContext, ? extends R> func) {
-        return run(Connection.TRANSACTION_READ_COMMITTED, func);
-    }
-
-    @Override
-    public <R> R repeatable(@NotNull Function1<? super TransactionContext, ? extends R> func) {
-        return run(Connection.TRANSACTION_REPEATABLE_READ, func);
-    }
-
-    @Override
-    public <R> R run(@NotNull Function1<? super TransactionContext, ? extends R> func) {
-        return run(null, func);
-    }
-
-    @Override
-    public <R> R serializable(@NotNull Function1<? super TransactionContext, ? extends R> func) {
-        return run(Connection.TRANSACTION_SERIALIZABLE, func);
-    }
-
-    @Override
-    public <R> R uncommitted(@NotNull Function1<? super TransactionContext, ? extends R> func) {
-        return run(Connection.TRANSACTION_READ_UNCOMMITTED, func);
     }
 }

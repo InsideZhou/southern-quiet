@@ -14,10 +14,7 @@ import me.insidezhou.southernquiet.instep.dao.TemplateTransactionRunner;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +23,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
-@ConditionalOnBean({DataSource.class, DataSourceProperties.class})
-@AutoConfigureAfter(DataSourceAutoConfiguration.class)
 public class InstepAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -73,6 +68,11 @@ public class InstepAutoConfiguration {
             }
 
             @Override
+            public void trace() {
+                logger.trace();
+            }
+
+            @Override
             public void debug() {
                 logger.debug();
             }
@@ -85,6 +85,11 @@ public class InstepAutoConfiguration {
             @Override
             public void warn() {
                 logger.warn();
+            }
+
+            @Override
+            public void error() {
+                logger.error();
             }
         };
     }
@@ -112,7 +117,7 @@ public class InstepAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, Instep instep, TransactionRunner transactionRunner) {
+    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, TransactionRunner transactionRunner) {
         return new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
     }
 

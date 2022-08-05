@@ -71,6 +71,16 @@ public class JdbcIdGenerator implements IdGenerator {
             randomSequenceStart ? new Random() : null,
             tickAccuracy
         );
+
+        log.message(JdbcIdGenerator.class.getSimpleName() + "开始工作")
+            .context("workerId", workerIdInUse)
+            .context("timestampBits", timestampBits)
+            .context("highPaddingBits", highPaddingBits)
+            .context("lowPaddingBits", lowPaddingBits)
+            .context("epoch", Instant.ofEpochSecond(epochInSeconds))
+            .context("sequenceStartRange", sequenceStartRange)
+            .context("randomSequenceStart", randomSequenceStart)
+            .info();
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -98,7 +108,7 @@ public class JdbcIdGenerator implements IdGenerator {
     }
 
     private int getWorkerId() {
-        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionsKt.eq(workerTable.appId, runtimeId)).orderBy(ColumnExtensionsKt.desc(workerTable.workerTime));
+        SQLPlan<TableSelectPlan> plan = workerTable.select().where(ColumnExtensionsKt.eq(workerTable.appId, runtimeId)).orderBy(ColumnExtensionsKt.desc(workerTable.workerTime)).trace();
         List<TableRow> rows;
         try {
             rows = instepSQL.executor().execute(plan, TableRow.class);
@@ -113,6 +123,13 @@ public class JdbcIdGenerator implements IdGenerator {
 
         Instant previousWorkerTime = row.get(workerTable.workerTime);
         waitUntilPreviousWorkerTimePassed(previousWorkerTime);
+
+        log.message("获取原workerId成功")
+            .context("appId", workerTable.appId)
+            .context("workerName", workerTable.workerName)
+            .context("workerId", workerTable.workerId)
+            .context("workerTime", workerTable.workerTime)
+            .debug();
 
         return row.get(workerTable.workerId);
     }
@@ -135,7 +152,7 @@ public class JdbcIdGenerator implements IdGenerator {
                 .addValue(workerTable.appId, runtimeId)
                 .addValue(workerTable.workerTime, Instant.now())
                 .addValue(workerTable.workerId, workerId)
-                .debug();
+                .trace();
 
             int rowAffected;
             try {
@@ -159,6 +176,8 @@ public class JdbcIdGenerator implements IdGenerator {
                 break;
             }
 
+            log.message("获取新workerId成功").context("workerId", workerId).debug();
+
             return workerId;
         }
 
@@ -176,7 +195,7 @@ public class JdbcIdGenerator implements IdGenerator {
                     ColumnExtensionsKt.eq(workerTable.workerId, workerIdInUse)
                         .and(ColumnExtensionsKt.eq(workerTable.appId, runtimeId))
                         .and(ColumnExtensionsKt.lte(workerTable.workerTime, now))
-                ).debug();
+                ).trace();
 
             int rowAffected = instepSQL.executor().executeUpdate(plan);
             clockMovedBack = 0 == rowAffected;

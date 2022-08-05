@@ -6,6 +6,8 @@ import me.insidezhou.southernquiet.event.EventPubSub;
 import me.insidezhou.southernquiet.filesystem.FileSystem;
 import me.insidezhou.southernquiet.filesystem.driver.LocalFileSystem;
 import me.insidezhou.southernquiet.keyvalue.driver.FileSystemKeyValueStore;
+import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
+import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import me.insidezhou.southernquiet.throttle.DefaultThrottleManager;
 import me.insidezhou.southernquiet.throttle.ThrottleManager;
 import me.insidezhou.southernquiet.util.AsyncRunner;
@@ -40,6 +42,8 @@ import static me.insidezhou.southernquiet.auth.AuthAdvice.AuthorizationMatcherQu
 @ImportAutoConfiguration(TaskSchedulingAutoConfiguration.class)
 @ComponentScan
 public class FrameworkAutoConfiguration {
+    private final static SouthernQuietLogger logger = SouthernQuietLoggerFactory.getLogger(FrameworkAutoConfiguration.class);
+
     public final static String ConfigRoot = "southern-quiet.framework";
     public final static String ConfigRoot_Auth = ConfigRoot + ".auth";
     public final static String ConfigRoot_Debounce = ConfigRoot + ".debounce";
@@ -85,7 +89,7 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public Metadata metadata(Properties properties) {
-        return new Metadata() {
+        var meta = new Metadata() {
             final private int coreNumber = Runtime.getRuntime().availableProcessors();
 
             @Override
@@ -109,6 +113,13 @@ public class FrameworkAutoConfiguration {
                 }
             }
         };
+
+        logger.message("SouthernQuiet Metadata 已生成")
+            .context("coreNumber", meta.getCoreNumber())
+            .context("runtimeId", meta.getRuntimeId())
+            .debug();
+
+        return meta;
     }
 
     @Bean
