@@ -14,11 +14,11 @@ plugins {
 }
 
 group = 'me.insidezhou.southernquiet'
-version = '4.7.3-001-SNAPSHOT'
+version = '4.7.3-002-SNAPSHOT'
 
 ext {
     jsonpathVersion = '2.4.0'
-    instepVersion = '3.0.0-Relaunch-SNAPSHOT'
+    instepVersion = '3.0.0-Relaunch-001-SNAPSHOT'
 }
 
 configurations.all {
