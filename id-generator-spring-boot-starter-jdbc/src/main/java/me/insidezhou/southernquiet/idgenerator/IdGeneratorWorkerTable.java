@@ -4,6 +4,10 @@ import instep.dao.sql.*;
 import instep.dao.sql.dialect.MySQLDialect;
 import instep.dao.sql.dialect.PostgreSQLDialect;
 import instep.dao.sql.dialect.SQLServerDialect;
+import me.insidezhou.southernquiet.instep.dao.TableWithColumnConditionGeneration;
+import me.insidezhou.southernquiet.instep.dao.conditiongenerationcolumn.DateTimeColumn;
+import me.insidezhou.southernquiet.instep.dao.conditiongenerationcolumn.IntegerColumn;
+import me.insidezhou.southernquiet.instep.dao.conditiongenerationcolumn.StringColumn;
 import me.insidezhou.southernquiet.logging.SouthernQuietLogger;
 import me.insidezhou.southernquiet.logging.SouthernQuietLoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,7 +16,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class IdGeneratorWorkerTable extends Table {
+public class IdGeneratorWorkerTable extends TableWithColumnConditionGeneration {
     public IdGeneratorWorkerTable(String tableName) {
         super(tableName, "id生成器的worker记录");
     }
