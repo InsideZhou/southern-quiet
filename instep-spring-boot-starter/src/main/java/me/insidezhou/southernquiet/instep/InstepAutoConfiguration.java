@@ -117,14 +117,15 @@ public class InstepAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, TransactionRunner transactionRunner) {
-        return new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
+    public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, TransactionRunner transactionRunner, Instep instep) {
+        var connectionProvider = new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
+        instep.bind(ConnectionProvider.class, connectionProvider);
+        return connectionProvider;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public InstepSQL instepSQL(Instep instep, ConnectionProvider connectionProvider) {
-        instep.bind(ConnectionProvider.class, connectionProvider);
+    public InstepSQL instepSQL(@SuppressWarnings("unused") ConnectionProvider connectionProvider) {
         return InstepSQL.INSTANCE;
     }
 }
