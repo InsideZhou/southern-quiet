@@ -44,6 +44,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"DuplicatedCode", "BlockingMethodInNonBlockingContext"})
 public class FileWebController implements DisposableBean {
@@ -155,7 +156,7 @@ public class FileWebController implements DisposableBean {
                     String contentType = tika.detect(resultStream);
                     resultStream.reset();
 
-                    var responseEntity = okResponseBuilder
+                    ResponseEntity<DataBuffer> responseEntity = okResponseBuilder
                         .contentLength(resultStream.available())
                         .contentType(MediaType.parseMediaType(contentType))
                         .eTag(id)
@@ -204,7 +205,7 @@ public class FileWebController implements DisposableBean {
                     return;
                 }
 
-                var responseEntity = okResponseBuilder
+                ResponseEntity<String> responseEntity = okResponseBuilder
                     .contentLength(base64.length())
                     .contentType(MediaType.TEXT_PLAIN)
                     .eTag(id)
@@ -280,7 +281,7 @@ public class FileWebController implements DisposableBean {
                         }
                     }
 
-                    var responseEntity = okResponseBuilder
+                    ResponseEntity<DataBuffer> responseEntity = okResponseBuilder
                         .contentLength(resultStream.available())
                         .contentType(MediaType.parseMediaType(mediaType))
                         .eTag(id)
@@ -350,12 +351,12 @@ public class FileWebController implements DisposableBean {
     }
 
     protected InputStream partToInputStream(Part part, boolean base64Decode) {
-        var stream = part.content().map(DataBuffer::asInputStream).toStream();
+        Stream<InputStream> stream = part.content().map(DataBuffer::asInputStream).toStream();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         stream.forEach(inputStream -> {
             try {
-                outputStream.writeBytes(inputStream.readAllBytes());
+                StreamUtils.copy(inputStream, outputStream);
             }
             catch (IOException e) {
                 throw new RuntimeException(e);

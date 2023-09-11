@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 
 import java.sql.Connection;
 
@@ -26,8 +27,8 @@ public class TemplateTransactionRunner implements TransactionRunner {
 
     @Override
     public <R> R with(@Nullable Integer level, @NotNull Function1<? super TransactionContext, ? extends R> func) {
-        var status = transactionManager.getTransaction(null);
-        var transactionContext = transactionContextThreadLocal.get();
+        TransactionStatus status = transactionManager.getTransaction(null);
+        TemplateTransactionContext transactionContext = transactionContextThreadLocal.get();
 
         if (null == transactionContext) {
             transactionContext = new TemplateTransactionContext(null == level ? TransactionDefinition.ISOLATION_DEFAULT : level);

@@ -26,7 +26,7 @@ public abstract class TableWithColumnConditionGeneration extends Table {
     @NotNull
     @Override
     public IntegerColumn autoIncrement(@NotNull String name) {
-        var column = new IntegerColumn(name, this, IntegerColumnType.Int);
+        IntegerColumn column = new IntegerColumn(name, this, IntegerColumnType.Int);
         column.autoIncrement();
         return column;
     }
@@ -34,7 +34,7 @@ public abstract class TableWithColumnConditionGeneration extends Table {
     @NotNull
     @Override
     public IntegerColumn autoIncrementLong(@NotNull String name) {
-        var column = new IntegerColumn(name, this, IntegerColumnType.Long);
+        IntegerColumn column = new IntegerColumn(name, this, IntegerColumnType.Long);
         column.autoIncrement();
         return column;
     }

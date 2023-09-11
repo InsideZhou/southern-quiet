@@ -219,7 +219,7 @@ public class FileSystemTest {
         }
 
         try (InputStream inputStream = fileSystem.openReadStream(target)) {
-            byte[] bytes = inputStream.readAllBytes();
+            byte[] bytes = StreamUtils.copyToByteArray(inputStream);
             String result = new String(bytes);
 
             //验证通过软链接 可以直接编辑源文件

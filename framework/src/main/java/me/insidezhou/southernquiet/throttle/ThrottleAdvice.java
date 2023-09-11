@@ -97,9 +97,9 @@ public class ThrottleAdvice implements MethodInterceptor {
 
             if (StringUtils.hasText(scheduledAnnotation.cron())) {
                 String cron = stringValueResolver.resolveStringValue(scheduledAnnotation.cron());
-                var cronExp = CronExpression.parse(Objects.requireNonNull(cron));
-                var start = Objects.requireNonNull(cronExp.next(LocalDateTime.now()));
-                var end = Objects.requireNonNull(cronExp.next(start));
+                CronExpression cronExp = CronExpression.parse(Objects.requireNonNull(cron));
+                LocalDateTime start = Objects.requireNonNull(cronExp.next(LocalDateTime.now()));
+                LocalDateTime end = Objects.requireNonNull(cronExp.next(start));
 
                 thresholdFromSchedule = Duration.between(start, end).toMillis();
             }

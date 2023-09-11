@@ -28,7 +28,8 @@ public class RedisTemplateProvider<T extends Serializable> {
         redisTemplate.afterPropertiesSet();
 
         this.eventSerializer = eventSerializer;
-        this.channelSerializer = Objects.requireNonNullElseGet(channelSerializer, redisTemplate::getStringSerializer);
+        this.channelSerializer = null != channelSerializer ? channelSerializer : redisTemplate.getStringSerializer();
+        Objects.requireNonNull(this.channelSerializer);
     }
 
     public RedisTemplate getRedisTemplate() {

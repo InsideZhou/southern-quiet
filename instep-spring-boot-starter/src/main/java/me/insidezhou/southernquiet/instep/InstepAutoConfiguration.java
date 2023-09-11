@@ -118,7 +118,7 @@ public class InstepAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ConnectionProvider connectionProvider(DataSource dataSource, Dialect dialect, TransactionRunner transactionRunner, Instep instep) {
-        var connectionProvider = new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
+        TemplateConnectionProvider connectionProvider = new TemplateConnectionProvider(dataSource, dialect, transactionRunner);
         instep.bind(ConnectionProvider.class, connectionProvider);
         return connectionProvider;
     }

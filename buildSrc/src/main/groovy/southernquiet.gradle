@@ -14,11 +14,11 @@ plugins {
 }
 
 group = 'me.insidezhou.southernquiet'
-version = '4.7.3-002-SNAPSHOT'
+version = '4.7.3'
 
 ext {
     jsonpathVersion = '2.4.0'
-    instepVersion = '3.0.0-Relaunch-001-SNAPSHOT'
+    instepVersion = '3.0.1'
 }
 
 configurations.all {
@@ -56,8 +56,8 @@ dependencies {
 compileJava.dependsOn(processResources)
 
 tasks.withType(JavaCompile) {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 
     options.encoding = "UTF-8"
 }
@@ -65,7 +65,7 @@ tasks.withType(JavaCompile) {
 compileKotlin {
     kotlinOptions {
         useIR = true
-        jvmTarget = JavaVersion.VERSION_11
+        jvmTarget = JavaVersion.VERSION_1_8
     }
 }
 

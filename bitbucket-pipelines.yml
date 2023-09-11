@@ -1,4 +1,4 @@
-image: inside/gradle:7
+image: inside/gradle:7-jdk8
 
 pipelines:
   tags:

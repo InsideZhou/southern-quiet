@@ -89,7 +89,7 @@ public class FrameworkAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public Metadata metadata(Properties properties) {
-        var meta = new Metadata() {
+        Metadata meta = new Metadata() {
             final private int coreNumber = Runtime.getRuntime().availableProcessors();
 
             @Override
